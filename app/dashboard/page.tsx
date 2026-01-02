@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../components/Sidebar'
 import Header from '../components/Header'
 import { getSession, signOut, getUser, isAdminEmail } from '../lib/auth'
-import DashboardContent from './components/DashboardContent'
-import UsersContent from './components/UsersContent'
-import UploadDocumentContent from './components/UploadDocumentContent'
-import UploadVideoContent from './components/UploadVideoContent'
+import DashboardContent from './shared/DashboardContent'
+import UsersContent from './features/users/UsersContent'
+import BooksContent from './features/books/BooksContent'
+import VideosContent from './features/videos/VideosContent'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -94,8 +94,8 @@ export default function Dashboard() {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {activeMenu === 'dashboard' && <DashboardContent />}
           {activeMenu === 'users' && <UsersContent />}
-          {activeMenu === 'upload-document' && <UploadDocumentContent />}
-          {activeMenu === 'upload-video' && <UploadVideoContent />}
+          {activeMenu === 'upload-document' && <BooksContent />}
+          {activeMenu === 'upload-video' && <VideosContent />}
         </main>
       </div>
     </div>

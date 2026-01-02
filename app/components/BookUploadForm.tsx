@@ -144,7 +144,8 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     if (e.target.files && e.target.files[0]) {
       if (e.target.id === 'cover') {
         handleCover(e.target.files[0])
-      } else {
+      } else if (e.target.id === 'book-file' || !e.target.id) {
+        // Handle book file upload (id is 'book-file' or no id for backward compatibility)
         handleFile(e.target.files[0])
       }
     }
@@ -462,6 +463,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
         >
           <input
             ref={fileInputRef}
+            id="book-file"
             type="file"
             accept=".pdf,.doc,.docx,.txt,.xls,.xlsx"
             onChange={handleChange}
@@ -542,7 +544,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
 
       <Button
         type="submit"
-        disabled={isLoading || !formData.title || !formData.author || !formData.year || !formData.file}
+        disabled={isLoading || !formData.title || !formData.author || !formData.year || !formData.file || !formData.category_id}
         isLoading={isLoading}
         className="w-full py-3 px-4"
       >

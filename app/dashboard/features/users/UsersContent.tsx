@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DataTable from '../../components/DataTable'
-import Button from '../../components/Button'
+import DataTable from '../../../components/DataTable'
+import Button from '../../../components/Button'
 
 interface User {
   id: string

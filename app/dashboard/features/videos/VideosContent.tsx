@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'react-toastify'
-import DataTable from '../../components/DataTable'
-import FileUpload from '../../components/FileUpload'
+import DataTable from '../../../components/DataTable'
+import FileUpload from '../../../components/FileUpload'
 
 interface VideoCategory {
   id: string
