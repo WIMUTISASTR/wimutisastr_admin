@@ -41,15 +41,32 @@ export default function LoginPage() {
       await signIn(email, password)
       router.push('/dashboard')
     } catch (err: any) {
-      // Show the actual error message from Supabase or our custom message
-      const errorMessage = err.message || 'Invalid email or password. Please try again.'
-      setError(errorMessage)
       setIsLoading(false)
-      console.error('Login error details:', {
-        message: err.message,
-        error: err,
-        stack: err.stack
-      }) // For debugging
+      // Show the actual error message from Supabase or our custom message
+      let errorMessage = 'Invalid email or password. Please try again.'
+      
+      if (err) {
+        if (typeof err === 'string') {
+          errorMessage = err
+        } else if (err?.message) {
+          errorMessage = err.message
+        } else if (err?.error?.message) {
+          errorMessage = err.error.message
+        }
+      }
+      
+      setError(errorMessage)
+      
+      // Log error details for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Login error details:', {
+          error: err,
+          message: err?.message,
+          errorMessage: errorMessage,
+          type: typeof err,
+          stringified: JSON.stringify(err, Object.getOwnPropertyNames(err))
+        })
+      }
     }
   }
 

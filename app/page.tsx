@@ -62,14 +62,14 @@ export default function PINPage() {
   return (
     <AuthCard
       footer={
-        <p className="text-xs text-amber-600">
+        <p className="text-xs text-slate-600">
           Admin Panel Access
         </p>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-semibold text-amber-900 mb-4 text-center">
+          <label className="block text-sm font-semibold text-slate-800 mb-4 text-center">
             Enter Your PIN
           </label>
           <PINInput
