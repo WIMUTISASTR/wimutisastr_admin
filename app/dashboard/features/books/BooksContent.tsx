@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
-import BookUploadForm from '../../../components/BookUploadForm'
-import BookEditModal from '../../../components/BookEditModal'
-import BookDetailModal from './BookDetailModal'
+import BookUploadForm from './BookUploadForm'
+import BookEditModal from './BookEditModal'
 import BookList from './BookList'
-import CategoryManagement from './CategoryManagement'
+import CategoryManagement from './BookCategoryManagement'
 import { Book, Category } from '../../shared/types'
 
 export default function BooksContent() {
@@ -16,8 +15,6 @@ export default function BooksContent() {
   const [activeView, setActiveView] = useState<'upload' | 'list' | 'categories'>('upload')
   const [editingBook, setEditingBook] = useState<Book | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [viewingBook, setViewingBook] = useState<Book | null>(null)
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
   useEffect(() => {
     fetchCategories()
@@ -179,11 +176,6 @@ export default function BooksContent() {
     setIsEditModalOpen(true)
   }
 
-  const handleViewDetails = (book: Book) => {
-    setViewingBook(book)
-    setIsDetailModalOpen(true)
-  }
-
   const handleUpdate = (updatedBook: Book) => {
     setBooks(books.map(b => b.id === updatedBook.id ? updatedBook : b))
     setEditingBook(null)
@@ -269,14 +261,12 @@ export default function BooksContent() {
           books={books}
           isLoading={isLoading}
           onEdit={handleEdit}
-          onViewDetails={handleViewDetails}
           onDelete={handleDelete}
         />
       ) : (
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
+        <div className="rounded-xl">
           {activeView === 'upload' && (
             <div>
-              <h3 className="text-lg font-bold text-slate-800 mb-6">Upload New Book</h3>
               <BookUploadForm
                 onUpload={handleUpload}
                 isLoading={isLoading}
@@ -307,16 +297,6 @@ export default function BooksContent() {
         categories={categories}
       />
 
-      {/* Book Detail Modal */}
-      <BookDetailModal
-        book={viewingBook}
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false)
-          setViewingBook(null)
-        }}
-        onEdit={handleEdit}
-      />
     </>
   )
 }

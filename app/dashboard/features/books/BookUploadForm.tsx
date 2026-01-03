@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Button from './Button'
+import Button from '../../../components/Button'
+import { Category } from '../../shared/types'
+import { formatFileSize } from '../../shared/utils'
+import { FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from '../../shared/constants'
 
 interface BookData {
   title: string
@@ -11,11 +14,6 @@ interface BookData {
   file: File | null
   cover: File | null
   category_id: string | null
-}
-
-interface Category {
-  id: string
-  name: string
 }
 
 interface BookUploadFormProps {
@@ -75,17 +73,16 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
   const handleFile = (selectedFile: File) => {
     setError('')
     
-    // Check file size (50MB max)
-    if (selectedFile.size > 50 * 1024 * 1024) {
-      setError('File size must be less than 50MB')
+    // Check file size
+    if (selectedFile.size > FILE_SIZE_LIMITS.BOOK_FILE) {
+      setError(`File size must be less than ${formatFileSize(FILE_SIZE_LIMITS.BOOK_FILE)}`)
       return
     }
 
     // Check file type
-    const allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.xls', '.xlsx']
     const fileExt = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
-    if (!allowedTypes.includes(fileExt)) {
-      setError('Invalid file type. Allowed: PDF, DOC, DOCX, TXT, XLS, XLSX')
+    if (!ALLOWED_FILE_TYPES.BOOK_DOCUMENTS.includes(fileExt as any)) {
+      setError(`Invalid file type. Allowed: ${ALLOWED_FILE_TYPES.BOOK_DOCUMENTS.join(', ').replace(/\./g, '').toUpperCase()}`)
       return
     }
 
@@ -95,17 +92,16 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
   const handleCover = (selectedFile: File) => {
     setError('')
     
-    // Check file size (5MB max for images)
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      setError('Cover image size must be less than 5MB')
+    // Check file size
+    if (selectedFile.size > FILE_SIZE_LIMITS.COVER_IMAGE) {
+      setError(`Cover image size must be less than ${formatFileSize(FILE_SIZE_LIMITS.COVER_IMAGE)}`)
       return
     }
 
     // Check file type (images only)
-    const allowedTypes = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
     const fileExt = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
-    if (!allowedTypes.includes(fileExt)) {
-      setError('Invalid image type. Allowed: JPG, JPEG, PNG, WEBP, GIF')
+    if (!ALLOWED_FILE_TYPES.IMAGES.includes(fileExt as any)) {
+      setError(`Invalid image type. Allowed: ${ALLOWED_FILE_TYPES.IMAGES.join(', ').replace(/\./g, '').toUpperCase()}`)
       return
     }
 
@@ -221,13 +217,6 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     }
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

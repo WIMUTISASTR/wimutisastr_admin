@@ -5,8 +5,10 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 const r2AccountId = process.env.R2_ACCOUNT_ID!
 const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID!
 const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY!
-const r2BucketName = process.env.R2_BUCKET_NAME!
+const r2BucketName = process.env.R2_BUCKET_NAME! // Default bucket for books
+const r2VideoBucketName = process.env.R2_VIDEO_BUCKET_NAME || 'video' // Bucket for videos
 const r2PublicUrl = process.env.R2_PUBLIC_URL || `https://${r2AccountId}.r2.cloudflarestorage.com/${r2BucketName}`
+const r2VideoPublicUrl = process.env.R2_VIDEO_PUBLIC_URL || `https://${r2AccountId}.r2.cloudflarestorage.com/${r2VideoBucketName}`
 
 // Create R2 S3 client (R2 is S3-compatible)
 function getR2Client() {
@@ -52,6 +54,20 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
+    // Determine which R2 bucket to use based on the bucket parameter
+    let actualBucketName: string
+    let publicUrlBase: string
+    
+    if (bucket === 'videos' || bucket === 'video-thumbnails' || bucket === 'video-category-covers') {
+      // Use video bucket for video-related uploads
+      actualBucketName = r2VideoBucketName
+      publicUrlBase = r2VideoPublicUrl
+    } else {
+      // Use book bucket for documents/books
+      actualBucketName = r2BucketName
+      publicUrlBase = r2PublicUrl
+    }
+
     // Build the key path with category-based organization for books
     let key = path
     
@@ -83,7 +99,7 @@ export async function POST(request: NextRequest) {
     // Upload file to R2
     const s3Client = getR2Client()
     const command = new PutObjectCommand({
-      Bucket: r2BucketName,
+      Bucket: actualBucketName,
       Key: key,
       Body: buffer,
       ContentType: file.type,
@@ -95,16 +111,18 @@ export async function POST(request: NextRequest) {
     // If R2_PUBLIC_URL is set (custom domain with public access), use it
     // Otherwise, use our API serve endpoint which handles authentication
     let publicUrl: string
-    if (r2PublicUrl && r2PublicUrl !== `https://${r2AccountId}.r2.cloudflarestorage.com/${r2BucketName}`) {
+    const defaultPublicUrl = `https://${r2AccountId}.r2.cloudflarestorage.com/${actualBucketName}`
+    
+    if (publicUrlBase && publicUrlBase !== defaultPublicUrl) {
       // Custom domain is set (assumed to be public)
-      publicUrl = r2PublicUrl.endsWith('/') 
-        ? `${r2PublicUrl}${key}` 
-        : `${r2PublicUrl}/${key}`
+      publicUrl = publicUrlBase.endsWith('/') 
+        ? `${publicUrlBase}${key}` 
+        : `${publicUrlBase}/${key}`
     } else {
       // Use our API serve endpoint (works with private buckets)
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
         (request.headers.get('origin') || request.url.split('/api')[0])
-      publicUrl = `${baseUrl}/api/storage/serve?key=${encodeURIComponent(key)}`
+      publicUrl = `${baseUrl}/api/storage/serve?key=${encodeURIComponent(key)}&bucket=${encodeURIComponent(actualBucketName)}`
     }
 
     return NextResponse.json({ 

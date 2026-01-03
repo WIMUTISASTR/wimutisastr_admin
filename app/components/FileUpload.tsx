@@ -10,6 +10,8 @@ interface FileUploadProps {
   label?: string
   description?: string
   isLoading?: boolean
+  hideUploadButton?: boolean // Hide the upload button (for use in forms with their own submit)
+  onFileSelect?: (file: File) => void // Called when file is selected (if hideUploadButton is true)
 }
 
 export default function FileUpload({
@@ -19,6 +21,8 @@ export default function FileUpload({
   label = 'Upload File',
   description,
   isLoading = false,
+  hideUploadButton = false,
+  onFileSelect,
 }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState('')
@@ -35,6 +39,11 @@ export default function FileUpload({
     }
 
     setFile(selectedFile)
+    
+    // If hideUploadButton is true, call onFileSelect callback instead
+    if (hideUploadButton && onFileSelect) {
+      onFileSelect(selectedFile)
+    }
   }
 
   const handleDrag = (e: React.DragEvent) => {
@@ -190,7 +199,7 @@ export default function FileUpload({
         )}
       </div>
 
-      {file && (
+      {file && !hideUploadButton && (
         <Button
           onClick={handleSubmit}
           isLoading={isLoading}

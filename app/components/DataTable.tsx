@@ -11,9 +11,10 @@ interface DataTableProps {
   data: any[]
   isLoading?: boolean
   emptyMessage?: string
+  onRowClick?: (row: any) => void
 }
 
-export default function DataTable({ columns, data, isLoading = false, emptyMessage = 'No data available' }: DataTableProps) {
+export default function DataTable({ columns, data, isLoading = false, emptyMessage = 'No data available', onRowClick }: DataTableProps) {
   if (isLoading) {
     return (
       <div className="text-center py-12">
@@ -48,7 +49,11 @@ export default function DataTable({ columns, data, isLoading = false, emptyMessa
         </thead>
         <tbody className="bg-white divide-y divide-slate-200">
           {data.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-slate-50 transition-colors">
+            <tr 
+              key={rowIndex} 
+              className={`hover:bg-slate-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+              onClick={() => onRowClick && onRowClick(row)}
+            >
               {columns.map((column, colIndex) => (
                 <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
                   {column.render

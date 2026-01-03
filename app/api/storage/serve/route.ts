@@ -5,7 +5,8 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 const r2AccountId = process.env.R2_ACCOUNT_ID!
 const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID!
 const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY!
-const r2BucketName = process.env.R2_BUCKET_NAME!
+const r2BucketName = process.env.R2_BUCKET_NAME! // Default bucket for books
+const r2VideoBucketName = process.env.R2_VIDEO_BUCKET_NAME || 'video' // Bucket for videos
 
 // Create R2 S3 client (R2 is S3-compatible)
 function getR2Client() {
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')
+    const bucket = searchParams.get('bucket')
 
     if (!key) {
       return NextResponse.json(
@@ -43,10 +45,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Determine which bucket to use
+    const actualBucketName = bucket || r2BucketName
+
     // Get file from R2
     const s3Client = getR2Client()
     const command = new GetObjectCommand({
-      Bucket: r2BucketName,
+      Bucket: actualBucketName,
       Key: key,
     })
 

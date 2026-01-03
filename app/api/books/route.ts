@@ -189,17 +189,66 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
     }
 
+    // Get existing book to check if file needs to be deleted
+    const { data: existingBook } = await supabaseAdmin
+      .from('books')
+      .select('file_url')
+      .eq('id', body.id)
+      .single()
+
+    // If a new file is being uploaded, delete the old file from R2
+    if (existingBook?.file_url && body.file_url && body.file_url !== existingBook.file_url) {
+      try {
+        const r2BucketName = process.env.R2_BUCKET_NAME!
+        const r2PublicUrl = process.env.R2_PUBLIC_URL || ''
+        
+        // Extract key from URL
+        let key = existingBook.file_url
+        if (r2PublicUrl) {
+          key = existingBook.file_url.replace(r2PublicUrl, '').replace(/^\//, '')
+        } else {
+          const urlObj = new URL(existingBook.file_url)
+          key = urlObj.pathname.replace(/^\//, '')
+        }
+        
+        if (key && r2BucketName) {
+          const s3Client = getR2Client()
+          await s3Client.send(new DeleteObjectCommand({
+            Bucket: r2BucketName,
+            Key: key,
+          }))
+        }
+      } catch (error) {
+        console.error('Error deleting old book file from R2:', error)
+        // Continue with update even if file deletion fails
+      }
+    }
+
+    // Build update object
+    const updateData: any = {
+      title: body.title,
+      author: body.author,
+      year: parseInt(body.year),
+      description: body.description || null,
+      cover_url: body.cover_url || null,
+      category_id: body.category_id,
+      updated_at: new Date().toISOString(),
+    }
+
+    // Only update file fields if they are provided
+    if (body.file_url) {
+      updateData.file_url = body.file_url
+    }
+    if (body.file_name) {
+      updateData.file_name = body.file_name
+    }
+    if (body.file_size !== undefined) {
+      updateData.file_size = body.file_size
+    }
+
     const { data: updatedBook, error } = await supabaseAdmin
       .from('books')
-      .update({
-        title: body.title,
-        author: body.author,
-        year: parseInt(body.year),
-        description: body.description || null,
-        cover_url: body.cover_url || null,
-        category_id: body.category_id,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', body.id)
       .select('*')
       .single()

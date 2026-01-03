@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       .insert([{
         name: body.name.trim(),
         description: body.description?.trim() || null,
+        cover_url: body.cover_url || null,
       }])
       .select()
       .single()
@@ -128,6 +129,7 @@ export async function PUT(request: NextRequest) {
       .update({
         name: body.name.trim(),
         description: body.description?.trim() || null,
+        cover_url: body.cover_url || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

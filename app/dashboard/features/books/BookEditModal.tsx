@@ -2,26 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
-
-interface Category {
-  id: string
-  name: string
-}
-
-interface Book {
-  id: string
-  title: string
-  author: string
-  year: string
-  description: string
-  file_name: string
-  file_url: string
-  file_size: number
-  cover_url: string | null
-  uploaded_at: string
-  category_id?: string | null
-  category?: { id: string; name: string } | null
-}
+import { Book, Category } from '../../shared/types'
+import { formatFileSize } from '../../shared/utils'
 
 interface BookEditModalProps {
   book: Book | null
@@ -42,6 +24,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
   const [isLoading, setIsLoading] = useState(false)
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
+  const [bookFile, setBookFile] = useState<File | null>(null)
 
   useEffect(() => {
     if (book) {
@@ -54,6 +37,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
       })
       setCoverPreview(book.cover_url)
       setCoverFile(null)
+      setBookFile(null)
     }
   }, [book])
 
@@ -70,15 +54,49 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
     try {
       setIsLoading(true)
 
+      // Get category name for folder organization
+      const categoryId = formData.category_id || book?.category_id
+      const category = categories.find(cat => cat.id === categoryId) || book?.category
+      const categoryName = category?.name || 'uncategorized'
+
       let coverUrl = book.cover_url
+      let fileUrl = book.file_url
+      let fileName = book.file_name
+      let fileSize = book.file_size
+
+      // Upload new book file if provided
+      if (bookFile) {
+        const fileExt = bookFile.name.split('.').pop()
+        const newFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+        const filePath = `documents/${newFileName}`
+
+        const fileFormData = new FormData()
+        fileFormData.append('file', bookFile)
+        fileFormData.append('bucket', 'documents')
+        fileFormData.append('path', filePath)
+        if (categoryId) {
+          fileFormData.append('category_id', categoryId)
+          fileFormData.append('category_name', categoryName)
+        }
+
+        const fileUploadResponse = await fetch('/api/storage/upload', {
+          method: 'POST',
+          body: fileFormData,
+        })
+
+        const fileUploadResult = await fileUploadResponse.json()
+
+        if (fileUploadResponse.ok) {
+          fileUrl = fileUploadResult.publicUrl
+          fileName = bookFile.name
+          fileSize = bookFile.size
+        } else {
+          throw new Error(fileUploadResult.error || 'Failed to upload new book file')
+        }
+      }
 
       // Upload new cover if provided
       if (coverFile) {
-        // Get category name for folder organization
-        const categoryId = formData.category_id || book?.category_id
-        const category = categories.find(cat => cat.id === categoryId) || book?.category
-        const categoryName = category?.name || 'uncategorized'
-
         const coverExt = coverFile.name.split('.').pop()
         const coverFileName = `cover_${Date.now()}_${Math.random().toString(36).substring(7)}.${coverExt}`
         const coverPath = `covers/${coverFileName}`
@@ -119,6 +137,9 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
           year: parseInt(formData.year),
           description: formData.description || null,
           cover_url: coverUrl,
+          file_url: fileUrl,
+          file_name: fileName,
+          file_size: fileSize,
           category_id: formData.category_id || null,
         }),
       })
@@ -137,6 +158,9 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
           year: result.data.year.toString(),
           description: result.data.description || '',
           cover_url: result.data.cover_url || null,
+          file_url: result.data.file_url,
+          file_name: result.data.file_name,
+          file_size: result.data.file_size,
         }
         onUpdate(updatedBook)
         toast.success('Book updated successfully!')
@@ -170,20 +194,77 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-800">Edit Book</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
-          >
-            ×
-          </button>
-        </div>
+  const handleBookFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (500MB max)
+      if (file.size > 500 * 1024 * 1024) {
+        toast.error('Book file must be less than 500MB')
+        return
+      }
+      setBookFile(file)
+    }
+  }
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+  return (
+    <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+      <div className="min-h-screen bg-white p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-slate-800">Edit Book</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-3xl p-2"
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Book Preview Section */}
+          <div className="mb-8 bg-gray-50 rounded-lg p-6 border border-gray-200 shadow-lg">
+            <div className="flex items-center gap-6">
+              {book.cover_url && (
+                <div className="shrink-0">
+                  <div className="w-32 h-48 rounded-lg overflow-hidden border-2 border-gray-300 shadow-md">
+                    <img
+                      src={book.cover_url}
+                      alt={`${book.title} cover`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold text-slate-800 mb-2">{book.title}</h3>
+                <p className="text-lg text-slate-600 mb-4">by {book.author}</p>
+                <div className="flex items-center gap-4 mb-4">
+                  <div>
+                    <span className="text-sm text-gray-600">Year:</span>
+                    <span className="ml-2 font-semibold text-slate-800">{book.year}</span>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600">Size:</span>
+                    <span className="ml-2 font-semibold text-slate-800">{formatFileSize(book.file_size)}</span>
+                  </div>
+                </div>
+                <a
+                  href={book.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  View Book
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-semibold text-black mb-2">
               Title <span className="text-red-500">*</span>
@@ -192,7 +273,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
               required
             />
           </div>
@@ -205,7 +286,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               type="text"
               value={formData.author}
               onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
               required
             />
           </div>
@@ -218,7 +299,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               type="number"
               value={formData.year}
               onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
               min="1000"
               max="9999"
               required
@@ -232,7 +313,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
             <select
               value={formData.category_id || ''}
               onChange={(e) => setFormData({ ...formData, category_id: e.target.value || null })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
               required
             >
               <option value="">Select a category</option>
@@ -256,8 +337,35 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-black mb-2">
+              Book File (optional)
+            </label>
+            <div className="space-y-2">
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-sm text-slate-600 mb-1">Current file:</p>
+                <p className="font-semibold text-slate-800 text-sm">{book.file_name}</p>
+                <p className="text-xs text-slate-500 mt-1">{formatFileSize(book.file_size)}</p>
+              </div>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.epub,.mobi,.txt"
+                onChange={handleBookFileChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
+                disabled={isLoading}
+              />
+              {bookFile && (
+                <div className="p-2 bg-blue-50 rounded border border-blue-200">
+                  <p className="text-sm text-blue-800 font-semibold">New file selected:</p>
+                  <p className="text-xs text-blue-600">{bookFile.name} ({formatFileSize(bookFile.size)})</p>
+                </div>
+              )}
+              <p className="text-xs text-gray-500">Supported: PDF, DOC, DOCX, EPUB, MOBI, TXT. Max 500MB. Leave empty to keep current file.</p>
+            </div>
           </div>
 
           <div>
@@ -279,7 +387,8 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
                   type="file"
                   accept="image/*"
                   onChange={handleCoverChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-black bg-white"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
+                  disabled={isLoading}
                 />
                 <p className="text-xs text-gray-500 mt-1">Max 5MB. Leave empty to keep current cover.</p>
               </div>
@@ -297,12 +406,13 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-linear-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/30"
             >
               {isLoading ? 'Updating...' : 'Update Book'}
             </button>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   )

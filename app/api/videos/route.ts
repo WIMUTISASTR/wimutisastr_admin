@@ -195,6 +195,9 @@ export async function PUT(request: NextRequest) {
     if (body.description !== undefined) updateData.description = body.description?.trim() || null
     if (body.category_id) updateData.category_id = body.category_id
     if (body.thumbnail_url !== undefined) updateData.thumbnail_url = body.thumbnail_url
+    if (body.file_url) updateData.file_url = body.file_url
+    if (body.file_name) updateData.file_name = body.file_name
+    if (body.file_size) updateData.file_size = body.file_size
 
     const { data, error } = await supabaseAdmin
       .from('videos')
@@ -252,15 +255,19 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete files from R2 storage
-    const r2BucketName = process.env.R2_BUCKET_NAME!
+    const r2VideoBucketName = process.env.R2_VIDEO_BUCKET_NAME || 'video'
+    const r2VideoPublicUrl = process.env.R2_VIDEO_PUBLIC_URL || ''
     const r2PublicUrl = process.env.R2_PUBLIC_URL || ''
     
-    if (video.file_url && r2BucketName) {
+    if (video.file_url && r2VideoBucketName) {
       try {
         // Extract key from URL (e.g., "videos/video123.mp4" from "https://cdn.example.com/videos/video123.mp4")
         let key = video.file_url
-        if (r2PublicUrl) {
-          // Remove the public URL prefix to get the key
+        if (r2VideoPublicUrl) {
+          // Remove the video public URL prefix to get the key
+          key = video.file_url.replace(r2VideoPublicUrl, '').replace(/^\//, '')
+        } else if (r2PublicUrl) {
+          // Fallback to book bucket URL (shouldn't happen but handle it)
           key = video.file_url.replace(r2PublicUrl, '').replace(/^\//, '')
         } else {
           // Fallback: extract path after the last domain part
@@ -271,7 +278,7 @@ export async function DELETE(request: NextRequest) {
         if (key) {
           const s3Client = getR2Client()
           await s3Client.send(new DeleteObjectCommand({
-            Bucket: r2BucketName,
+            Bucket: r2VideoBucketName,
             Key: key,
           }))
         }
@@ -281,11 +288,14 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    if (video.thumbnail_url && r2BucketName) {
+    if (video.thumbnail_url && r2VideoBucketName) {
       try {
         // Extract key from URL
         let key = video.thumbnail_url
-        if (r2PublicUrl) {
+        if (r2VideoPublicUrl) {
+          key = video.thumbnail_url.replace(r2VideoPublicUrl, '').replace(/^\//, '')
+        } else if (r2PublicUrl) {
+          // Fallback to book bucket URL (shouldn't happen but handle it)
           key = video.thumbnail_url.replace(r2PublicUrl, '').replace(/^\//, '')
         } else {
           const urlObj = new URL(video.thumbnail_url)
@@ -295,7 +305,7 @@ export async function DELETE(request: NextRequest) {
         if (key) {
           const s3Client = getR2Client()
           await s3Client.send(new DeleteObjectCommand({
-            Bucket: r2BucketName,
+            Bucket: r2VideoBucketName,
             Key: key,
           }))
         }

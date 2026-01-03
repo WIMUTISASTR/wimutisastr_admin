@@ -2,58 +2,21 @@
 
 import { useState, useEffect } from 'react'
 import DataTable from '../../../components/DataTable'
-import Button from '../../../components/Button'
-
-interface User {
-  id: string
-  email: string
-  created_at: string
-  last_sign_in_at: string | null
-}
+import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal'
+import { User } from '../../shared/types'
+import { useUsers } from '../../shared/hooks/useUsers'
+import { formatDate } from '../../shared/utils'
 
 export default function UsersContent() {
-  const [users, setUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { users, isLoading, error, fetchUsers, deleteUser } = useUsers()
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<{ id: string; email: string } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     fetchUsers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  const fetchUsers = async () => {
-    try {
-      setIsLoading(true)
-      setError('')
-      
-      // Fetch users from API route
-      const response = await fetch('/api/users')
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch users')
-      }
-
-      setUsers(data.users || [])
-    } catch (err: any) {
-      console.error('Error fetching users:', err)
-      setError(err.message || 'Failed to fetch users')
-      // For demo, show empty state
-      setUsers([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Never'
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
 
   const columns = [
     {
@@ -76,7 +39,10 @@ export default function UsersContent() {
       render: (value: string, row: User) => (
         <div className="flex gap-2">
           <button
-            onClick={() => handleDeleteUser(row.id)}
+            onClick={() => {
+              setUserToDelete({ id: row.id, email: row.email })
+              setDeleteModalOpen(true)
+            }}
             className="text-red-600 hover:text-red-700 text-sm font-medium"
           >
             Delete
@@ -86,40 +52,34 @@ export default function UsersContent() {
     },
   ]
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return
+  const handleDeleteUserConfirm = async () => {
+    if (!userToDelete) return
 
     try {
-      const response = await fetch('/api/users', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete user')
+      setIsDeleting(true)
+      const success = await deleteUser(userToDelete.id)
+      if (success) {
+        setDeleteModalOpen(false)
+        setUserToDelete(null)
       }
-      
-      setUsers(users.filter(user => user.id !== userId))
     } catch (err: any) {
-      alert(err.message || 'Failed to delete user')
+      // Error is handled by the hook
+    } finally {
+      setIsDeleting(false)
     }
+  }
+
+  const handleDeleteUserCancel = () => {
+    setDeleteModalOpen(false)
+    setUserToDelete(null)
   }
 
   return (
     <>
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800 mb-2">Users</h2>
-          <p className="text-slate-600">Manage system users</p>
+          <h4>Manage users</h4>
         </div>
-        <Button onClick={fetchUsers} variant="secondary">
-          Refresh
-        </Button>
       </div>
 
       {error && (
@@ -128,7 +88,7 @@ export default function UsersContent() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
+      <div className="rounded-xl">
         <DataTable
           columns={columns}
           data={users}
@@ -136,6 +96,16 @@ export default function UsersContent() {
           emptyMessage="No users found"
         />
       </div>
+
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={handleDeleteUserCancel}
+        onConfirm={handleDeleteUserConfirm}
+        title="Delete User"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        itemName={userToDelete?.email}
+        isLoading={isDeleting}
+      />
     </>
   )
 }
