@@ -51,5 +51,8 @@ export interface User {
   email: string
   created_at: string
   last_sign_in_at: string | null
+  email_confirmed_at: string | null
+  phone?: string | null
+  user_metadata?: any
 }
 

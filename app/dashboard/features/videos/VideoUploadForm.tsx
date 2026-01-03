@@ -163,8 +163,8 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
             setFormData({ ...formData, title: e.target.value })
             if (errors.title) setErrors({ ...errors, title: '' })
           }}
-          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all bg-white text-black placeholder-gray-400 ${
-            errors.title ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-indigo-600'
+          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 transition-all bg-white text-black placeholder-gray-400 ${
+            errors.title ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-gold-500'
           }`}
           placeholder="Enter video title"
           disabled={isLoading}
@@ -191,11 +191,11 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
           disabled={isLoading}
           className={`
             w-full px-4 py-3 border-2 rounded-lg 
-            focus:outline-none focus:ring-2 focus:ring-indigo-600 
+            focus:outline-none focus:ring-2 focus:ring-gold-500 
             transition-all bg-white text-black
             flex items-center justify-between
-            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
-            ${errors.category_id ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-indigo-600'}
+            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gold-400'}
+            ${errors.category_id ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-gold-500'}
             ${!formData.category_id ? 'text-gray-500' : 'text-black'}
           `}
         >
@@ -230,10 +230,10 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                     onClick={() => handleCategorySelect(category.id)}
                     className={`
                       w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center gap-3
-                      ${formData.category_id === category.id ? 'bg-indigo-50 font-semibold' : ''}
+                      ${formData.category_id === category.id ? 'bg-gold-50 font-semibold' : ''}
                     `}
                   >
-                    <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-indigo-200 bg-slate-50">
+                    <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gold-200 bg-slate-50">
                       {category.cover_url ? (
                         <img
                           src={category.cover_url}
@@ -241,8 +241,8 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-linear-to-br from-indigo-100 to-blue-100 flex items-center justify-center">
-                          <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-full h-full bg-linear-to-br from-gold-100 to-gold-200 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
                           </svg>
                         </div>
@@ -250,7 +250,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                     </div>
                     <span className="flex-1 text-left">{category.name}</span>
                     {formData.category_id === category.id && (
-                      <svg className="w-5 h-5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-gold-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -279,8 +279,8 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
             setFormData({ ...formData, description: e.target.value })
             if (errors.description) setErrors({ ...errors, description: '' })
           }}
-          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all bg-white text-black placeholder-gray-400 ${
-            errors.description ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-indigo-600'
+          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 transition-all bg-white text-black placeholder-gray-400 ${
+            errors.description ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-gold-500'
           }`}
           placeholder="Enter video description (optional)"
           rows={4}
@@ -315,10 +315,10 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
           isLoading={isLoading}
         />
         {formData.file && (
-          <div className="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+          <div className="mt-2 p-3 bg-gold-50 border border-gold-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 <div>
@@ -363,7 +363,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
       <button
         type="submit"
         disabled={isLoading || !formData.title.trim() || !formData.category_id || !formData.file}
-        className="w-full py-3 px-4 bg-linear-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/30"
+        className="w-full py-3 px-4 bg-linear-to-br from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">
@@ -374,7 +374,12 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
             Uploading...
           </span>
         ) : (
-          'Upload Video'
+          <span className="flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Upload Video
+          </span>
         )}
       </button>
     </form>

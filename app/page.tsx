@@ -13,11 +13,20 @@ export default function PINPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if PIN already verified
-    const pinVerified = localStorage.getItem('pinVerified')
-    if (pinVerified === 'true') {
-      router.push('/login')
+    // Check if PIN already verified by trying to access a protected endpoint
+    const checkPinStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/verify-pin', {
+          method: 'GET',
+        })
+        if (response.ok) {
+          router.push('/login')
+        }
+      } catch (error) {
+        // PIN not verified, stay on this page
+      }
     }
+    checkPinStatus()
   }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,7 +54,7 @@ export default function PINPage() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        localStorage.setItem('pinVerified', 'true')
+        // Cookie is set by the API route, no localStorage needed
         router.push('/login')
       } else {
         setError('Invalid PIN. Please try again.')

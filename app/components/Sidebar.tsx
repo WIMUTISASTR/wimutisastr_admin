@@ -38,18 +38,18 @@ export default function Sidebar({
         `}
       >
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-indigo-600 to-blue-600">
+        <div className="p-6 border-b border-gold-200 bg-gradient-to-br from-gold-500 via-gold-600 to-gold-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Logo size="md" />
               <div>
-                <h1 className="text-lg font-bold text-white">WIMUTISASSTR</h1>
-                <p className="text-xs text-indigo-100">Admin Panel</p>
+                <h1 className="text-lg font-bold text-white">WIMUTISASTR</h1>
+                <p className="text-xs text-gold-100">Law Office Admin</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="lg:hidden text-white hover:text-indigo-100"
+              className="lg:hidden text-white hover:text-gold-100 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -69,8 +69,8 @@ export default function Sidebar({
                     w-full flex items-center gap-3 px-4 py-3 rounded-lg
                     transition-all duration-200
                     ${activeMenu === item.id
-                      ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg shadow-indigo-500/20'
-                      : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600'
+                      ? 'bg-gradient-to-r from-gold-500 to-gold-600 text-white shadow-lg shadow-gold-500/30'
+                      : 'text-slate-700 hover:bg-gold-50 hover:text-gold-700'
                     }
                   `}
                 >

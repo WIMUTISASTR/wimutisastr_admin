@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { verifyPinCookie } from '@/app/lib/auth-middleware'
+import { handleApiError, ValidationError, successResponse } from '@/app/lib/errors'
+import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 
 // Cloudflare R2 configuration
 const r2AccountId = process.env.R2_ACCOUNT_ID!
@@ -29,11 +32,15 @@ function getR2Client() {
 // POST - Upload file to Cloudflare R2 storage
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication
+    verifyPinCookie(request)
+
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`upload:${clientId}`, RATE_LIMITS.UPLOAD)
+
     if (!r2AccountId || !r2AccessKeyId || !r2SecretAccessKey || !r2BucketName) {
-      return NextResponse.json(
-        { error: 'R2 storage credentials not configured' },
-        { status: 500 }
-      )
+      throw new Error('R2 storage credentials not configured')
     }
 
     const formData = await request.formData()
@@ -44,10 +51,19 @@ export async function POST(request: NextRequest) {
     const categoryName = formData.get('category_name') as string | null
 
     if (!file || !bucket || !path) {
-      return NextResponse.json(
-        { error: 'Missing required fields: file, bucket, or path' },
-        { status: 400 }
-      )
+      throw new ValidationError('Missing required fields: file, bucket, or path')
+    }
+
+    // Validate file size (max 2GB)
+    const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
+    if (file.size > MAX_FILE_SIZE) {
+      throw new ValidationError('File size exceeds maximum limit of 2GB')
+    }
+
+    // Validate bucket name
+    const validBuckets = ['documents', 'books', 'videos', 'video-thumbnails', 'covers', 'video-category-covers']
+    if (!validBuckets.includes(bucket)) {
+      throw new ValidationError(`Invalid bucket. Must be one of: ${validBuckets.join(', ')}`)
     }
 
     // Convert File to ArrayBuffer
@@ -125,16 +141,13 @@ export async function POST(request: NextRequest) {
       publicUrl = `${baseUrl}/api/storage/serve?key=${encodeURIComponent(key)}&bucket=${encodeURIComponent(actualBucketName)}`
     }
 
-    return NextResponse.json({ 
+    return successResponse({ 
       path: key,
       publicUrl,
       url: publicUrl // Alias for compatibility
     })
-  } catch (error: any) {
-    console.error('R2 upload error:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Failed to upload file' 
-    }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 

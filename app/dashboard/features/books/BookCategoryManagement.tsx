@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 import DataTable from '../../../components/DataTable'
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal'
+import Card from '../../../components/Card'
 import { Category } from '../../shared/types'
 
 interface CategoryManagementProps {
@@ -137,25 +138,57 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
     setIsCategoryModalOpen(true)
   }
 
+  // Function to get a color based on category name
+  const getCategoryColor = (name: string) => {
+    const colors = [
+      'bg-gradient-to-r from-blue-500 to-indigo-500',
+      'bg-gradient-to-r from-purple-500 to-pink-500',
+      'bg-gradient-to-r from-green-500 to-emerald-500',
+      'bg-gradient-to-r from-orange-500 to-red-500',
+      'bg-gradient-to-r from-cyan-500 to-blue-500',
+      'bg-gradient-to-r from-rose-500 to-pink-500',
+      'bg-gradient-to-r from-amber-500 to-orange-500',
+      'bg-gradient-to-r from-teal-500 to-cyan-500',
+      'bg-gradient-to-r from-violet-500 to-purple-500',
+      'bg-gradient-to-r from-lime-500 to-green-500',
+    ]
+    const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
+    return colors[index]
+  }
+
   const categoryColumns = [
     {
-      header: 'Name',
+      header: 'Category',
       accessor: 'name',
       render: (value: string) => (
-        <span className="font-semibold text-slate-800">{value}</span>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-lg ${getCategoryColor(value)} shadow-md flex items-center justify-center`}>
+            <span className="text-white font-bold text-sm">
+              {value.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <span className="font-bold text-slate-900">{value}</span>
+          </div>
+        </div>
       ),
     },
     {
       header: 'Description',
       accessor: 'description',
       render: (value: string | null) => (
-        <span className="text-gray-600">{value || 'No description'}</span>
+        <span className="text-slate-600 text-sm">{value || 'No description'}</span>
       ),
     },
     {
       header: 'Created',
       accessor: 'created_at',
-      render: (value: string) => new Date(value).toLocaleDateString(),
+      render: (value: string) => (
+        <div>
+          <div className="text-sm font-medium text-slate-900">{new Date(value).toLocaleDateString()}</div>
+          <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
+      ),
     },
     {
       header: 'Actions',
@@ -243,25 +276,52 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
   return (
     <>
+      {/* Stats Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
+        <Card padding="md" hover>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-gold-100 to-gold-200 rounded-xl flex items-center justify-center shadow-sm">
+              <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-slate-600 font-medium">Total Categories</p>
+              <p className="text-2xl font-bold text-slate-900">{categories.length}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       <div className="mb-6 flex justify-between items-center">
-        <h3 className="text-lg font-bold text-slate-800"></h3>
+        <h3 className="text-lg font-bold text-slate-800">All Categories</h3>
         <button
           onClick={handleNewCategory}
-          className="px-4 py-2 bg-linear-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-colors font-semibold flex items-center gap-2"
+          className="px-4 py-2 bg-gradient-to-r from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-colors font-semibold flex items-center gap-2 shadow-md hover:shadow-lg"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
+          New Category
         </button>
       </div>
-      <div className="overflow-x-auto overflow-y-visible">
-        <DataTable
-          columns={categoryColumns}
-          data={categories}
-          isLoading={isLoading}
-          emptyMessage="No categories created yet"
-        />
-      </div>
+      
+      <Card padding="none">
+        <div className="overflow-x-auto overflow-y-visible">
+          <DataTable
+            columns={categoryColumns}
+            data={categories}
+            isLoading={isLoading}
+            emptyMessage="No categories created yet"
+            emptyDescription="Create your first category to organize your books"
+            emptyIcon={
+              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            }
+          />
+        </div>
+      </Card>
 
       {/* Create/Edit Category Modal */}
       {isCategoryModalOpen && (
@@ -292,7 +352,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                   type="text"
                   value={categoryFormData.name}
                   onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
                   placeholder="e.g., Fiction, Non-Fiction, Law"
                   required
                 />
@@ -306,7 +366,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                   value={categoryFormData.description}
                   onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
                   placeholder="Optional description for this category"
                 />
               </div>
@@ -326,7 +386,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 px-6 py-3 bg-linear-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
                   {isLoading
                     ? editingCategory

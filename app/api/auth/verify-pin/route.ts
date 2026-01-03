@@ -1,19 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { pinSchema, validateData } from '@/app/lib/validations'
+import { handleApiError, AuthenticationError, successResponse } from '@/app/lib/errors'
+import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 
 const VALID_PIN = process.env.ADMIN_PIN
 
+if (!VALID_PIN) {
+  throw new Error('ADMIN_PIN environment variable is not set')
+}
+
+// POST - Verify PIN
 export async function POST(request: NextRequest) {
   try {
-    const { pin } = await request.json()
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`pin:${clientId}`, RATE_LIMITS.PIN_VERIFICATION)
 
-    if (!pin || pin !== VALID_PIN) {
+    // Parse and validate request body
+    const body = await request.json()
+    const validation = validateData(pinSchema, body)
+    
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid PIN' },
-        { status: 401 }
+        { error: validation.errors.join(', ') },
+        { status: 400 }
       )
     }
 
-    // Set secure HTTP-only cookie instead of localStorage
+    const { pin } = validation.data
+
+    if (pin !== VALID_PIN) {
+      throw new AuthenticationError('Invalid PIN')
+    }
+
+    // Set secure HTTP-only cookie
     const response = NextResponse.json({ success: true })
     response.cookies.set('pinVerified', 'true', {
       httpOnly: true, // Prevents JavaScript access
@@ -23,6 +43,39 @@ export async function POST(request: NextRequest) {
       path: '/',
     })
 
+    return response
+  } catch (error) {
+    return handleApiError(error)
+  }
+}
+
+// GET - Check if PIN is verified
+export async function GET(request: NextRequest) {
+  try {
+    const pinVerified = request.cookies.get('pinVerified')?.value
+    
+    if (pinVerified === 'true') {
+      return NextResponse.json({ verified: true })
+    }
+    
+    return NextResponse.json(
+      { verified: false },
+      { status: 401 }
+    )
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Clear PIN verification cookie
+export async function DELETE(request: NextRequest) {
+  try {
+    const response = NextResponse.json({ success: true })
+    response.cookies.delete('pinVerified')
+    
     return response
   } catch (error) {
     return NextResponse.json(

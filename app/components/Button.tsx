@@ -22,9 +22,9 @@ export default function Button({
   const baseClasses = 'font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
   
   const variantClasses = {
-    primary: 'bg-linear-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-lg shadow-indigo-500/30 transform hover:scale-[1.02] active:scale-[0.98]',
-    secondary: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200',
-    ghost: 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600',
+    primary: 'bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 text-white shadow-lg shadow-gold-500/30 transform hover:scale-[1.02] active:scale-[0.98]',
+    secondary: 'bg-gold-50 text-gold-700 hover:bg-gold-100 border border-gold-200',
+    ghost: 'text-slate-700 hover:bg-gold-50 hover:text-gold-700',
   }
 
   const combinedClassName = `${baseClasses} ${variantClasses[variant]} ${className}`.trim()

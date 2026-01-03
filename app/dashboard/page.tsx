@@ -19,14 +19,18 @@ export default function Dashboard() {
   useEffect(() => {
     // Check both PIN verification and Supabase session
     const checkAuth = async () => {
-      const pinVerified = localStorage.getItem('pinVerified')
-      
-      if (pinVerified !== 'true') {
-        router.push('/')
-        return
-      }
-
       try {
+        // Check PIN verification (cookie-based)
+        const pinResponse = await fetch('/api/auth/verify-pin', {
+          method: 'GET',
+        })
+        
+        if (!pinResponse.ok) {
+          router.push('/')
+          return
+        }
+
+        // Check Supabase session
         const session = await getSession()
         if (session) {
           // Verify the user is the admin email
@@ -36,15 +40,15 @@ export default function Dashboard() {
           } else {
             // Not admin email, sign out and redirect
             await signOut()
-            localStorage.removeItem('pinVerified')
+            await fetch('/api/auth/verify-pin', { method: 'DELETE' })
             router.push('/')
           }
         } else {
-          localStorage.removeItem('pinVerified')
+          await fetch('/api/auth/verify-pin', { method: 'DELETE' })
           router.push('/')
         }
       } catch (error) {
-        localStorage.removeItem('pinVerified')
+        await fetch('/api/auth/verify-pin', { method: 'DELETE' })
         router.push('/')
       }
     }
@@ -54,12 +58,13 @@ export default function Dashboard() {
   const handleLogout = async () => {
     try {
       await signOut()
-      localStorage.removeItem('pinVerified')
+      // Clear PIN verification cookie
+      await fetch('/api/auth/verify-pin', { method: 'DELETE' })
       router.push('/')
     } catch (error) {
       console.error('Error signing out:', error)
       // Still redirect even if signOut fails
-      localStorage.removeItem('pinVerified')
+      await fetch('/api/auth/verify-pin', { method: 'DELETE' })
       router.push('/')
     }
   }
@@ -92,7 +97,7 @@ export default function Dashboard() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {activeMenu === 'dashboard' && <DashboardContent />}
+          {activeMenu === 'dashboard' && <DashboardContent onNavigate={setActiveMenu} />}
           {activeMenu === 'users' && <UsersContent />}
           {activeMenu === 'upload-document' && <BooksContent />}
           {activeMenu === 'upload-video' && <VideosContent />}

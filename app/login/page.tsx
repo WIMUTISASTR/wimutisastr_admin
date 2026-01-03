@@ -12,25 +12,29 @@ export default function LoginPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if PIN is verified
-    const pinVerified = localStorage.getItem('pinVerified')
-    if (pinVerified !== 'true') {
-      router.push('/')
-      return
-    }
-
-    // Check if already logged in with Supabase
-    const checkSession = async () => {
+    // Check both PIN verification and Supabase session
+    const checkAuth = async () => {
       try {
+        // Check if PIN is verified (cookie-based)
+        const pinResponse = await fetch('/api/auth/verify-pin', {
+          method: 'GET',
+        })
+        
+        if (!pinResponse.ok) {
+          router.push('/')
+          return
+        }
+
+        // Check if already logged in with Supabase
         const session = await getSession()
         if (session) {
           router.push('/dashboard')
         }
       } catch (error) {
-        // No session, user needs to login
+        router.push('/')
       }
     }
-    checkSession()
+    checkAuth()
   }, [router])
 
   const handleSubmit = async (email: string, password: string) => {
@@ -74,11 +78,14 @@ export default function LoginPage() {
     <AuthCard
       footer={
         <button
-          onClick={() => {
-            localStorage.removeItem('pinVerified')
+          onClick={async () => {
+            // Clear PIN verification cookie
+            await fetch('/api/auth/verify-pin', {
+              method: 'DELETE',
+            })
             router.push('/')
           }}
-          className="text-xs text-amber-600 hover:text-amber-700 underline"
+          className="text-xs text-gold-600 hover:text-gold-700 underline"
         >
           Back to PIN Entry
         </button>

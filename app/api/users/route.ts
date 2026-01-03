@@ -1,84 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
+import { handleApiError, successResponse } from '@/app/lib/errors'
+import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 
-// Use service role key for admin operations (server-side only)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
+// GET - Fetch all users with pagination
 export async function GET(request: NextRequest) {
   try {
-    if (!supabaseServiceKey) {
-      console.error('SUPABASE_SERVICE_ROLE_KEY is missing from environment variables')
-      return NextResponse.json(
-        { 
-          error: 'Service role key not configured. Please add SUPABASE_SERVICE_ROLE_KEY to your .env file.',
-          hint: 'Get it from: Supabase Dashboard > Settings > API > service_role key'
-        },
-        { status: 500 }
-      )
-    }
+    // Verify authentication
+    verifyPinCookie(request)
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`users:get:${clientId}`, RATE_LIMITS.API_READ)
+
+    const supabaseAdmin = getSupabaseAdmin()
+    const { searchParams } = new URL(request.url)
+    
+    // Pagination parameters
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100) // Max 100 per page
+    const offset = (page - 1) * limit
+
+    // Fetch users from auth.users
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage: limit,
     })
 
-    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers()
+    if (error) throw error
 
-    if (error) {
-      throw error
-    }
-
-    const formattedUsers = users.map(user => ({
+    // Transform the data to include useful information
+    const users = data.users.map(user => ({
       id: user.id,
-      email: user.email || 'No email',
+      email: user.email,
       created_at: user.created_at,
       last_sign_in_at: user.last_sign_in_at,
+      email_confirmed_at: user.email_confirmed_at,
+      phone: user.phone,
+      user_metadata: user.user_metadata,
     }))
 
-    return NextResponse.json({ users: formattedUsers })
-  } catch (error: any) {
-    console.error('Error fetching users:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch users' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const { userId } = await request.json()
-
-    if (!supabaseServiceKey) {
-      return NextResponse.json(
-        { error: 'Service role key not configured' },
-        { status: 500 }
-      )
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
+    return NextResponse.json({
+      data: users,
+      pagination: {
+        page,
+        limit,
+        total: data.users.length, // Note: Supabase doesn't provide total count
+        totalPages: Math.ceil(data.users.length / limit),
       }
     })
-
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
-
-    if (error) {
-      throw error
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error deleting user:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to delete user' },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error)
   }
 }
-

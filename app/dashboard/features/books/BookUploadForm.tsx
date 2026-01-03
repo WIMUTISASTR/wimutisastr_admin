@@ -79,10 +79,11 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
       return
     }
 
-    // Check file type
+    // Check file type - allow both regular and edit document types
     const fileExt = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
-    if (!ALLOWED_FILE_TYPES.BOOK_DOCUMENTS.includes(fileExt as any)) {
-      setError(`Invalid file type. Allowed: ${ALLOWED_FILE_TYPES.BOOK_DOCUMENTS.join(', ').replace(/\./g, '').toUpperCase()}`)
+    const allowedTypes = [...new Set([...ALLOWED_FILE_TYPES.BOOK_DOCUMENTS, ...ALLOWED_FILE_TYPES.BOOK_DOCUMENTS_EDIT])]
+    if (!allowedTypes.includes(fileExt as any)) {
+      setError(`Invalid file type. Allowed: ${allowedTypes.join(', ').replace(/\./g, '').toUpperCase()}`)
       return
     }
 
@@ -230,7 +231,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           type="text"
           value={formData.title}
           onChange={handleInputChange}
-          className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all bg-white border-gray-300 text-black placeholder-gray-400"
+          className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-white border-gray-300 text-black placeholder-gray-400"
           placeholder="Enter book title"
           disabled={isLoading}
           required
@@ -248,7 +249,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
             type="text"
             value={formData.author}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all bg-white border-gray-300 text-black placeholder-gray-400"
+            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-white border-gray-300 text-black placeholder-gray-400"
             placeholder="Enter author name"
             disabled={isLoading}
             required
@@ -267,7 +268,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
             onChange={handleInputChange}
             min="1000"
             max={new Date().getFullYear()}
-            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all bg-white border-gray-300 text-black placeholder-gray-400"
+            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-white border-gray-300 text-black placeholder-gray-400"
             placeholder="e.g., 2024"
             disabled={isLoading}
             required
@@ -285,10 +286,10 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           disabled={isLoading}
           className={`
             w-full px-4 py-3 border-2 rounded-lg 
-            focus:outline-none focus:ring-2 focus:ring-black focus:border-black 
+            focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 
             transition-all bg-white border-gray-300 text-black
             flex items-center justify-between
-            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
+            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gold-400'}
             ${!formData.category_id ? 'text-gray-500' : 'text-black'}
           `}
         >
@@ -349,7 +350,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           value={formData.description}
           onChange={handleInputChange}
           rows={4}
-          className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all bg-white border-gray-300 text-black placeholder-gray-400 resize-none"
+          className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-white border-gray-300 text-black placeholder-gray-400 resize-none"
           placeholder="Enter book description (optional)"
           disabled={isLoading}
         />
@@ -366,7 +367,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           onDrop={handleCoverDrop}
           className={`
             border-2 border-dashed rounded-lg p-6 text-center transition-colors
-            ${coverDragActive ? 'border-black bg-gray-50' : 'border-gray-300 bg-gray-50'}
+            ${coverDragActive ? 'border-gold-500 bg-gold-50' : 'border-gray-300 bg-gray-50'}
           `}
         >
           <input
@@ -446,7 +447,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           onDrop={handleDrop}
           className={`
             border-2 border-dashed rounded-lg p-8 text-center transition-colors
-            ${dragActive ? 'border-black bg-gray-50' : 'border-gray-300 bg-gray-50'}
+            ${dragActive ? 'border-gold-500 bg-gold-50' : 'border-gray-300 bg-gray-50'}
             ${error ? 'border-red-300' : ''}
           `}
         >
@@ -454,7 +455,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
             ref={fileInputRef}
             id="book-file"
             type="file"
-            accept=".pdf,.doc,.docx,.txt,.xls,.xlsx"
+            accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.epub,.mobi"
             onChange={handleChange}
             className="hidden"
             disabled={isLoading}
@@ -488,7 +489,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
             </div>
             
             <p className="text-xs text-gray-500">
-              Supported: PDF, DOC, DOCX, TXT, XLS, XLSX (Max 50MB)
+              Supported: PDF, DOC, DOCX, TXT, XLS, XLSX, EPUB, MOBI (Max 50MB)
             </p>
           </div>
         </div>
@@ -535,9 +536,24 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
         type="submit"
         disabled={isLoading || !formData.title || !formData.author || !formData.year || !formData.file || !formData.category_id}
         isLoading={isLoading}
-        className="w-full py-3 px-4"
+        className="w-full py-3 px-4 shadow-lg hover:shadow-xl transition-shadow"
       >
-        Upload Book
+        {isLoading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Uploading...
+          </span>
+        ) : (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Upload Book
+          </span>
+        )}
       </Button>
     </form>
   )

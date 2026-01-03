@@ -108,7 +108,7 @@ export default function ThumbnailUpload({
           onDrop={handleDrop}
           className={`
             border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer
-            ${dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/30'}
+            ${dragActive ? 'border-gold-500 bg-gold-50' : 'border-gray-300 bg-slate-50 hover:border-gold-400 hover:bg-gold-50/30'}
             ${error ? 'border-red-300' : ''}
             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
           `}
@@ -145,7 +145,7 @@ export default function ThumbnailUpload({
                   e.stopPropagation()
                   fileInputRef.current?.click()
                 }}
-                className="text-indigo-600 hover:text-indigo-700 font-medium underline"
+                className="text-gold-600 hover:text-gold-700 font-medium underline"
                 disabled={isLoading}
               >
                 Click to upload

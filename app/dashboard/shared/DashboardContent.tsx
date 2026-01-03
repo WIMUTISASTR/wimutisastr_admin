@@ -1,92 +1,107 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import StatsCard from '../../components/StatsCard'
+import PageHeader from '../../components/PageHeader'
+import Card from '../../components/Card'
+import EmptyState from '../../components/EmptyState'
+import QuickActionCard from '../../components/QuickActionCard'
+import { useDashboardStats } from './hooks/useDashboardStats'
+import { Icons } from './icons'
 
-export default function DashboardContent() {
-  const [stats, setStats] = useState({
-    users: 0,
-    documents: 0,
-    videos: 0,
-  })
-  const [isLoading, setIsLoading] = useState(true)
+interface DashboardContentProps {
+  onNavigate?: (menu: string) => void
+}
 
-  useEffect(() => {
-    fetchStats()
-  }, [])
+const QUICK_ACTIONS = [
+  {
+    id: 'users',
+    title: 'Manage Users',
+    description: 'View and manage registered users',
+    color: 'gold' as const,
+    icon: Icons.Users,
+  },
+  {
+    id: 'upload-document',
+    title: 'Upload Document',
+    description: 'Add new books and documents',
+    color: 'blue' as const,
+    icon: Icons.Upload,
+  },
+  {
+    id: 'upload-video',
+    title: 'Upload Video',
+    description: 'Add new video content',
+    color: 'purple' as const,
+    icon: Icons.Video,
+  },
+] as const
 
-  const fetchStats = async () => {
-    try {
-      setIsLoading(true)
-      
-      // Fetch all stats in parallel
-      const [usersResponse, booksResponse, videosResponse] = await Promise.all([
-        fetch('/api/users'),
-        fetch('/api/books'),
-        fetch('/api/videos'),
-      ])
-
-      const usersData = await usersResponse.json()
-      const booksData = await booksResponse.json()
-      const videosData = await videosResponse.json()
-
-      setStats({
-        users: usersData.users?.length || 0,
-        documents: booksData.data?.length || 0,
-        videos: videosData.data?.length || 0,
-      })
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+export default function DashboardContent({ onNavigate }: DashboardContentProps) {
+  const { stats, isLoading } = useDashboardStats()
 
   return (
     <>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-slate-800 mb-2">Dashboard</h2>
-        <p className="text-slate-600">Welcome to the admin panel</p>
-      </div>
+      <PageHeader
+        title="Dashboard Overview"
+        description="Monitor your platform's key metrics and activity"
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatsCard
           title="Total Users"
-          value={isLoading ? '...' : stats.users}
-          icon={
-            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          }
+          value={stats.users}
+          icon={Icons.Users}
+          color="gold"
+          isLoading={isLoading}
         />
         <StatsCard
           title="Documents"
-          value={isLoading ? '...' : stats.documents}
-          icon={
-            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          }
+          value={stats.documents}
+          icon={Icons.Document}
+          color="blue"
+          isLoading={isLoading}
         />
         <StatsCard
           title="Videos"
-          value={isLoading ? '...' : stats.videos}
-          icon={
-            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          }
+          value={stats.videos}
+          icon={Icons.Video}
+          color="purple"
+          isLoading={isLoading}
         />
       </div>
 
-      {/* Content Area */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
-        <h3 className="text-xl font-bold text-slate-800 mb-4">Recent Activity</h3>
-        <div className="text-center py-12 text-indigo-600">
-          <p>No recent activity to display</p>
+      {/* Quick Actions */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-slate-900 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {QUICK_ACTIONS.map((action) => (
+            <QuickActionCard
+              key={action.id}
+              title={action.title}
+              description={action.description}
+              color={action.color}
+              onClick={() => onNavigate?.(action.id)}
+              icon={action.icon}
+            />
+          ))}
         </div>
       </div>
+
+      {/* Recent Activity */}
+      <Card>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-slate-900">Recent Activity</h3>
+          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+            View all
+          </button>
+        </div>
+        <EmptyState
+          icon={Icons.Activity}
+          title="No recent activity"
+          description="User activities and system events will appear here"
+        />
+      </Card>
     </>
   )
 }

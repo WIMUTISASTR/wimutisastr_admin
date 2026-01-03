@@ -7,6 +7,8 @@ import VideoUploadForm from './VideoUploadForm'
 import VideoCategoryManagement from './VideoCategoryManagement'
 import VideoEditModal from './VideoEditModal'
 import UploadProgressModal from '../../../components/UploadProgressModal'
+import TabNavigation from '../../../components/TabNavigation'
+import PageHeader from '../../../components/PageHeader'
 import { Video, VideoCategory } from '../../shared/types'
 
 export default function VideosContent() {
@@ -262,58 +264,54 @@ export default function VideosContent() {
     }
   }
 
+  const tabs = [
+    {
+      id: 'upload',
+      label: 'Upload Video',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+      ),
+    },
+    {
+      id: 'categories',
+      label: 'Categories',
+      badge: categories.length,
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+        </svg>
+      ),
+    },
+    {
+      id: 'list',
+      label: 'All Videos',
+      badge: videos.length,
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+  ]
+
   return (
     <>
-      {/* Tab Navigation */}
-      <div className="mb-6">
-        <div className="flex gap-2 border-b border-slate-200">
-          <button
-            onClick={() => setActiveView('upload')}
-            className={`
-              px-6 py-3 font-semibold transition-all relative
-              ${activeView === 'upload'
-                ? 'text-indigo-700'
-                : 'text-slate-600 hover:text-indigo-600'
-              }
-            `}
-          >
-            Upload Video
-            {activeView === 'upload' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-indigo-600 to-blue-600"></span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveView('categories')}
-            className={`
-              px-6 py-3 font-semibold transition-all relative
-              ${activeView === 'categories'
-                ? 'text-indigo-700'
-                : 'text-slate-600 hover:text-indigo-600'
-              }
-            `}
-          >
-            Video Categories
-            {activeView === 'categories' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-indigo-600 to-blue-600"></span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveView('list')}
-            className={`
-              px-6 py-3 font-semibold transition-all relative
-              ${activeView === 'list'
-                ? 'text-indigo-700'
-                : 'text-slate-600 hover:text-indigo-600'
-              }
-            `}
-          >
-            Video List
-            {activeView === 'list' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-indigo-600 to-blue-600"></span>
-            )}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Video Management"
+        description="Upload, organize, and manage your video content"
+        breadcrumbs={[
+          { label: 'Dashboard' },
+          { label: 'Videos' },
+        ]}
+      />
+
+      <TabNavigation
+        tabs={tabs}
+        activeTab={activeView}
+        onTabChange={(tab) => setActiveView(tab as 'upload' | 'list' | 'categories')}
+      />
 
       {/* Content Area */}
       {activeView === 'list' ? (

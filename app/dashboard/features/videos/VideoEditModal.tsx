@@ -212,24 +212,27 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
   }
 
   return (
-    <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
-      <div className="min-h-screen bg-white p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
+      <div className="min-h-screen p-4 md:p-6 flex items-start justify-center">
+        <div className="w-full max-w-6xl bg-white rounded-xl shadow-2xl my-8">
+          <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b border-gray-200 rounded-t-xl">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Edit Video</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-3xl p-2"
+              className="text-gray-400 hover:text-gray-600 text-3xl p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Close"
             >
               ×
             </button>
           </div>
 
+          <div className="p-6">
           {/* Video Player Section */}
-          <div className="mb-8 bg-black rounded-lg overflow-hidden shadow-xl">
+          <div className="mb-6 bg-black rounded-lg overflow-hidden shadow-xl">
             <video
               src={videoPreviewUrl || video.file_url}
               controls
-              className="w-full h-auto max-h-[600px]"
+              className="w-full h-auto max-h-[500px]"
               preload="metadata"
               key={videoPreviewUrl || video.file_url}
             >
@@ -237,14 +240,14 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
             </video>
             {videoFile && (
               <div className="bg-blue-50 border-t border-blue-200 p-3">
-                <p className="text-sm text-blue-800">
-                  <strong>Preview:</strong> New video file selected. The video above shows a preview of the new file.
+                <p className="text-sm text-blue-800 font-medium">
+                  <strong>Preview:</strong> New video file selected - showing preview above
                 </p>
               </div>
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 mb-6">
           <div>
             <label className="block text-sm font-semibold text-black mb-2">
               Video Title <span className="text-red-500">*</span>
@@ -253,7 +256,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-black bg-white transition-all"
               required
             />
           </div>
@@ -268,10 +271,10 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
               disabled={isLoading}
               className={`
                 w-full px-4 py-2 border-2 rounded-lg 
-                focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 
+                focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 
                 transition-all bg-white border-gray-300 text-black
                 flex items-center justify-between
-                ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
+                ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gold-400'}
                 ${!formData.category_id ? 'text-gray-500' : 'text-black'}
               `}
             >
@@ -309,7 +312,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
                           ${formData.category_id === category.id ? 'bg-indigo-50 font-semibold' : ''}
                         `}
                       >
-                        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-indigo-200 bg-slate-50">
+                        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gold-200 bg-slate-50">
                           {category.cover_url ? (
                             <img
                               src={category.cover_url}
@@ -317,8 +320,8 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full bg-linear-to-br from-indigo-100 to-blue-100 flex items-center justify-center">
-                              <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="w-full h-full bg-linear-to-br from-gold-100 to-gold-200 flex items-center justify-center">
+                              <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
                               </svg>
                             </div>
@@ -326,7 +329,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
                         </div>
                         <span className="flex-1 text-left">{category.name}</span>
                         {formData.category_id === category.id && (
-                          <svg className="w-5 h-5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-gold-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
@@ -349,7 +352,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-black bg-white"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-black bg-white transition-all"
               rows={4}
             />
           </div>
@@ -365,7 +368,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
                 </p>
               </div>
             )}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-400 transition-colors">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gold-400 transition-colors">
               <input
                 ref={videoFileInputRef}
                 type="file"
@@ -395,7 +398,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
                 type="button"
                 onClick={() => videoFileInputRef.current?.click()}
                 disabled={isLoading}
-                className="text-indigo-600 hover:text-indigo-700 font-medium underline disabled:opacity-50"
+                className="text-gold-600 hover:text-gold-700 font-medium underline disabled:opacity-50"
               >
                 Click to select a new video file
               </button>
@@ -445,23 +448,34 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-6 py-3 border border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-semibold"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 px-6 py-3 bg-linear-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Updating...' : 'Update Video'}
-            </button>
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 -mx-6 px-6 pb-6 mt-6">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 px-6 py-3 bg-linear-to-br from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/30"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Updating...
+                  </span>
+                ) : 'Update Video'}
+              </button>
+            </div>
           </div>
           </form>
+          </div>
         </div>
       </div>
     </div>

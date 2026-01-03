@@ -1,7 +1,11 @@
 import { supabase } from './supabase'
 
-// Get admin email from environment variable (more secure)
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin168@gmail.com'
+// Get admin email from environment variable - no fallback for security
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL
+
+if (!ADMIN_EMAIL) {
+  throw new Error('NEXT_PUBLIC_ADMIN_EMAIL environment variable is required')
+}
 
 export interface AuthUser {
   id: string
@@ -10,6 +14,9 @@ export interface AuthUser {
 }
 
 export function isAdminEmail(email: string): boolean {
+  if (!ADMIN_EMAIL) {
+    throw new Error('NEXT_PUBLIC_ADMIN_EMAIL environment variable is required')
+  }
   return email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
 }
 

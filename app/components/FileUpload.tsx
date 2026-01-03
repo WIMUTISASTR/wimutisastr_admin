@@ -101,11 +101,11 @@ export default function FileUpload({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-semibold text-amber-900 mb-2">
+        <label className="block text-sm font-semibold text-black mb-2">
           {label}
         </label>
         {description && (
-          <p className="text-sm text-amber-600 mb-4">{description}</p>
+          <p className="text-sm text-gray-600 mb-4">{description}</p>
         )}
         
         <div
@@ -115,7 +115,7 @@ export default function FileUpload({
           onDrop={handleDrop}
           className={`
             border-2 border-dashed rounded-lg p-8 text-center transition-colors
-            ${dragActive ? 'border-amber-500 bg-amber-50' : 'border-amber-200 bg-amber-50/30'}
+            ${dragActive ? 'border-gold-500 bg-gold-50' : 'border-gray-300 bg-gray-50'}
             ${error ? 'border-red-300' : ''}
           `}
         >
@@ -130,7 +130,7 @@ export default function FileUpload({
           
           <div className="space-y-4">
             <svg
-              className="mx-auto h-12 w-12 text-amber-400"
+              className="mx-auto h-12 w-12 text-gray-400"
               stroke="currentColor"
               fill="none"
               viewBox="0 0 48 48"
@@ -147,30 +147,30 @@ export default function FileUpload({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-amber-600 hover:text-amber-700 font-medium underline"
+                className="text-black hover:text-gray-700 font-medium underline"
                 disabled={isLoading}
               >
                 Click to upload
               </button>
-              <span className="text-amber-600"> or drag and drop</span>
+              <span className="text-gray-600"> or drag and drop</span>
             </div>
             
-            <p className="text-xs text-amber-500">
+            <p className="text-xs text-gray-500">
               Maximum file size: {maxSize}MB
             </p>
           </div>
         </div>
 
         {file && (
-          <div className="mt-4 p-4 bg-white rounded-lg border border-amber-200">
+          <div className="mt-4 p-4 bg-white rounded-lg border border-gray-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <div>
-                  <p className="text-sm font-medium text-amber-900">{file.name}</p>
-                  <p className="text-xs text-amber-600">{formatFileSize(file.size)}</p>
+                  <p className="text-sm font-medium text-black">{file.name}</p>
+                  <p className="text-xs text-gray-600">{formatFileSize(file.size)}</p>
                 </div>
               </div>
               <button

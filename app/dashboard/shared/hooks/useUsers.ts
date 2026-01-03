@@ -13,13 +13,14 @@ export function useUsers() {
       setError(null)
 
       const response = await fetch('/api/users')
-      const data = await response.json()
+      const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch users')
+        throw new Error(result.error || 'Failed to fetch users')
       }
 
-      setUsers(data.users || [])
+      // API returns { data: [...], pagination: {...} }
+      setUsers(result.data || [])
     } catch (err: any) {
       console.error('Error fetching users:', err)
       setError(err.message || 'Failed to fetch users')

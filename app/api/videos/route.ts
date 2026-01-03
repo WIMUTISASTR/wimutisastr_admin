@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
+import { handleApiError, successResponse, NotFoundError, ValidationError } from '@/app/lib/errors'
+import { createVideoSchema, updateVideoSchema, validateData } from '@/app/lib/validations'
+import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing Supabase environment variables')
-  }
-
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  })
-}
-
-// Create R2 S3 client (R2 is S3-compatible)
+// Create R2 S3 client
 function getR2Client() {
-  const r2AccountId = process.env.R2_ACCOUNT_ID!
-  const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID!
-  const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY!
+  const r2AccountId = process.env.R2_ACCOUNT_ID
+  const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID
+  const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY
 
   if (!r2AccountId || !r2AccessKeyId || !r2SecretAccessKey) {
     throw new Error('R2 credentials are not configured')
@@ -38,210 +25,173 @@ function getR2Client() {
   })
 }
 
-// GET - Fetch all videos
+// GET - Fetch videos with pagination
 export async function GET(request: NextRequest) {
   try {
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseServiceKey || supabaseServiceKey === 'your_service_role_key_here') {
-      return NextResponse.json(
-        { error: 'Service role key not configured' },
-        { status: 500 }
-      )
-    }
+    // Verify authentication
+    verifyPinCookie(request)
+
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`videos:get:${clientId}`, RATE_LIMITS.API_READ)
 
     const supabaseAdmin = getSupabaseAdmin()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
+    
+    // Pagination parameters
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100) // Max 100 per page
+    const offset = (page - 1) * limit
 
     if (id) {
       // Fetch single video
       const { data, error } = await supabaseAdmin
         .from('videos')
-        .select('*')
+        .select('*, category:video_categories(id, name, cover_url)')
         .eq('id', id)
         .single()
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
-      }
+      if (error) throw error
+      if (!data) throw new NotFoundError('Video not found')
 
-      return NextResponse.json({ data })
+      return successResponse(data)
     }
 
-    // Fetch all videos with categories
-    const { data: videos, error: videosError } = await supabaseAdmin
+    // Fetch videos with pagination
+    const { data: videos, error: videosError, count } = await supabaseAdmin
       .from('videos')
-      .select('*')
+      .select('*, category:video_categories(id, name, cover_url)', { count: 'exact' })
       .order('uploaded_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
-    if (videosError) {
-      return NextResponse.json({ error: videosError.message }, { status: 500 })
-    }
+    if (videosError) throw videosError
 
-    // Fetch all categories
-    const { data: categories, error: categoriesError } = await supabaseAdmin
-      .from('video_categories')
-      .select('id, name')
-
-    if (categoriesError) {
-      console.warn('Error fetching categories:', categoriesError)
-    }
-
-    // Join categories with videos
-    const videosWithCategories = videos?.map(video => ({
-      ...video,
-      category: categories?.find(cat => cat.id === video.category_id) || null
-    })) || []
-
-    return NextResponse.json({ data: videosWithCategories })
-  } catch (error: any) {
-    console.error('API route error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch videos' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      data: videos || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      }
+    })
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 
 // POST - Create a new video
 export async function POST(request: NextRequest) {
   try {
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseServiceKey || supabaseServiceKey === 'your_service_role_key_here') {
-      return NextResponse.json(
-        { error: 'Service role key not configured' },
-        { status: 500 }
-      )
-    }
+    // Verify authentication
+    verifyPinCookie(request)
 
-    const supabaseAdmin = getSupabaseAdmin()
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`videos:post:${clientId}`, RATE_LIMITS.API_WRITE)
+
+    // Parse and validate request body
     const body = await request.json()
-
-    // Validate required fields
-    if (!body.title || body.title.trim() === '') {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    const validation = validateData(createVideoSchema, body)
+    
+    if (!validation.success) {
+      throw new ValidationError(validation.errors.join(', '))
     }
 
-    if (!body.file_url) {
-      return NextResponse.json({ error: 'File URL is required' }, { status: 400 })
-    }
+    const videoData = validation.data
+    const supabaseAdmin = getSupabaseAdmin()
 
-    if (!body.category_id) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 })
-    }
-
+    // Insert video
     const { data, error } = await supabaseAdmin
       .from('videos')
       .insert([{
-        title: body.title.trim(),
-        description: body.description?.trim() || null,
-        file_name: body.file_name,
-        file_url: body.file_url,
-        file_size: body.file_size,
-        thumbnail_url: body.thumbnail_url || null,
-        category_id: body.category_id,
+        title: videoData.title,
+        description: videoData.description || null,
+        file_name: videoData.file_name,
+        file_url: videoData.file_url,
+        file_size: videoData.file_size || null,
+        thumbnail_url: videoData.thumbnail_url || null,
+        category_id: videoData.category_id,
       }])
-      .select()
+      .select('*, category:video_categories(id, name, cover_url)')
       .single()
 
-    if (error) {
-      console.error('Database insert error:', error)
-      return NextResponse.json({ 
-        error: error.message,
-        details: error.details,
-        hint: error.hint
-      }, { status: 500 })
-    }
+    if (error) throw error
 
-    return NextResponse.json({ data })
-  } catch (error: any) {
-    console.error('API route error:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Failed to create video' 
-    }, { status: 500 })
+    return successResponse(data, 201)
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 
 // PUT - Update a video
 export async function PUT(request: NextRequest) {
   try {
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseServiceKey || supabaseServiceKey === 'your_service_role_key_here') {
-      return NextResponse.json(
-        { error: 'Service role key not configured' },
-        { status: 500 }
-      )
-    }
+    // Verify authentication
+    verifyPinCookie(request)
 
-    const supabaseAdmin = getSupabaseAdmin()
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`videos:put:${clientId}`, RATE_LIMITS.API_WRITE)
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: 'Video ID is required' }, { status: 400 })
+      throw new ValidationError('Video ID is required')
     }
 
+    // Parse and validate request body
     const body = await request.json()
-
-    if (!body.category_id) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 })
+    const validation = validateData(updateVideoSchema, body)
+    
+    if (!validation.success) {
+      throw new ValidationError(validation.errors.join(', '))
     }
 
     const updateData: any = {
+      ...validation.data,
       updated_at: new Date().toISOString(),
     }
 
-    if (body.title) updateData.title = body.title.trim()
-    if (body.description !== undefined) updateData.description = body.description?.trim() || null
-    if (body.category_id) updateData.category_id = body.category_id
-    if (body.thumbnail_url !== undefined) updateData.thumbnail_url = body.thumbnail_url
-    if (body.file_url) updateData.file_url = body.file_url
-    if (body.file_name) updateData.file_name = body.file_name
-    if (body.file_size) updateData.file_size = body.file_size
+    const supabaseAdmin = getSupabaseAdmin()
 
+    // Update video
     const { data, error } = await supabaseAdmin
       .from('videos')
       .update(updateData)
       .eq('id', id)
-      .select()
+      .select('*, category:video_categories(id, name, cover_url)')
       .single()
 
-    if (error) {
-      console.error('Database update error:', error)
-      return NextResponse.json({ 
-        error: error.message,
-        details: error.details,
-        hint: error.hint
-      }, { status: 500 })
-    }
+    if (error) throw error
+    if (!data) throw new NotFoundError('Video not found')
 
-    return NextResponse.json({ data })
-  } catch (error: any) {
-    console.error('API route error:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Failed to update video' 
-    }, { status: 500 })
+    return successResponse(data)
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 
 // DELETE - Delete a video
 export async function DELETE(request: NextRequest) {
   try {
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseServiceKey || supabaseServiceKey === 'your_service_role_key_here') {
-      return NextResponse.json(
-        { error: 'Service role key not configured' },
-        { status: 500 }
-      )
-    }
+    // Verify authentication
+    verifyPinCookie(request)
 
-    const supabaseAdmin = getSupabaseAdmin()
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`videos:delete:${clientId}`, RATE_LIMITS.API_WRITE)
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: 'Video ID is required' }, { status: 400 })
+      throw new ValidationError('Video ID is required')
     }
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     // Get video data first to delete files from storage
     const { data: video, error: fetchError } = await supabaseAdmin
@@ -250,31 +200,32 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id)
       .single()
 
-    if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 500 })
-    }
+    if (fetchError) throw fetchError
+    if (!video) throw new NotFoundError('Video not found')
 
     // Delete files from R2 storage
     const r2VideoBucketName = process.env.R2_VIDEO_BUCKET_NAME || 'video'
     const r2VideoPublicUrl = process.env.R2_VIDEO_PUBLIC_URL || ''
     const r2PublicUrl = process.env.R2_PUBLIC_URL || ''
     
-    if (video.file_url && r2VideoBucketName) {
+    // Helper function to extract key from URL
+    const extractKeyFromUrl = (url: string): string => {
+      let key = url
+      if (r2VideoPublicUrl && url.startsWith(r2VideoPublicUrl)) {
+        key = url.replace(r2VideoPublicUrl, '').replace(/^\//, '')
+      } else if (r2PublicUrl && url.startsWith(r2PublicUrl)) {
+        key = url.replace(r2PublicUrl, '').replace(/^\//, '')
+      } else if (url.startsWith('http')) {
+        const urlObj = new URL(url)
+        key = urlObj.pathname.replace(/^\//, '')
+      }
+      return key
+    }
+
+    // Delete video file
+    if (video.file_url) {
       try {
-        // Extract key from URL (e.g., "videos/video123.mp4" from "https://cdn.example.com/videos/video123.mp4")
-        let key = video.file_url
-        if (r2VideoPublicUrl) {
-          // Remove the video public URL prefix to get the key
-          key = video.file_url.replace(r2VideoPublicUrl, '').replace(/^\//, '')
-        } else if (r2PublicUrl) {
-          // Fallback to book bucket URL (shouldn't happen but handle it)
-          key = video.file_url.replace(r2PublicUrl, '').replace(/^\//, '')
-        } else {
-          // Fallback: extract path after the last domain part
-          const urlObj = new URL(video.file_url)
-          key = urlObj.pathname.replace(/^\//, '')
-        }
-        
+        const key = extractKeyFromUrl(video.file_url)
         if (key) {
           const s3Client = getR2Client()
           await s3Client.send(new DeleteObjectCommand({
@@ -283,25 +234,15 @@ export async function DELETE(request: NextRequest) {
           }))
         }
       } catch (error) {
-        console.error('Error deleting video file from R2:', error)
-        // Continue with database deletion even if file deletion fails
+        // Log but don't fail - file might already be deleted
+        console.warn('Error deleting video file from R2:', error)
       }
     }
 
-    if (video.thumbnail_url && r2VideoBucketName) {
+    // Delete thumbnail
+    if (video.thumbnail_url) {
       try {
-        // Extract key from URL
-        let key = video.thumbnail_url
-        if (r2VideoPublicUrl) {
-          key = video.thumbnail_url.replace(r2VideoPublicUrl, '').replace(/^\//, '')
-        } else if (r2PublicUrl) {
-          // Fallback to book bucket URL (shouldn't happen but handle it)
-          key = video.thumbnail_url.replace(r2PublicUrl, '').replace(/^\//, '')
-        } else {
-          const urlObj = new URL(video.thumbnail_url)
-          key = urlObj.pathname.replace(/^\//, '')
-        }
-        
+        const key = extractKeyFromUrl(video.thumbnail_url)
         if (key) {
           const s3Client = getR2Client()
           await s3Client.send(new DeleteObjectCommand({
@@ -310,27 +251,20 @@ export async function DELETE(request: NextRequest) {
           }))
         }
       } catch (error) {
-        console.error('Error deleting thumbnail from R2:', error)
-        // Continue with database deletion even if file deletion fails
+        console.warn('Error deleting thumbnail from R2:', error)
       }
     }
 
-    // Delete video record
+    // Delete video record from database
     const { error: deleteError } = await supabaseAdmin
       .from('videos')
       .delete()
       .eq('id', id)
 
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 })
-    }
+    if (deleteError) throw deleteError
 
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('API route error:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Failed to delete video' 
-    }, { status: 500 })
+    return successResponse({ success: true, message: 'Video deleted successfully' })
+  } catch (error) {
+    return handleApiError(error)
   }
 }
-

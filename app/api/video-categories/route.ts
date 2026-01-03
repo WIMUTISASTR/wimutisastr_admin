@@ -1,198 +1,203 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing Supabase environment variables')
-  }
-
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  })
-}
+import { getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
+import { handleApiError, successResponse, NotFoundError, ValidationError } from '@/app/lib/errors'
+import { createCategorySchema, updateCategorySchema, validateData } from '@/app/lib/validations'
+import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 
 // GET - Fetch all video categories
 export async function GET(request: NextRequest) {
   try {
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseServiceKey || supabaseServiceKey === 'your_service_role_key_here') {
-      return NextResponse.json(
-        { error: 'Service role key not configured' },
-        { status: 500 }
-      )
-    }
+    // Verify authentication
+    verifyPinCookie(request)
+
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`video-categories:get:${clientId}`, RATE_LIMITS.API_READ)
 
     const supabaseAdmin = getSupabaseAdmin()
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (id) {
+      // Fetch single category
+      const { data, error } = await supabaseAdmin
+        .from('video_categories')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+      if (!data) throw new NotFoundError('Video category not found')
+
+      return successResponse(data)
+    }
+
+    // Fetch all categories
     const { data, error } = await supabaseAdmin
       .from('video_categories')
       .select('*')
       .order('name', { ascending: true })
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+    if (error) throw error
 
-    return NextResponse.json({ data })
-  } catch (error: any) {
-    console.error('API route error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch video categories' },
-      { status: 500 }
-    )
+    return successResponse(data || [])
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 
 // POST - Create a new video category
 export async function POST(request: NextRequest) {
   try {
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseServiceKey || supabaseServiceKey === 'your_service_role_key_here') {
-      return NextResponse.json(
-        { error: 'Service role key not configured' },
-        { status: 500 }
-      )
-    }
+    // Verify authentication
+    verifyPinCookie(request)
 
-    const supabaseAdmin = getSupabaseAdmin()
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`video-categories:post:${clientId}`, RATE_LIMITS.API_WRITE)
+
+    // Parse and validate request body
     const body = await request.json()
-
-    if (!body.name || body.name.trim() === '') {
-      return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
+    const validation = validateData(createCategorySchema, body)
+    
+    if (!validation.success) {
+      throw new ValidationError(validation.errors.join(', '))
     }
 
+    const categoryData = validation.data
+    const supabaseAdmin = getSupabaseAdmin()
+
+    // Check for duplicate name
+    const { data: existing } = await supabaseAdmin
+      .from('video_categories')
+      .select('id')
+      .ilike('name', categoryData.name)
+      .single()
+
+    if (existing) {
+      throw new ValidationError('A video category with this name already exists')
+    }
+
+    // Insert category
     const { data, error } = await supabaseAdmin
       .from('video_categories')
       .insert([{
-        name: body.name.trim(),
-        description: body.description?.trim() || null,
-        cover_url: body.cover_url || null,
+        name: categoryData.name,
+        description: categoryData.description || null,
+        cover_url: categoryData.cover_url || null,
       }])
       .select()
       .single()
 
-    if (error) {
-      console.error('Database insert error:', error)
-      if (error.code === '23505') {
-        return NextResponse.json({ 
-          error: 'A category with this name already exists' 
-        }, { status: 400 })
-      }
-      return NextResponse.json({ 
-        error: error.message,
-        details: error.details,
-        hint: error.hint
-      }, { status: 500 })
-    }
+    if (error) throw error
 
-    return NextResponse.json({ data })
-  } catch (error: any) {
-    console.error('API route error:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Failed to create video category' 
-    }, { status: 500 })
+    return successResponse(data, 201)
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 
 // PUT - Update a video category
 export async function PUT(request: NextRequest) {
   try {
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseServiceKey || supabaseServiceKey === 'your_service_role_key_here') {
-      return NextResponse.json(
-        { error: 'Service role key not configured' },
-        { status: 500 }
-      )
-    }
+    // Verify authentication
+    verifyPinCookie(request)
 
-    const supabaseAdmin = getSupabaseAdmin()
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`video-categories:put:${clientId}`, RATE_LIMITS.API_WRITE)
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: 'Category ID is required' }, { status: 400 })
+      throw new ValidationError('Video category ID is required')
     }
 
+    // Parse and validate request body
     const body = await request.json()
-
-    if (!body.name || body.name.trim() === '') {
-      return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
+    const validation = validateData(updateCategorySchema, body)
+    
+    if (!validation.success) {
+      throw new ValidationError(validation.errors.join(', '))
     }
 
+    const updateData = validation.data
+    const supabaseAdmin = getSupabaseAdmin()
+
+    // Check for duplicate name (excluding current category)
+    if (updateData.name) {
+      const { data: existing } = await supabaseAdmin
+        .from('video_categories')
+        .select('id')
+        .ilike('name', updateData.name)
+        .neq('id', id)
+        .single()
+
+      if (existing) {
+        throw new ValidationError('A video category with this name already exists')
+      }
+    }
+
+    // Update category
     const { data, error } = await supabaseAdmin
       .from('video_categories')
-      .update({
-        name: body.name.trim(),
-        description: body.description?.trim() || null,
-        cover_url: body.cover_url || null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()
 
-    if (error) {
-      console.error('Database update error:', error)
-      if (error.code === '23505') {
-        return NextResponse.json({ 
-          error: 'A category with this name already exists' 
-        }, { status: 400 })
-      }
-      return NextResponse.json({ 
-        error: error.message,
-        details: error.details,
-        hint: error.hint
-      }, { status: 500 })
-    }
+    if (error) throw error
+    if (!data) throw new NotFoundError('Video category not found')
 
-    return NextResponse.json({ data })
-  } catch (error: any) {
-    console.error('API route error:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Failed to update video category' 
-    }, { status: 500 })
+    return successResponse(data)
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 
 // DELETE - Delete a video category
 export async function DELETE(request: NextRequest) {
   try {
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseServiceKey || supabaseServiceKey === 'your_service_role_key_here') {
-      return NextResponse.json(
-        { error: 'Service role key not configured' },
-        { status: 500 }
-      )
-    }
+    // Verify authentication
+    verifyPinCookie(request)
 
-    const supabaseAdmin = getSupabaseAdmin()
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    checkRateLimit(`video-categories:delete:${clientId}`, RATE_LIMITS.API_WRITE)
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: 'Category ID is required' }, { status: 400 })
+      throw new ValidationError('Video category ID is required')
     }
 
-    const { error } = await supabaseAdmin
+    const supabaseAdmin = getSupabaseAdmin()
+
+    // Check if category has associated videos
+    const { data: videos, error: videosError } = await supabaseAdmin
+      .from('videos')
+      .select('id')
+      .eq('category_id', id)
+      .limit(1)
+
+    if (videosError) throw videosError
+
+    if (videos && videos.length > 0) {
+      throw new ValidationError('Cannot delete category with associated videos')
+    }
+
+    // Delete category
+    const { error: deleteError } = await supabaseAdmin
       .from('video_categories')
       .delete()
       .eq('id', id)
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+    if (deleteError) throw deleteError
 
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('API route error:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Failed to delete video category' 
-    }, { status: 500 })
+    return successResponse({ success: true, message: 'Video category deleted successfully' })
+  } catch (error) {
+    return handleApiError(error)
   }
 }
-

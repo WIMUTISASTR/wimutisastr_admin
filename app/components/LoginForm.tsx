@@ -22,7 +22,7 @@ export default function LoginForm({ onSubmit, isLoading = false, error }: LoginF
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label htmlFor="email" className="block text-sm font-semibold text-amber-900 mb-2">
+        <label htmlFor="email" className="block text-sm font-semibold text-gold-900 mb-2">
           Email
         </label>
         <input
@@ -30,7 +30,7 @@ export default function LoginForm({ onSubmit, isLoading = false, error }: LoginF
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-amber-50/50 border-amber-200 text-amber-900 placeholder-amber-400"
+          className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-gold-50/50 border-gold-200 text-gold-900 placeholder-gold-400"
           placeholder="Enter your email"
           disabled={isLoading}
           autoFocus
@@ -38,7 +38,7 @@ export default function LoginForm({ onSubmit, isLoading = false, error }: LoginF
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-semibold text-amber-900 mb-2">
+        <label htmlFor="password" className="block text-sm font-semibold text-gold-900 mb-2">
           Password
         </label>
         <div className="relative">
@@ -47,14 +47,14 @@ export default function LoginForm({ onSubmit, isLoading = false, error }: LoginF
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-amber-50/50 border-amber-200 text-amber-900 placeholder-amber-400 pr-12"
+            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-gold-50/50 border-gold-200 text-gold-900 placeholder-gold-400 pr-12"
             placeholder="Enter your password"
             disabled={isLoading}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 hover:text-amber-700 focus:outline-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-600 hover:text-gold-700 focus:outline-none"
             tabIndex={-1}
           >
             {showPassword ? (
