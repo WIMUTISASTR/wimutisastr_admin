@@ -57,6 +57,10 @@ export const createBookSchema = z.object({
     .min(1, 'Title is required')
     .max(200, 'Title must be less than 200 characters')
     .trim(),
+  year: z.coerce.number()
+    .int('Year must be a whole number')
+    .min(1000, 'Year must be a valid 4-digit year')
+    .max(9999, 'Year must be a valid 4-digit year'),
   description: z.string()
     .max(1000, 'Description must be less than 1000 characters')
     .trim()
@@ -79,6 +83,11 @@ export const updateBookSchema = z.object({
     .min(1, 'Title is required')
     .max(200, 'Title must be less than 200 characters')
     .trim()
+    .optional(),
+  year: z.coerce.number()
+    .int('Year must be a whole number')
+    .min(1000, 'Year must be a valid 4-digit year')
+    .max(9999, 'Year must be a valid 4-digit year')
     .optional(),
   description: z.string()
     .max(1000, 'Description must be less than 1000 characters')

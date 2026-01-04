@@ -92,7 +92,7 @@ export default function PINPage() {
           type="submit"
           disabled={isLoading}
           isLoading={isLoading}
-          className="w-full py-3 px-4"
+          className="w-full py-3 px-4 bg-blue-700"
         >
           Verify PIN
         </Button>

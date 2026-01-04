@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
       .from('books')
       .insert([{
         title: bookData.title,
+        year: bookData.year,
         description: bookData.description || null,
         author: bookData.author || null,
         file_name: bookData.file_name,

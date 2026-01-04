@@ -88,6 +88,13 @@ const ENV_VARS: EnvVar[] = [
     description: 'Application URL (defaults to current origin)',
     clientSide: true,
   },
+
+  // Encryption
+  {
+    key: 'ENCRYPTION_KEY',
+    required: true,
+    description: 'AES-256 encryption key (base64 encoded)',
+  },
 ]
 
 interface ValidationResult {
@@ -126,7 +133,8 @@ export function validateEnv(throwOnError: boolean = true): ValidationResult {
       value === 'your_anon_key_here' ||
       value === 'your_account_id_here' ||
       value === 'your_access_key_id_here' ||
-      value === 'your_secret_access_key_here'
+      value === 'your_secret_access_key_here' ||
+      value === 'your_base64_encryption_key_here'
     )) {
       errors.push(`Environment variable ${envVar.key} contains a placeholder value`)
       errors.push(`  Please update it with your actual value`)
@@ -153,6 +161,21 @@ export function validateEnv(throwOnError: boolean = true): ValidationResult {
         case 'NEXT_PUBLIC_APP_URL':
           if (value && !value.startsWith('http://') && !value.startsWith('https://')) {
             warnings.push(`${envVar.key} should start with http:// or https://`)
+          }
+          break
+
+        case 'ENCRYPTION_KEY':
+          if (value) {
+            try {
+              const key = Buffer.from(value, 'base64')
+              if (key.length !== 32) {
+                errors.push(`ENCRYPTION_KEY must be 32 bytes (256 bits) when decoded, got ${key.length} bytes`)
+                errors.push(`  Generate a new key with: node scripts/generate-encryption-key.js`)
+              }
+            } catch (e) {
+              errors.push(`ENCRYPTION_KEY must be valid base64 encoded string`)
+              errors.push(`  Generate a new key with: node scripts/generate-encryption-key.js`)
+            }
           }
           break
       }

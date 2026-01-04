@@ -1,8 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import ThumbnailUpload from '../../../components/forms/ThumbnailUpload'
+import Modal from '../../../components/feedback/Modal'
+import { useZodForm } from '@/app/lib/useZodForm'
+import { createCategorySchema, updateCategorySchema } from '@/app/lib/validations'
 
 interface VideoCategory {
   id: string
@@ -28,26 +31,23 @@ export default function VideoCategoryModal({
   onSave,
   isLoading,
 }: VideoCategoryModalProps) {
-  const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '' })
+  const schema = useMemo(() => (editingCategory ? updateCategorySchema : createCategorySchema), [editingCategory])
+  const form = useZodForm(schema, { name: '', description: '' } as any)
+  const { reset } = form
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
   useEffect(() => {
     if (editingCategory) {
-      setCategoryFormData({
-        name: editingCategory.name,
-        description: editingCategory.description || '',
-      })
+      reset({ name: editingCategory.name, description: editingCategory.description || '' } as any)
       setCoverPreview(editingCategory.cover_url)
       setCoverFile(null)
     } else {
-      setCategoryFormData({ name: '', description: '' })
+      reset({ name: '', description: '' } as any)
       setCoverPreview(null)
       setCoverFile(null)
     }
-  }, [editingCategory, isOpen])
-
-  if (!isOpen) return null
+  }, [editingCategory, isOpen, reset])
 
   const handleCoverUpload = (file: File) => {
     setCoverFile(file)
@@ -94,6 +94,18 @@ export default function VideoCategoryModal({
         }
       }
 
+      const payload = {
+        name: (form.values as any).name,
+        description: ((form.values as any).description || '').trim() ? (form.values as any).description : null,
+        cover_url: coverUrl,
+      }
+
+      const validation = form.validate(payload)
+      if (!validation.success) {
+        toast.error('Please fix the highlighted fields.')
+        return
+      }
+
       const url = editingCategory
         ? `/api/video-categories?id=${editingCategory.id}`
         : '/api/video-categories'
@@ -104,10 +116,7 @@ export default function VideoCategoryModal({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...categoryFormData,
-          cover_url: coverUrl,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const result = await response.json()
@@ -126,46 +135,45 @@ export default function VideoCategoryModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-800">
-            {editingCategory ? 'Edit Category' : 'New Category'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editingCategory ? 'Edit Video Category' : 'Create Video Category'}
+      variant="center"
+      isDismissable={!isLoading}
+      className="p-6"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-black mb-2">
               Category Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              value={categoryFormData.name}
-              onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+              value={(form.values as any).name}
+              onChange={(e) => form.setValue('name' as any, e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               placeholder="e.g., Tutorial, Documentary, Entertainment"
               required
             />
+            {form.errors.name && (
+              <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.name}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-semibold text-black mb-2">
               Description
             </label>
             <textarea
-              value={categoryFormData.description}
-              onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
+              value={(form.values as any).description}
+              onChange={(e) => form.setValue('description' as any, e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               placeholder="Category description (optional)"
               rows={3}
             />
+            {form.errors.description && (
+              <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.description}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-semibold text-black mb-2">
@@ -178,11 +186,15 @@ export default function VideoCategoryModal({
               isLoading={isLoading}
               onRemove={handleCoverRemove}
             />
+            {form.errors.cover_url && (
+              <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.cover_url}</p>
+            )}
           </div>
           <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
+              disabled={isLoading}
               className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
             >
               Cancel
@@ -190,7 +202,7 @@ export default function VideoCategoryModal({
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-6 py-3 bg-linear-to-br from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/30"
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg transition-all  disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/30"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -201,13 +213,12 @@ export default function VideoCategoryModal({
                   {editingCategory ? 'Updating...' : 'Creating...'}
                 </span>
               ) : (
-                editingCategory ? 'Update Category' : 'Create Category'
+                editingCategory ? 'Update' : 'Create'
               )}
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   )
 }
 

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'react-toastify'
 import ThumbnailUpload from '../../../components/forms/ThumbnailUpload'
+import Modal from '../../../components/feedback/Modal'
+import { Button } from '../../../components/ui'
 
 interface VideoCategory {
   id: string
@@ -71,7 +73,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
     }
   }, [videoFile])
 
-  if (!isOpen || !video) return null
+  if (!video) return null
 
   const handleThumbnailUpload = (file: File) => {
     setThumbnailFile(file)
@@ -212,21 +214,14 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
-      <div className="min-h-screen flex items-stretch justify-center">
-        <div className="w-full bg-white shadow-2xl">
-          <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b border-gray-200">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Edit Video</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-3xl p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Close"
-            >
-              ×
-            </button>
-          </div>
-
-          <div className="p-6">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Video"
+      variant="fullscreen"
+      isDismissable={!isLoading}
+    >
+      <div className="p-6">
           {/* Video Player Section */}
           <div className="mb-6 bg-black rounded-lg overflow-hidden shadow-xl">
             <video
@@ -265,17 +260,13 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
             <label className="block text-sm font-semibold text-black mb-2">
               Category <span className="text-red-500">*</span>
             </label>
-            <button
+            <Button
               type="button"
               onClick={() => !isLoading && setIsCategoryOpen(!isCategoryOpen)}
               disabled={isLoading}
-              className={`
-            w-full px-4 py-2 border-2 rounded-lg 
-            transition-all bg-white border-gray-300 text-black
-                flex items-center justify-between
-                ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gold-400'}
-                ${!formData.category_id ? 'text-gray-500' : 'text-black'}
-              `}
+              variant="secondary"
+              fullWidth
+              className={`flex items-center justify-between transform-none ${!formData.category_id ? 'text-gray-500' : 'text-black'}`}
             >
               <span>
                 {formData.category_id 
@@ -291,7 +282,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-            </button>
+            </Button>
 
             {isCategoryOpen && !isLoading && (
               <>
@@ -302,14 +293,13 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
                 <div className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {categories && categories.length > 0 ? (
                     categories.map((category) => (
-                      <button
+                      <Button
                         key={category.id}
                         type="button"
                         onClick={() => handleCategorySelect(category.id)}
-                        className={`
-                          w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center gap-3
-                          ${formData.category_id === category.id ? 'bg-indigo-50 font-semibold' : ''}
-                        `}
+                        variant="ghost"
+                        size="sm"
+                        className={`w-full justify-start transform-none px-4 py-3 ${formData.category_id === category.id ? 'bg-indigo-50 font-semibold' : 'hover:bg-gray-100'}`}
                       >
                         <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gold-200 bg-slate-50">
                           {category.cover_url ? (
@@ -332,7 +322,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
-                      </button>
+                      </Button>
                     ))
                   ) : (
                     <div className="px-4 py-3 text-gray-500 text-sm">
@@ -393,14 +383,16 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              <button
+              <Button
                 type="button"
                 onClick={() => videoFileInputRef.current?.click()}
                 disabled={isLoading}
-                className="text-gold-600 hover:text-gold-700 font-medium underline disabled:opacity-50"
+                variant="ghost"
+                size="sm"
+                className="transform-none underline text-blue-700 hover:text-blue-800"
               >
                 Click to select a new video file
-              </button>
+              </Button>
               <p className="text-xs text-gray-500 mt-2">
                 Supported formats: MP4, AVI, MOV, WMV, FLV (Max 500MB)
               </p>
@@ -416,7 +408,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
                       Size: {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => {
                       setVideoFile(null)
@@ -424,11 +416,13 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
                         videoFileInputRef.current.value = ''
                       }
                     }}
-                    className="text-sm text-blue-600 hover:text-blue-800 underline"
                     disabled={isLoading}
+                    variant="ghost"
+                    size="sm"
+                    className="transform-none underline text-blue-700 hover:text-blue-800"
                   >
                     Remove
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -449,35 +443,17 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
 
           <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 -mx-6 px-6 pb-6 mt-6">
             <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-6 py-3 border-2 border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-semibold"
-              >
+              <Button type="button" onClick={onClose} variant="secondary" fullWidth className="transform-none">
                 Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1 px-6 py-3 bg-linear-to-br from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/30"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Updating...
-                  </span>
-                ) : 'Update Video'}
-              </button>
+              </Button>
+              <Button type="submit" isLoading={isLoading} fullWidth className="transform-none">
+                Update Video
+              </Button>
             </div>
           </div>
           </form>
-          </div>
-        </div>
       </div>
-    </div>
+    </Modal>
   )
 }
 

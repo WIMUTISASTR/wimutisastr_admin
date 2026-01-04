@@ -18,7 +18,7 @@ type ViewType = 'upload' | 'list' | 'categories'
 const TABS = [
   {
     id: 'upload' as const,
-    label: 'Upload Book',
+    label: 'Upload',
     icon: Icons.Upload,
   },
   {
@@ -28,7 +28,7 @@ const TABS = [
   },
   {
     id: 'list' as const,
-    label: 'All Books',
+    label: 'Books',
     icon: Icons.Book,
   },
 ]

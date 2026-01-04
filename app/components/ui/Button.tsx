@@ -1,40 +1,69 @@
-import { ReactNode } from 'react'
+import { ButtonHTMLAttributes, ReactNode } from 'react'
 
-interface ButtonProps {
+type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'ghost'
+  | 'danger'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'light'
+  | 'dark'
+
+type ButtonSize = 'sm' | 'md' | 'lg'
+
+type NativeButtonProps = ButtonHTMLAttributes<HTMLButtonElement>
+
+interface ButtonProps extends Omit<NativeButtonProps, 'className' | 'children'> {
   children: ReactNode
-  onClick?: () => void
-  type?: 'button' | 'submit' | 'reset'
-  variant?: 'primary' | 'secondary' | 'ghost'
-  disabled?: boolean
+  variant?: ButtonVariant
+  size?: ButtonSize
+  fullWidth?: boolean
   isLoading?: boolean
   className?: string
 }
 
 export default function Button({
   children,
-  onClick,
-  type = 'button',
   variant = 'primary',
-  disabled = false,
+  size = 'md',
+  fullWidth = false,
   isLoading = false,
   className = '',
+  type = 'button',
+  disabled,
+  ...rest
 }: ButtonProps) {
-  const baseClasses = 'font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
+  const baseClasses =
+    'inline-flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
+
+  const sizeClasses: Record<ButtonSize, string> = {
+    sm: 'px-3 py-2 text-sm',
+    md: 'px-4 py-2',
+    lg: 'px-6 py-3 text-base',
+  }
   
-  const variantClasses = {
-    primary: 'bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 text-white shadow-lg shadow-gold-500/30 transform hover:scale-[1.02] active:scale-[0.98]',
-    secondary: 'bg-gold-50 text-gold-700 hover:bg-gold-100 border border-gold-200',
-    ghost: 'text-slate-700 hover:bg-gold-50 hover:text-gold-700',
+  const variantClasses: Record<ButtonVariant, string> = {
+    primary: 'bg-blue-700 hover:bg-blue-800 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-700 shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    ghost: 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+    danger: 'bg-red-600 hover:bg-red-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    success: 'bg-green-600 hover:bg-green-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    warning: 'bg-yellow-600 hover:bg-yellow-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    info: 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    light: 'bg-gray-200 hover:bg-gray-300 text-gray-700 shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    dark: 'bg-gray-800 hover:bg-gray-900 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
   }
 
-  const combinedClassName = `${baseClasses} ${variantClasses[variant]} ${className}`.trim()
+  const combinedClassName = `${baseClasses} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${variantClasses[variant]} ${className}`.trim()
 
   return (
     <button
       type={type}
-      onClick={onClick}
       disabled={disabled || isLoading}
       className={combinedClassName}
+      {...rest}
     >
       {isLoading ? (
         <span className="flex items-center justify-center">

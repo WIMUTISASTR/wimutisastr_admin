@@ -358,7 +358,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
       <button
         type="submit"
         disabled={isLoading || !formData.title.trim() || !formData.category_id || !formData.file}
-        className="w-full py-3 px-4 bg-linear-to-br from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+        className="w-full py-3 px-4 bg-blue-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">

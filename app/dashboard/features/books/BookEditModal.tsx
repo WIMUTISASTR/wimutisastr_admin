@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
+import { z } from 'zod'
 import { Book, Category } from '../../shared/types'
 import { formatFileSize } from '../../shared/utils'
+import Modal from '../../../components/feedback/Modal'
+import { useZodForm } from '@/app/lib/useZodForm'
 
 interface BookEditModalProps {
   book: Book | null
@@ -14,13 +17,34 @@ interface BookEditModalProps {
 }
 
 export default function BookEditModal({ book, isOpen, onClose, onUpdate, categories = [] }: BookEditModalProps) {
-  const [formData, setFormData] = useState({
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters').trim(),
+        author: z.string().min(1, 'Author is required').max(100, 'Author name must be less than 100 characters').trim(),
+        year: z.coerce.number()
+          .int('Year must be a whole number')
+          .min(1000, 'Year must be a valid 4-digit year')
+          .max(9999, 'Year must be a valid 4-digit year'),
+        description: z
+          .string()
+          .max(1000, 'Description must be less than 1000 characters')
+          .optional()
+          .nullable(),
+        category_id: z.string().uuid('Category is required'),
+      }),
+    []
+  )
+
+  const form = useZodForm(formSchema, {
     title: '',
     author: '',
-    year: '',
+    year: '' as any,
     description: '',
-    category_id: null as string | null,
-  })
+    category_id: '',
+  } as any)
+  const { reset } = form
+
   const [isLoading, setIsLoading] = useState(false)
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
@@ -28,34 +52,44 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
 
   useEffect(() => {
     if (book) {
-      setFormData({
+      reset({
         title: book.title,
         author: book.author,
-        year: book.year,
+        year: (book.year as any) ?? '',
         description: book.description || '',
-        category_id: book.category_id || null,
-      })
+        category_id: book.category_id || '',
+      } as any)
       setCoverPreview(book.cover_url)
       setCoverFile(null)
       setBookFile(null)
     }
-  }, [book])
+  }, [book, isOpen, reset])
 
-  if (!isOpen || !book) return null
+  if (!book) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.title || !formData.author || !formData.year || !formData.category_id) {
-      toast.error('Please fill in all required fields including category')
-      return
-    }
-
     try {
       setIsLoading(true)
 
+      const validated = form.validate({
+        title: (form.values as any).title,
+        author: (form.values as any).author,
+        year: (form.values as any).year,
+        description: ((form.values as any).description || '').trim()
+          ? (form.values as any).description
+          : null,
+        category_id: (form.values as any).category_id,
+      })
+
+      if (!validated.success) {
+        toast.error('Please fix the highlighted fields.')
+        return
+      }
+
       // Get category name for folder organization
-      const categoryId = formData.category_id || book?.category_id
+      const categoryId = validated.data.category_id
       const category = categories.find(cat => cat.id === categoryId) || book?.category
       const categoryName = category?.name || 'uncategorized'
 
@@ -125,22 +159,21 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
       }
 
       // Update book via API
-      const response = await fetch('/api/books', {
+      const response = await fetch(`/api/books?id=${book.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: book.id,
-          title: formData.title,
-          author: formData.author,
-          year: parseInt(formData.year),
-          description: formData.description || null,
+          title: validated.data.title,
+          author: validated.data.author,
+          year: validated.data.year,
+          description: validated.data.description || null,
           cover_url: coverUrl,
           file_url: fileUrl,
           file_name: fileName,
           file_size: fileSize,
-          category_id: formData.category_id || null,
+          category_id: validated.data.category_id,
         }),
       })
 
@@ -151,6 +184,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
       }
 
       if (result.data) {
+        const selectedCategory = categories.find((c) => c.id === validated.data.category_id) || null
         const updatedBook: Book = {
           ...book,
           title: result.data.title,
@@ -161,6 +195,8 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
           file_url: result.data.file_url,
           file_name: result.data.file_name,
           file_size: result.data.file_size,
+          category_id: result.data.category_id || validated.data.category_id,
+          category: selectedCategory ? { id: selectedCategory.id, name: selectedCategory.name } : book.category,
         }
         onUpdate(updatedBook)
         toast.success('Book updated successfully!')
@@ -208,29 +244,22 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
 
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
-      <div className="min-h-screen flex items-stretch justify-center">
-        <div className="w-full bg-white shadow-2xl">
-          <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b border-gray-200">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Edit Book</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-3xl p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Close"
-            >
-              ×
-            </button>
-          </div>
-
-          <div className="p-6">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Book"
+      variant="fullscreen"
+      isDismissable={!isLoading}
+    >
+      <div className="p-6">
           {/* Book Preview Section */}
           <div className="mb-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-lg p-4 md:p-6 border border-gray-200 shadow-sm">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
-              {book.cover_url && (
+              {(coverPreview || book.cover_url) && (
                 <div className="shrink-0 mx-auto md:mx-0">
                   <div className="w-24 h-36 md:w-32 md:h-48 rounded-lg overflow-hidden border-2 border-gray-300 shadow-md">
                     <img
-                      src={book.cover_url}
+                      src={coverPreview || book.cover_url || ''}
                       alt={`${book.title} cover`}
                       className="w-full h-full object-cover"
                     />
@@ -258,12 +287,8 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
                   href={book.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-br from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-colors font-semibold shadow-md"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors font-semibold shadow-md hover:bg-blue-400"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
                   View Book
                 </a>
               </div>
@@ -277,11 +302,12 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
             </label>
             <input
               type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              value={(form.values as any).title}
+              onChange={(e) => form.setValue('title' as any, e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               required
             />
+            {form.errors.title && <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.title}</p>}
           </div>
 
           <div>
@@ -290,11 +316,12 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
             </label>
             <input
               type="text"
-              value={formData.author}
-              onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+              value={(form.values as any).author}
+              onChange={(e) => form.setValue('author' as any, e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               required
             />
+            {form.errors.author && <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.author}</p>}
           </div>
 
           <div>
@@ -303,13 +330,14 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
             </label>
             <input
               type="number"
-              value={formData.year}
-              onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+              value={(form.values as any).year}
+              onChange={(e) => form.setValue('year' as any, e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               min="1000"
               max="9999"
               required
             />
+            {form.errors.year && <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.year}</p>}
           </div>
 
           <div>
@@ -317,8 +345,8 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               Category <span className="text-red-500">*</span>
             </label>
             <select
-              value={formData.category_id || ''}
-              onChange={(e) => setFormData({ ...formData, category_id: e.target.value || null })}
+              value={(form.values as any).category_id || ''}
+              onChange={(e) => form.setValue('category_id' as any, e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               required
             >
@@ -333,6 +361,9 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
                 <option value="" disabled>No categories available</option>
               )}
             </select>
+            {form.errors.category_id && (
+              <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.category_id}</p>
+            )}
           </div>
 
           <div>
@@ -340,11 +371,14 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               Description
             </label>
             <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              value={(form.values as any).description}
+              onChange={(e) => form.setValue('description' as any, e.target.value)}
               rows={4}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
             />
+            {form.errors.description && (
+              <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.description}</p>
+            )}
           </div>
 
           <div>
@@ -406,6 +440,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               <button
                 type="button"
                 onClick={onClose}
+                disabled={isLoading}
                 className="flex-1 px-6 py-3 border-2 border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-semibold"
               >
                 Cancel
@@ -413,7 +448,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 px-6 py-3 bg-linear-to-br from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/30"
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg transition-all  disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/30"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -423,15 +458,13 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
                     </svg>
                     Updating...
                   </span>
-                ) : 'Update Book'}
+                ) : 'Update'}
               </button>
             </div>
           </div>
           </form>
-          </div>
-        </div>
       </div>
-    </div>
+    </Modal>
   )
 }
 

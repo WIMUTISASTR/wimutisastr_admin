@@ -38,13 +38,13 @@ export default function Sidebar({
         `}
       >
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-gold-200 bg-linear-to-br from-gold-500 via-gold-600 to-gold-700">
+        <div className="p-6 border-b border-gold-200 ">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Logo size="md" />
               <div>
-                <h1 className="text-lg font-bold text-white">WIMUTISASTR</h1>
-                <p className="text-xs text-gold-100">Law Office Admin</p>
+                <h1 className="text-lg font-bold text-gold-500">WIMUTISASTR</h1>
+                <p className="text-xs text-gold-500">Law Office Admin</p>
               </div>
             </div>
             <button
@@ -69,7 +69,7 @@ export default function Sidebar({
                     w-full flex items-center gap-3 px-4 py-3 rounded-lg
                     transition-all duration-200
                     ${activeMenu === item.id
-                      ? 'bg-linear-to-r from-gold-500 to-gold-600 text-white shadow-lg shadow-gold-500/30'
+                      ? 'bg-gold-500 text-white'
                       : 'text-slate-700 hover:bg-gold-50 hover:text-gold-700'
                     }
                   `}

@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '../ui'
+
 interface PaginationProps {
   currentPage: number
   totalPages: number
@@ -75,16 +77,18 @@ export default function Pagination({
       {/* Pagination controls */}
       <div className="flex items-center gap-2">
         {/* Previous button */}
-        <button
+        <Button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1 || isLoading}
-          className="px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Previous page"
+          variant="secondary"
+          size="sm"
+          className="transform-none"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-        </button>
+        </Button>
 
         {/* Page numbers */}
         <div className="hidden sm:flex items-center gap-1">
@@ -101,23 +105,18 @@ export default function Pagination({
             const isActive = pageNum === currentPage
 
             return (
-              <button
+              <Button
                 key={pageNum}
                 onClick={() => onPageChange(pageNum)}
                 disabled={isLoading}
-                className={`
-                  px-3 py-2 text-sm font-medium rounded-lg transition-colors
-                  ${isActive
-                    ? 'bg-gold-600 text-white hover:bg-gold-700'
-                    : 'text-slate-700 bg-white border border-slate-300 hover:bg-slate-50'
-                  }
-                  ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
+                variant={isActive ? 'primary' : 'secondary'}
+                size="sm"
+                className="transform-none"
                 aria-label={`Go to page ${pageNum}`}
                 aria-current={isActive ? 'page' : undefined}
               >
                 {pageNum}
-              </button>
+              </Button>
             )
           })}
         </div>
@@ -128,16 +127,18 @@ export default function Pagination({
         </div>
 
         {/* Next button */}
-        <button
+        <Button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages || isLoading}
-          className="px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Next page"
+          variant="secondary"
+          size="sm"
+          className="transform-none"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </button>
+        </Button>
       </div>
     </div>
   )
