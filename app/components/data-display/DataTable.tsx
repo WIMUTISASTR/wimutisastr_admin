@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
-import LoadingSkeleton from './LoadingSkeleton'
-import EmptyState from './EmptyState'
+import LoadingSkeleton from '../feedback/LoadingSkeleton'
+import { EmptyState } from '../ui'
 
 interface Column {
   header: string
@@ -74,7 +74,7 @@ export default function DataTable({
                 className={`
                   transition-colors
                   ${striped && rowIndex % 2 === 1 ? 'bg-slate-50' : 'bg-white'}
-                  ${hoverable ? 'hover:bg-indigo-50' : ''}
+                  ${hoverable ? 'hover:bg-slate-100' : ''}
                   ${onRowClick ? 'cursor-pointer' : ''}
                 `}
                 onClick={() => onRowClick && onRowClick(row)}

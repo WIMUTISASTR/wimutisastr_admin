@@ -2,17 +2,30 @@ import { useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import { User } from '../types'
 
+interface PaginationInfo {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+  })
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (page = 1, limit = 20) => {
     try {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch('/api/users')
+      const response = await fetch(`/api/users?page=${page}&limit=${limit}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -21,6 +34,10 @@ export function useUsers() {
 
       // API returns { data: [...], pagination: {...} }
       setUsers(result.data || [])
+      
+      if (result.pagination) {
+        setPagination(result.pagination)
+      }
     } catch (err: any) {
       console.error('Error fetching users:', err)
       setError(err.message || 'Failed to fetch users')
@@ -58,6 +75,7 @@ export function useUsers() {
     users,
     isLoading,
     error,
+    pagination,
     fetchUsers,
     deleteUser,
   }

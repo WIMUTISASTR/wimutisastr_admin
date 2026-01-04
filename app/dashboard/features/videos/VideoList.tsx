@@ -1,12 +1,18 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import DataTable from '../../../components/DataTable'
-import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal'
-import Card from '../../../components/Card'
-import Badge from '../../../components/Badge'
+import { DataTable, Pagination } from '../../../components/data-display'
+import { DeleteConfirmationModal } from '../../../components/feedback'
+import { Card, Badge } from '../../../components/ui'
 import { Video, VideoCategory } from '../../shared/types'
 import { formatFileSize } from '../../shared/utils'
+
+interface PaginationInfo {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
 
 interface VideoListProps {
   videos: Video[]
@@ -14,9 +20,11 @@ interface VideoListProps {
   isLoading: boolean
   onEdit: (video: Video) => void
   onDelete: (videoId: string) => Promise<void>
+  pagination: PaginationInfo
+  onPageChange: (page: number) => void
 }
 
-export default function VideoList({ videos, categories, isLoading, onEdit, onDelete }: VideoListProps) {
+export default function VideoList({ videos, categories, isLoading, onEdit, onDelete, pagination, onPageChange }: VideoListProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [videoToDelete, setVideoToDelete] = useState<{ id: string; title: string } | null>(null)
@@ -142,59 +150,9 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
   if (!selectedCategoryId) {
     return (
       <>
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
-        <Card padding="md" hover>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-linear-to-br from-gold-100 to-gold-200 rounded-xl flex items-center justify-center shadow-sm">
-              <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-slate-600 font-medium">Total Videos</p>
-              <p className="text-2xl font-bold text-slate-900">{videos.length}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="md" hover>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-linear-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center shadow-sm">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-slate-600 font-medium">Categories</p>
-              <p className="text-2xl font-bold text-slate-900">{categories.length}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="md" hover>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-linear-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-sm">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-slate-600 font-medium">Total Size</p>
-              <p className="text-2xl font-bold text-slate-900">
-                {formatFileSize(videos.reduce((sum, video) => sum + video.file_size, 0))}
-              </p>
-            </div>
-          </div>
-        </Card>
-        </div>
-
         {/* Categories Table */}
         <Card padding="none">
-          <div className="p-6 border-b border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-900">Video Categories</h3>
-            <p className="text-sm text-slate-600 mt-1">Click on a category to view its videos</p>
-          </div>
+
           <DataTable
             columns={categoryColumns}
             data={categories}
@@ -327,7 +285,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Categories
+            Back
           </button>
           
           <div className="flex items-center gap-3">
@@ -342,14 +300,13 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       </Card>
 
       {/* Search Bar */}
-      <Card padding="md" className="mb-6">
-        <div className="relative">
+        <div className="relative mb-8">
           <input
             type="text"
-            placeholder="Search videos by title..."
+            placeholder="Search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
+            className="w-100 bg-white pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg transition-all"
           />
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -365,7 +322,6 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
             </button>
           )}
         </div>
-      </Card>
 
       {/* Videos Table */}
       <Card padding="none">
@@ -383,6 +339,16 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
           onRowClick={(video) => onEdit(video as Video)}
           hoverable
         />
+        {!isLoading && videos.length > 0 && (
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={onPageChange}
+            isLoading={isLoading}
+          />
+        )}
       </Card>
 
       <DeleteConfirmationModal

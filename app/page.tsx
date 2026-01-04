@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import PINInput, { PINInputRef } from './components/PINInput'
-import AuthCard from './components/AuthCard'
-import Button from './components/Button'
+import PINInput, { PINInputRef } from '@/app/components/auth/PINInput'
+import AuthCard from '@/app/components/auth/AuthCard'
+import { Button } from '@/app/components/ui'
 
 export default function PINPage() {
   const [error, setError] = useState('')

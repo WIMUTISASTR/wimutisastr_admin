@@ -2,16 +2,29 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { Video, VideoCategory } from '../types'
 
+interface PaginationInfo {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
 export function useVideos() {
   const [videos, setVideos] = useState<Video[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+  })
 
-  const fetchVideos = async () => {
+  const fetchVideos = async (page = 1, limit = 20) => {
     try {
       setIsLoading(true)
       setError(null)
-      const response = await fetch('/api/videos')
+      const response = await fetch(`/api/videos?page=${page}&limit=${limit}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -20,6 +33,10 @@ export function useVideos() {
 
       if (result.data) {
         setVideos(result.data)
+      }
+
+      if (result.pagination) {
+        setPagination(result.pagination)
       }
     } catch (err: any) {
       console.error('Error fetching videos:', err)
@@ -56,6 +73,7 @@ export function useVideos() {
     videos,
     isLoading,
     error,
+    pagination,
     fetchVideos,
     deleteVideo,
     setVideos,
@@ -65,14 +83,23 @@ export function useVideos() {
 export function useVideoCategories() {
   const [categories, setCategories] = useState<VideoCategory[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0,
+  })
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (page = 1, limit = 50) => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/video-categories')
+      const response = await fetch(`/api/video-categories?page=${page}&limit=${limit}`)
       const result = await response.json()
       if (response.ok && result.data) {
         setCategories(result.data)
+      }
+      if (result.pagination) {
+        setPagination(result.pagination)
       }
     } catch (error) {
       console.error('Error fetching video categories:', error)
@@ -84,6 +111,7 @@ export function useVideoCategories() {
   return {
     categories,
     isLoading,
+    pagination,
     fetchCategories,
   }
 }

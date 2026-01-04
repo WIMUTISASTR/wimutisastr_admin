@@ -17,6 +17,11 @@ export async function GET(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
+    
+    // Pagination parameters
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100 per page
+    const offset = (page - 1) * limit
 
     if (id) {
       // Fetch single category
@@ -32,15 +37,24 @@ export async function GET(request: NextRequest) {
       return successResponse(data)
     }
 
-    // Fetch all categories
-    const { data, error } = await supabaseAdmin
+    // Fetch categories with pagination
+    const { data: categories, error: categoriesError, count } = await supabaseAdmin
       .from('categories')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('name', { ascending: true })
+      .range(offset, offset + limit - 1)
 
-    if (error) throw error
+    if (categoriesError) throw categoriesError
 
-    return successResponse(data || [])
+    return NextResponse.json({
+      data: categories || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      }
+    })
   } catch (error) {
     return handleApiError(error)
   }

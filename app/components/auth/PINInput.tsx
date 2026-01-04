@@ -135,7 +135,7 @@ const PINInput = forwardRef<PINInputRef, PINInputProps>(({
               const pastedData = e.clipboardData.getData('text')
               handlePinChange(index, pastedData)
             }}
-            className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-amber-50/50 border-amber-200 text-amber-900"
+            className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg transition-all bg-amber-50/50 border-amber-200 text-amber-900"
             disabled={disabled}
             autoFocus={index === 0 && autoFocus}
           />

@@ -2,11 +2,19 @@ import { useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import type { Book } from '../types'
 
+interface PaginationInfo {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
 interface UseBooksReturn {
   books: Book[]
   isLoading: boolean
   error: string | null
-  fetchBooks: () => Promise<void>
+  pagination: PaginationInfo
+  fetchBooks: (page?: number, limit?: number) => Promise<void>
   updateBook: (book: Book) => void
   deleteBook: (bookId: string) => Promise<boolean>
   setBooks: React.Dispatch<React.SetStateAction<Book[]>>
@@ -19,13 +27,19 @@ export function useBooks(): UseBooksReturn {
   const [books, setBooks] = useState<Book[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+  })
 
-  const fetchBooks = useCallback(async () => {
+  const fetchBooks = useCallback(async (page = 1, limit = 20) => {
     try {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch('/api/books')
+      const response = await fetch(`/api/books?page=${page}&limit=${limit}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -47,6 +61,10 @@ export function useBooks(): UseBooksReturn {
           category_id: book.category_id || null,
           category: book.category || null,
         })))
+      }
+
+      if (result.pagination) {
+        setPagination(result.pagination)
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch books'
@@ -89,6 +107,7 @@ export function useBooks(): UseBooksReturn {
     books,
     isLoading,
     error,
+    pagination,
     fetchBooks,
     updateBook,
     deleteBook,

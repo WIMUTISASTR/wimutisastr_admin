@@ -6,15 +6,15 @@ import VideoList from './VideoList'
 import VideoUploadForm from './VideoUploadForm'
 import VideoCategoryManagement from './VideoCategoryManagement'
 import VideoEditModal from './VideoEditModal'
-import UploadProgressModal from '../../../components/UploadProgressModal'
-import TabNavigation from '../../../components/TabNavigation'
-import PageHeader from '../../../components/PageHeader'
+import { UploadProgressModal } from '../../../components/feedback'
+import { TabNavigation } from '../../../components/navigation'
+import { PageHeader } from '../../../components/layout'
+import { useVideos, useVideoCategories } from '../../shared/hooks/useVideos'
 import { Video, VideoCategory } from '../../shared/types'
 
 export default function VideosContent() {
-  const [videos, setVideos] = useState<Video[]>([])
-  const [categories, setCategories] = useState<VideoCategory[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const { videos, isLoading, pagination, fetchVideos, setVideos } = useVideos()
+  const { categories, fetchCategories } = useVideoCategories()
   const [activeView, setActiveView] = useState<'upload' | 'list' | 'categories'>('upload')
   const [editingVideo, setEditingVideo] = useState<Video | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -22,45 +22,17 @@ export default function VideosContent() {
   const [uploadStep, setUploadStep] = useState('')
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
   const [uploadingFileName, setUploadingFileName] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     fetchCategories()
     if (activeView === 'list') {
-      fetchVideos()
+      fetchVideos(1, 20)
     }
   }, [activeView])
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/video-categories')
-      const result = await response.json()
-      if (response.ok && result.data) {
-        setCategories(result.data)
-      }
-    } catch (error) {
-      console.error('Error fetching video categories:', error)
-    }
-  }
-
-  const fetchVideos = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/videos')
-      const result = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch videos')
-      }
-
-      if (result.data) {
-        setVideos(result.data)
-      }
-    } catch (error: any) {
-      console.error('Error fetching videos:', error)
-      toast.error(error.message || 'Failed to fetch videos')
-    } finally {
-      setIsLoading(false)
-    }
+  const handlePageChange = (page: number) => {
+    fetchVideos(page, pagination.limit)
   }
 
   // Helper function to upload file with progress tracking
@@ -119,7 +91,7 @@ export default function VideosContent() {
     thumbnail: File | null
   }) => {
     try {
-      setIsLoading(true)
+      setIsUploading(true)
       setIsProgressModalOpen(true)
       setUploadProgress(0)
       setUploadingFileName(videoData.file.name)
@@ -225,7 +197,7 @@ export default function VideosContent() {
       toast.error(error.message || 'Failed to upload video')
       throw error
     } finally {
-      setIsLoading(false)
+      setIsUploading(false)
       setUploadProgress(0)
       setUploadStep('')
       setUploadingFileName('')
@@ -321,6 +293,8 @@ export default function VideosContent() {
           isLoading={isLoading}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          pagination={pagination}
+          onPageChange={handlePageChange}
         />
       ) : (
         <div className="rounded-xl p-6">
@@ -328,7 +302,7 @@ export default function VideosContent() {
             <div>
               <VideoUploadForm
                 categories={categories}
-                    isLoading={isLoading}
+                isLoading={isUploading}
                 onUpload={handleVideoUpload}
               />
             </div>
@@ -337,9 +311,9 @@ export default function VideosContent() {
           {activeView === 'categories' && (
             <VideoCategoryManagement
               categories={categories}
-                  isLoading={isLoading}
+              isLoading={isLoading}
               onRefresh={fetchCategories}
-                />
+            />
           )}
         </div>
       )}

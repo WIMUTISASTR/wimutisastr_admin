@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'react-toastify'
-import ThumbnailUpload from '../../../components/ThumbnailUpload'
+import ThumbnailUpload from '../../../components/forms/ThumbnailUpload'
 
 interface VideoCategory {
   id: string
@@ -213,9 +213,9 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
-      <div className="min-h-screen p-4 md:p-6 flex items-start justify-center">
-        <div className="w-full max-w-6xl bg-white rounded-xl shadow-2xl my-8">
-          <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b border-gray-200 rounded-t-xl">
+      <div className="min-h-screen flex items-stretch justify-center">
+        <div className="w-full bg-white shadow-2xl">
+          <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b border-gray-200">
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Edit Video</h2>
             <button
               onClick={onClose}
@@ -256,7 +256,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-black bg-white transition-all"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black bg-white transition-all"
               required
             />
           </div>
@@ -270,9 +270,8 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
               onClick={() => !isLoading && setIsCategoryOpen(!isCategoryOpen)}
               disabled={isLoading}
               className={`
-                w-full px-4 py-2 border-2 rounded-lg 
-                focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 
-                transition-all bg-white border-gray-300 text-black
+            w-full px-4 py-2 border-2 rounded-lg 
+            transition-all bg-white border-gray-300 text-black
                 flex items-center justify-between
                 ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gold-400'}
                 ${!formData.category_id ? 'text-gray-500' : 'text-black'}
@@ -352,7 +351,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-black bg-white transition-all"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black bg-white transition-all"
               rows={4}
             />
           </div>

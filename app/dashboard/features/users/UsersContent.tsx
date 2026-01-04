@@ -1,25 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DataTable from '../../../components/DataTable'
-import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal'
-import PageHeader from '../../../components/PageHeader'
-import Card from '../../../components/Card'
-import Badge from '../../../components/Badge'
+import { DataTable, Pagination } from '../../../components/data-display'
+import { DeleteConfirmationModal } from '../../../components/feedback'
+import { PageHeader } from '../../../components/layout'
+import { Card, Badge } from '../../../components/ui'
 import { User } from '../../shared/types'
 import { useUsers } from '../../shared/hooks/useUsers'
 import { formatDate } from '../../shared/utils'
 
 export default function UsersContent() {
-  const { users, isLoading, error, fetchUsers, deleteUser } = useUsers()
+  const { users, isLoading, error, pagination, fetchUsers, deleteUser } = useUsers()
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<{ id: string; email: string } | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    fetchUsers()
+    fetchUsers(1, 20)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const handlePageChange = (page: number) => {
+    fetchUsers(page, pagination.limit)
+  }
 
   const columns = [
     {
@@ -220,6 +223,16 @@ export default function UsersContent() {
           }
           hoverable
         />
+        {!isLoading && users.length > 0 && (
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
       </Card>
 
       <DeleteConfirmationModal

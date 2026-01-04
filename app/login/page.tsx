@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import AuthCard from '../components/AuthCard'
-import LoginForm from '../components/LoginForm'
+import { AuthCard, LoginForm } from '../components/auth'
 import { signIn, getSession } from '../lib/auth'
 
 export default function LoginPage() {

@@ -145,7 +145,7 @@ export default function ThumbnailUpload({
                   e.stopPropagation()
                   fileInputRef.current?.click()
                 }}
-                className="text-gold-600 hover:text-gold-700 font-medium underline"
+                className="text-black hover:text-slate-700 font-medium underline"
                 disabled={isLoading}
               >
                 Click to upload

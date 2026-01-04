@@ -1,10 +1,8 @@
 'use client'
 
-import StatsCard from '../../components/StatsCard'
-import PageHeader from '../../components/PageHeader'
-import Card from '../../components/Card'
-import EmptyState from '../../components/EmptyState'
-import QuickActionCard from '../../components/QuickActionCard'
+import { StatsCard, QuickActionCard } from '../../components/data-display'
+import { PageHeader } from '../../components/layout'
+import { Card, EmptyState } from '../../components/ui'
 import { useDashboardStats } from './hooks/useDashboardStats'
 import { Icons } from './icons'
 

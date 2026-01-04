@@ -1,7 +1,7 @@
 'use client'
 
-import Logo from './Logo'
-import Button from './Button'
+import { Logo } from '../auth'
+import { Button } from '../ui'
 
 interface MenuItem {
   id: string
@@ -38,7 +38,7 @@ export default function Sidebar({
         `}
       >
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-gold-200 bg-gradient-to-br from-gold-500 via-gold-600 to-gold-700">
+        <div className="p-6 border-b border-gold-200 bg-linear-to-br from-gold-500 via-gold-600 to-gold-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Logo size="md" />
@@ -69,7 +69,7 @@ export default function Sidebar({
                     w-full flex items-center gap-3 px-4 py-3 rounded-lg
                     transition-all duration-200
                     ${activeMenu === item.id
-                      ? 'bg-gradient-to-r from-gold-500 to-gold-600 text-white shadow-lg shadow-gold-500/30'
+                      ? 'bg-linear-to-r from-gold-500 to-gold-600 text-white shadow-lg shadow-gold-500/30'
                       : 'text-slate-700 hover:bg-gold-50 hover:text-gold-700'
                     }
                   `}

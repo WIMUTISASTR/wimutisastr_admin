@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
-import ThumbnailUpload from '../../../components/ThumbnailUpload'
+import ThumbnailUpload from '../../../components/forms/ThumbnailUpload'
 
 interface VideoCategory {
   id: string
@@ -150,7 +150,7 @@ export default function VideoCategoryModal({
               type="text"
               value={categoryFormData.name}
               onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               placeholder="e.g., Tutorial, Documentary, Entertainment"
               required
             />
@@ -162,7 +162,7 @@ export default function VideoCategoryModal({
             <textarea
               value={categoryFormData.description}
               onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               placeholder="Category description (optional)"
               rows={3}
             />

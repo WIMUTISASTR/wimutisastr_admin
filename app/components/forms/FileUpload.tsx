@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import Button from './Button'
+import { Button } from '../ui'
 
 interface FileUploadProps {
   accept?: string

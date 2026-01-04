@@ -9,9 +9,9 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, description, action, breadcrumbs }: PageHeaderProps) {
   return (
-    <div className="mb-8">
+    <div className="mb-4">
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav className="flex mb-3" aria-label="Breadcrumb">
+        <nav className="flex mb-0" aria-label="Breadcrumb">
           <ol className="inline-flex items-center space-x-1 md:space-x-3">
             {breadcrumbs.map((crumb, index) => (
               <li key={index} className="inline-flex items-center">
@@ -29,16 +29,11 @@ export default function PageHeader({ title, description, action, breadcrumbs }: 
         </nav>
       )}
       
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{title}</h1>
-          {description && (
-            <p className="text-slate-600 text-lg">{description}</p>
-          )}
-        </div>
-        {action && <div className="flex-shrink-0">{action}</div>}
+      <div className="flex justify-between items-start">        
+        {action && <div className="shrink-0">{action}</div>}
       </div>
     </div>
   )
 }
+
 

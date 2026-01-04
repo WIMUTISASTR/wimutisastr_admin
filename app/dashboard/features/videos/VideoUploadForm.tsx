@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'react-toastify'
-import FileUpload from '../../../components/FileUpload'
-import ThumbnailUpload from '../../../components/ThumbnailUpload'
+import { FileUpload, ThumbnailUpload } from '../../../components/forms'
 import { VideoCategory } from '../../shared/types'
 import { FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from '../../shared/constants'
 import { formatFileSize } from '../../shared/utils'
@@ -163,8 +162,8 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
             setFormData({ ...formData, title: e.target.value })
             if (errors.title) setErrors({ ...errors, title: '' })
           }}
-          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 transition-all bg-white text-black placeholder-gray-400 ${
-            errors.title ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-gold-500'
+          className={`w-full px-4 py-3 border-2 rounded-lg transition-all bg-white text-black placeholder-gray-400 ${
+            errors.title ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder="Enter video title"
           disabled={isLoading}
@@ -191,11 +190,10 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
           disabled={isLoading}
           className={`
             w-full px-4 py-3 border-2 rounded-lg 
-            focus:outline-none focus:ring-2 focus:ring-gold-500 
             transition-all bg-white text-black
             flex items-center justify-between
-            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gold-400'}
-            ${errors.category_id ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-gold-500'}
+            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+            ${errors.category_id ? 'border-red-500' : 'border-gray-300'}
             ${!formData.category_id ? 'text-gray-500' : 'text-black'}
           `}
         >
@@ -279,8 +277,8 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
             setFormData({ ...formData, description: e.target.value })
             if (errors.description) setErrors({ ...errors, description: '' })
           }}
-          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 transition-all bg-white text-black placeholder-gray-400 ${
-            errors.description ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-gold-500'
+          className={`w-full px-4 py-3 border-2 rounded-lg transition-all bg-white text-black placeholder-gray-400 ${
+            errors.description ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder="Enter video description (optional)"
           rows={4}
@@ -298,9 +296,6 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-black mb-2">
-          Video File <span className="text-red-500">*</span>
-        </label>
         <FileUpload
           accept="video/*"
           maxSize={FILE_SIZE_LIMITS.VIDEO_FILE / (1024 * 1024)}

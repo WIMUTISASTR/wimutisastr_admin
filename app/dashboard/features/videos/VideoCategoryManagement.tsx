@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { toast } from 'react-toastify'
-import DataTable from '../../../components/DataTable'
-import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal'
+import { DataTable } from '../../../components/data-display'
+import { DeleteConfirmationModal } from '../../../components/feedback'
 import VideoCategoryModal from './VideoCategoryModal'
-import Card from '../../../components/Card'
+import { Card } from '../../../components/ui'
 
 interface VideoCategory {
   id: string
@@ -224,22 +224,6 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
 
   return (
     <>
-      {/* Stats Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
-        <Card padding="md" hover>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-linear-to-br from-gold-100 to-gold-200 rounded-xl flex items-center justify-center shadow-sm">
-              <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-slate-600 font-medium">Total Categories</p>
-              <p className="text-2xl font-bold text-slate-900">{categories.length}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
 
       <div className="mb-6 flex justify-between items-center">
         <h3 className="text-lg font-bold text-slate-800">Video Categories</h3>

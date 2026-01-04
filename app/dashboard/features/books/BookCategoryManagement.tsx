@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { toast } from 'react-toastify'
-import DataTable from '../../../components/DataTable'
-import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal'
-import Card from '../../../components/Card'
+import { DataTable } from '../../../components/data-display'
+import { DeleteConfirmationModal } from '../../../components/feedback'
+import { Card } from '../../../components/ui'
 import { Category } from '../../shared/types'
 
 interface CategoryManagementProps {
@@ -276,28 +276,13 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
   return (
     <>
-      {/* Stats Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
-        <Card padding="md" hover>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-gold-100 to-gold-200 rounded-xl flex items-center justify-center shadow-sm">
-              <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-slate-600 font-medium">Total Categories</p>
-              <p className="text-2xl font-bold text-slate-900">{categories.length}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+
 
       <div className="mb-6 flex justify-between items-center">
         <h3 className="text-lg font-bold text-slate-800">All Categories</h3>
         <button
           onClick={handleNewCategory}
-          className="px-4 py-2 bg-gradient-to-r from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-colors font-semibold flex items-center gap-2 shadow-md hover:shadow-lg"
+          className="px-4 py-2 bg-linear-to-r from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-colors font-semibold flex items-center gap-2 shadow-md hover:shadow-lg"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -352,7 +337,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                   type="text"
                   value={categoryFormData.name}
                   onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
                   placeholder="e.g., Fiction, Non-Fiction, Law"
                   required
                 />
@@ -366,7 +351,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                   value={categoryFormData.description}
                   onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
                   placeholder="Optional description for this category"
                 />
               </div>
@@ -386,7 +371,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  className="flex-1 px-6 py-3 bg-linear-to-r from-gold-600 to-gold-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
                   {isLoading
                     ? editingCategory

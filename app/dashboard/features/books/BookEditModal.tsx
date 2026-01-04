@@ -209,8 +209,8 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
-      <div className="min-h-screen p-4 md:p-6 flex items-start justify-center">
-        <div className="w-full max-w-6xl bg-white rounded-xl shadow-2xl my-8">
+      <div className="min-h-screen flex items-stretch justify-center">
+        <div className="w-full bg-white shadow-2xl">
           <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b border-gray-200">
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Edit Book</h2>
             <button
@@ -279,7 +279,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               required
             />
           </div>
@@ -292,7 +292,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               type="text"
               value={formData.author}
               onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               required
             />
           </div>
@@ -305,7 +305,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               type="number"
               value={formData.year}
               onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               min="1000"
               max="9999"
               required
@@ -319,7 +319,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
             <select
               value={formData.category_id || ''}
               onChange={(e) => setFormData({ ...formData, category_id: e.target.value || null })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               required
             >
               <option value="">Select a category</option>
@@ -343,7 +343,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
             />
           </div>
 
@@ -361,7 +361,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
                 type="file"
                 accept=".pdf,.doc,.docx,.epub,.mobi,.txt"
                 onChange={handleBookFileChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
                 disabled={isLoading}
               />
               {bookFile && (
@@ -393,7 +393,7 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
                   type="file"
                   accept="image/*"
                   onChange={handleCoverChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-black bg-white"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
                   disabled={isLoading}
                 />
                 <p className="text-xs text-gray-500 mt-1">Max 5MB. Leave empty to keep current cover.</p>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Button from './Button'
+import { Button } from '../ui'
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>
@@ -30,7 +30,7 @@ export default function LoginForm({ onSubmit, isLoading = false, error }: LoginF
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-gold-50/50 border-gold-200 text-gold-900 placeholder-gold-400"
+          className="w-full px-4 py-3 border-2 rounded-lg transition-all bg-gold-50/50 border-gold-200 text-gold-900 placeholder-gold-400"
           placeholder="Enter your email"
           disabled={isLoading}
           autoFocus
@@ -47,14 +47,14 @@ export default function LoginForm({ onSubmit, isLoading = false, error }: LoginF
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-gold-50/50 border-gold-200 text-gold-900 placeholder-gold-400 pr-12"
+            className="w-full px-4 py-3 border-2 rounded-lg transition-all bg-gold-50/50 border-gold-200 text-gold-900 placeholder-gold-400 pr-12"
             placeholder="Enter your password"
             disabled={isLoading}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-600 hover:text-gold-700 focus:outline-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-600 hover:text-gold-700"
             tabIndex={-1}
           >
             {showPassword ? (

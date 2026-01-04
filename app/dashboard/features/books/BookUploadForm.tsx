@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Button from '../../../components/Button'
+import { Button } from '../../../components/ui'
 import { Category } from '../../shared/types'
 import { formatFileSize } from '../../shared/utils'
 import { FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from '../../shared/constants'
@@ -43,7 +43,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value === '' ? null : value }))
+    setFormData(prev => ({ ...prev, [name]: value }))
     setError('')
   }
 
@@ -231,7 +231,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           type="text"
           value={formData.title}
           onChange={handleInputChange}
-          className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-white border-gray-300 text-black placeholder-gray-400"
+          className="w-full px-4 py-3 border-2 rounded-lg transition-all bg-white border-gray-300 text-black placeholder-gray-400"
           placeholder="Enter book title"
           disabled={isLoading}
           required
@@ -249,7 +249,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
             type="text"
             value={formData.author}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-white border-gray-300 text-black placeholder-gray-400"
+            className="w-full px-4 py-3 border-2 rounded-lg transition-all bg-white border-gray-300 text-black placeholder-gray-400"
             placeholder="Enter author name"
             disabled={isLoading}
             required
@@ -268,7 +268,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
             onChange={handleInputChange}
             min="1000"
             max={new Date().getFullYear()}
-            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-white border-gray-300 text-black placeholder-gray-400"
+            className="w-full px-4 py-3 border-2 rounded-lg transition-all bg-white border-gray-300 text-black placeholder-gray-400"
             placeholder="e.g., 2024"
             disabled={isLoading}
             required
@@ -286,7 +286,6 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           disabled={isLoading}
           className={`
             w-full px-4 py-3 border-2 rounded-lg 
-            focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 
             transition-all bg-white border-gray-300 text-black
             flex items-center justify-between
             ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gold-400'}
@@ -350,7 +349,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           value={formData.description}
           onChange={handleInputChange}
           rows={4}
-          className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all bg-white border-gray-300 text-black placeholder-gray-400 resize-none"
+          className="w-full px-4 py-3 border-2 rounded-lg transition-all bg-white border-gray-300 text-black placeholder-gray-400 resize-none"
           placeholder="Enter book description (optional)"
           disabled={isLoading}
         />
@@ -367,7 +366,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           onDrop={handleCoverDrop}
           className={`
             border-2 border-dashed rounded-lg p-6 text-center transition-colors
-            ${coverDragActive ? 'border-gold-500 bg-gold-50' : 'border-gray-300 bg-gray-50'}
+            ${coverDragActive ? 'border-slate-400 bg-slate-50' : 'border-gray-300 bg-gray-50'}
           `}
         >
           <input
@@ -447,7 +446,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           onDrop={handleDrop}
           className={`
             border-2 border-dashed rounded-lg p-8 text-center transition-colors
-            ${dragActive ? 'border-gold-500 bg-gold-50' : 'border-gray-300 bg-gray-50'}
+            ${dragActive ? 'border-slate-400 bg-slate-50' : 'border-gray-300 bg-gray-50'}
             ${error ? 'border-red-300' : ''}
           `}
         >

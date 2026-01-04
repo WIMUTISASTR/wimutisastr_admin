@@ -6,8 +6,8 @@ import BookUploadForm from './BookUploadForm'
 import BookEditModal from './BookEditModal'
 import BookList from './BookList'
 import CategoryManagement from './BookCategoryManagement'
-import TabNavigation from '../../../components/TabNavigation'
-import PageHeader from '../../../components/PageHeader'
+import { TabNavigation } from '../../../components/navigation'
+import { PageHeader } from '../../../components/layout'
 import { useBooks } from '../../shared/hooks/useBooks'
 import { useCategories } from '../../shared/hooks/useCategories'
 import { Icons } from '../../shared/icons'
@@ -34,7 +34,7 @@ const TABS = [
 ]
 
 export default function BooksContent() {
-  const { books, isLoading, fetchBooks, updateBook, deleteBook: removeBook } = useBooks()
+  const { books, isLoading, pagination, fetchBooks, updateBook, deleteBook: removeBook } = useBooks()
   const { categories, fetchCategories } = useCategories()
   const [activeView, setActiveView] = useState<ViewType>('upload')
   const [editingBook, setEditingBook] = useState<Book | null>(null)
@@ -43,9 +43,13 @@ export default function BooksContent() {
 
   useEffect(() => {
     if (activeView === 'list') {
-      fetchBooks()
+      fetchBooks(1, 20)
     }
   }, [activeView, fetchBooks])
+
+  const handlePageChange = (page: number) => {
+    fetchBooks(page, pagination.limit)
+  }
 
   const handleUpload = async (bookData: {
     title: string
@@ -155,6 +159,8 @@ export default function BooksContent() {
           isLoading={isLoading}
           onEdit={handleEdit}
           onDelete={removeBook}
+          pagination={pagination}
+          onPageChange={handlePageChange}
         />
       )}
 
