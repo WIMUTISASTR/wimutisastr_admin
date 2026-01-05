@@ -25,7 +25,6 @@ interface VideoCategoryManagementProps {
 export default function VideoCategoryManagement({ categories, isLoading, onRefresh }: VideoCategoryManagementProps) {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<VideoCategory | null>(null)
-  const [openCategoryDropdownId, setOpenCategoryDropdownId] = useState<string | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -33,19 +32,16 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
   const handleNewCategory = () => {
     setEditingCategory(null)
     setIsCategoryModalOpen(true)
-    setOpenCategoryDropdownId(null)
   }
 
   const handleCategoryEdit = (category: VideoCategory) => {
     setEditingCategory(category)
     setIsCategoryModalOpen(true)
-    setOpenCategoryDropdownId(null)
   }
 
   const handleCategoryDeleteClick = (category: VideoCategory) => {
     setCategoryToDelete({ id: category.id, name: category.name })
     setDeleteModalOpen(true)
-    setOpenCategoryDropdownId(null)
   }
 
   const handleCategoryDeleteConfirm = async () => {
@@ -139,74 +135,24 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
       ),
     },
     {
-      header: 'Actions',
+      header: '',
       accessor: 'id',
+      width: '1%',
       render: (value: string, row: VideoCategory) => (
-        <div className="relative">
+        <div className="w-full flex items-center justify-end">
           <Button
             onClick={(e) => {
               e.stopPropagation()
-              setOpenCategoryDropdownId(openCategoryDropdownId === row.id ? null : row.id)
+              handleCategoryDeleteClick(row)
             }}
-            aria-label="Actions"
-            variant="ghost"
+            aria-label="Delete category"
+            title="Delete category"
+            variant="danger"
             size="sm"
-            className="p-2 transform-none"
+            className="transform-none"
           >
-            <UIIcons.DotsVertical className="w-5 h-5" />
+            <UIIcons.Delete className="w-4 h-4" />
           </Button>
-
-          {openCategoryDropdownId === row.id && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setOpenCategoryDropdownId(null)}
-              />
-              
-              <div 
-                className="fixed w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50 py-1"
-                ref={(el) => {
-                  if (el && openCategoryDropdownId === row.id) {
-                    const container = el.closest('.relative') as HTMLElement
-                    const button = container?.querySelector('button') as HTMLElement
-                    if (button) {
-                      const rect = button.getBoundingClientRect()
-                      el.style.top = `${rect.bottom + 8}px`
-                      el.style.right = `${window.innerWidth - rect.right}px`
-                    }
-                  }
-                }}
-              >
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleCategoryEdit(row)
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start transform-none text-blue-700 hover:bg-blue-50"
-                >
-                  <UIIcons.Edit className="w-4 h-4" />
-                  Edit
-                </Button>
-                
-                <div className="border-t border-gray-200 my-1"></div>
-                
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleCategoryDeleteClick(row)
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start transform-none text-red-600 hover:bg-red-50"
-                >
-                  <UIIcons.Delete className="w-4 h-4" />
-                  Delete
-                </Button>
-              </div>
-            </>
-          )}
         </div>
       ),
     },
@@ -216,7 +162,10 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
     <>
 
       <div className="mb-6 flex justify-between items-center">
-        <h3 className="text-lg font-bold text-slate-800"></h3>
+        <div>
+          <h3 className="text-xl font-bold text-slate-900">Video Categories</h3>
+          <p className="text-sm text-slate-600 mt-0.5">Click a row to edit. Use delete to remove a category.</p>
+        </div>
         <Button onClick={handleNewCategory} size="sm">
           <UIIcons.Plus className="w-4 h-4" />
           New
@@ -236,6 +185,8 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
               </svg>
             }
+            onRowClick={(category) => handleCategoryEdit(category as VideoCategory)}
+            hoverable
           />
         </div>
       </Card>

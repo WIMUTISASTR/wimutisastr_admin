@@ -85,6 +85,7 @@ export default function VideosContent() {
 
   const handleVideoUpload = async (videoData: {
     title: string
+    presented_by: string
     description: string
     category_id: string
     file: File
@@ -156,6 +157,7 @@ export default function VideosContent() {
       
       const videoMetadata = {
         title: videoData.title.trim(),
+        presented_by: videoData.presented_by.trim() || null,
         description: videoData.description.trim() || null,
         file_name: videoData.file.name,
         file_url: videoUploadResult.publicUrl || videoUploadResult.url,

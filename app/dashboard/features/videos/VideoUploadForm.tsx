@@ -6,12 +6,14 @@ import { FileUpload, ThumbnailUpload } from '../../../components/forms'
 import { VideoCategory } from '../../shared/types'
 import { FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from '../../shared/constants'
 import { formatFileSize } from '../../shared/utils'
+import { Button } from '../../../components/ui'
 
 interface VideoUploadFormProps {
   categories: VideoCategory[]
   isLoading: boolean
   onUpload: (videoData: {
     title: string
+    presented_by: string
     description: string
     category_id: string
     file: File
@@ -22,37 +24,23 @@ interface VideoUploadFormProps {
 export default function VideoUploadForm({ categories, isLoading, onUpload }: VideoUploadFormProps) {
   const [formData, setFormData] = useState({
     title: '',
+    presented_by: '',
     description: '',
     category_id: '',
     file: null as File | null,
     thumbnail: null as File | null,
   })
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const categoryDropdownRef = useRef<HTMLDivElement>(null)
 
   const MAX_TITLE_LENGTH = 200
+  const MAX_PRESENTED_BY_LENGTH = 100
   const MAX_DESCRIPTION_LENGTH = 1000
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
-        setIsCategoryOpen(false)
-      }
-    }
+  // (Category dropdown removed in favor of a simple <select> for consistency)
 
-    if (isCategoryOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isCategoryOpen])
-
-  const validateForm = (): boolean => {
+  const validateForm = (): { ok: true } | { ok: false; errors: { [key: string]: string } } => {
     const newErrors: { [key: string]: string } = {}
 
     // Validate title
@@ -65,6 +53,11 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
     // Validate category
     if (!formData.category_id) {
       newErrors.category_id = 'Please select a category'
+    }
+
+    // Validate presented by (optional)
+    if (formData.presented_by.trim().length > MAX_PRESENTED_BY_LENGTH) {
+      newErrors.presented_by = `Presented by must be less than ${MAX_PRESENTED_BY_LENGTH} characters`
     }
 
     // Validate file
@@ -88,24 +81,24 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
     }
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    if (Object.keys(newErrors).length === 0) return { ok: true }
+    return { ok: false, errors: newErrors }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!validateForm()) {
-      // Show first error
-      const firstError = Object.values(errors)[0]
-      if (firstError) {
-        toast.error(firstError)
-      }
+    const validation = validateForm()
+    if (!validation.ok) {
+      const firstError = Object.values(validation.errors)[0]
+      if (firstError) toast.error(firstError)
       return
     }
 
     try {
       await onUpload({
         title: formData.title.trim(),
+        presented_by: formData.presented_by.trim(),
         description: formData.description.trim(),
         category_id: formData.category_id,
         file: formData.file!,
@@ -115,6 +108,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
       // Reset form only on success
       setFormData({
         title: '',
+        presented_by: '',
         description: '',
         category_id: '',
         file: null,
@@ -144,239 +138,186 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
     setThumbnailPreview(null)
   }
 
-  const handleCategorySelect = (categoryId: string) => {
-    setFormData({ ...formData, category_id: categoryId })
-    setIsCategoryOpen(false)
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className="block text-sm font-semibold text-black mb-2">
-          Video Title <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={formData.title}
-          onChange={(e) => {
-            setFormData({ ...formData, title: e.target.value })
-            if (errors.title) setErrors({ ...errors, title: '' })
-          }}
-          className={`w-full px-4 py-3 border-2 rounded-lg transition-all bg-white text-black placeholder-gray-400 ${
-            errors.title ? 'border-red-500' : 'border-gray-300'
-          }`}
-          placeholder="Enter video title"
-          disabled={isLoading}
-          maxLength={MAX_TITLE_LENGTH}
-          required
-        />
-        <div className="flex justify-between items-center mt-1">
-          {errors.title && (
-            <span className="text-sm text-red-600">{errors.title}</span>
-          )}
-          <span className={`text-xs ml-auto ${formData.title.length > MAX_TITLE_LENGTH * 0.9 ? 'text-orange-600' : 'text-gray-500'}`}>
-            {formData.title.length}/{MAX_TITLE_LENGTH}
-          </span>
+    <form onSubmit={handleSubmit} className="bg-slate-50">
+      <div className="mx-auto w-full max-w-5xl p-4 md:p-6 space-y-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+          <h3 className="text-xl font-bold text-slate-900">Upload Video</h3>
+          <p className="text-sm text-slate-600 mt-1">Fill in details and upload files.</p>
         </div>
-      </div>
 
-      <div className="relative" ref={categoryDropdownRef}>
-        <label className="block text-sm font-semibold text-black mb-2">
-          Category <span className="text-red-500">*</span>
-        </label>
-        <button
-          type="button"
-          onClick={() => !isLoading && setIsCategoryOpen(!isCategoryOpen)}
-          disabled={isLoading}
-          className={`
-            w-full px-4 py-3 border-2 rounded-lg 
-            transition-all bg-white text-black
-            flex items-center justify-between
-            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            ${errors.category_id ? 'border-red-500' : 'border-gray-300'}
-            ${!formData.category_id ? 'text-gray-500' : 'text-black'}
-          `}
-        >
-          <span>
-            {formData.category_id 
-              ? categories.find(c => c.id === formData.category_id)?.name || 'Select a category'
-              : 'Select a category'
-            }
-          </span>
-          <svg
-            className={`w-5 h-5 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Details */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm" ref={categoryDropdownRef}>
+            <h4 className="text-lg font-bold text-slate-900">Details</h4>
+            <p className="text-sm text-slate-600 mt-1">Video information.</p>
 
-        {isCategoryOpen && !isLoading && (
-          <>
-            <div
-              className="fixed inset-0 z-10"
-              onClick={() => setIsCategoryOpen(false)}
-            />
-            <div className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {categories && categories.length > 0 ? (
-                categories.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => handleCategorySelect(category.id)}
-                    className={`
-                      w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center gap-3
-                      ${formData.category_id === category.id ? 'bg-gold-50 font-semibold' : ''}
-                    `}
-                  >
-                    <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gold-200 bg-slate-50">
-                      {category.cover_url ? (
-                        <img
-                          src={category.cover_url}
-                          alt={category.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-linear-to-br from-gold-100 to-gold-200 flex items-center justify-center">
-                          <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                    <span className="flex-1 text-left">{category.name}</span>
-                    {formData.category_id === category.id && (
-                      <svg className="w-5 h-5 text-gold-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                ))
-              ) : (
-                <div className="px-4 py-3 text-gray-500 text-sm">
-                  No categories available. Create categories first.
-                </div>
-              )}
-            </div>
-          </>
-        )}
-        {errors.category_id && (
-          <span className="text-sm text-red-600 mt-1 block">{errors.category_id}</span>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-semibold text-black mb-2">
-          Description
-        </label>
-        <textarea
-          value={formData.description}
-          onChange={(e) => {
-            setFormData({ ...formData, description: e.target.value })
-            if (errors.description) setErrors({ ...errors, description: '' })
-          }}
-          className={`w-full px-4 py-3 border-2 rounded-lg transition-all bg-white text-black placeholder-gray-400 ${
-            errors.description ? 'border-red-500' : 'border-gray-300'
-          }`}
-          placeholder="Enter video description (optional)"
-          rows={4}
-          disabled={isLoading}
-          maxLength={MAX_DESCRIPTION_LENGTH}
-        />
-        <div className="flex justify-between items-center mt-1">
-          {errors.description && (
-            <span className="text-sm text-red-600">{errors.description}</span>
-          )}
-          <span className={`text-xs ml-auto ${formData.description.length > MAX_DESCRIPTION_LENGTH * 0.9 ? 'text-orange-600' : 'text-gray-500'}`}>
-            {formData.description.length}/{MAX_DESCRIPTION_LENGTH}
-          </span>
-        </div>
-      </div>
-
-      <div>
-        <FileUpload
-          accept="video/*"
-          maxSize={FILE_SIZE_LIMITS.VIDEO_FILE / (1024 * 1024)}
-          onUpload={async () => {}}
-          onFileSelect={(file) => {
-            setFormData({ ...formData, file })
-            if (errors.file) setErrors({ ...errors, file: '' })
-          }}
-          hideUploadButton={true}
-          label="Upload Video"
-          description={`Supported formats: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()} (Max ${formatFileSize(FILE_SIZE_LIMITS.VIDEO_FILE)})`}
-          isLoading={isLoading}
-        />
-        {formData.file && (
-          <div className="mt-2 p-3 bg-gold-50 border border-gold-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-medium text-slate-800">{formData.file.name}</p>
-                  <p className="text-xs text-slate-600">{formatFileSize(formData.file.size)}</p>
+            <div className="mt-5 grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                  Video Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => {
+                    setFormData({ ...formData, title: e.target.value })
+                    if (errors.title) setErrors({ ...errors, title: '' })
+                  }}
+                  className={`w-full px-4 py-2.5 border rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 ${
+                    errors.title ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                  placeholder="Enter video title"
+                  disabled={isLoading}
+                  maxLength={MAX_TITLE_LENGTH}
+                  required
+                />
+                <div className="flex justify-between items-center mt-1">
+                  {errors.title && <span className="text-sm text-red-600">{errors.title}</span>}
+                  <span className={`text-xs ml-auto ${formData.title.length > MAX_TITLE_LENGTH * 0.9 ? 'text-orange-600' : 'text-slate-500'}`}>
+                    {formData.title.length}/{MAX_TITLE_LENGTH}
+                  </span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({ ...formData, file: null })
-                  if (errors.file) setErrors({ ...errors, file: '' })
-                }}
-                className="text-red-600 hover:text-red-700"
-                disabled={isLoading}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                  Presented by
+                </label>
+                <input
+                  type="text"
+                  value={formData.presented_by}
+                  onChange={(e) => {
+                    setFormData({ ...formData, presented_by: e.target.value })
+                    if (errors.presented_by) setErrors({ ...errors, presented_by: '' })
+                  }}
+                  className={`w-full px-4 py-2.5 border rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 ${
+                    errors.presented_by ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                  placeholder="e.g., John Doe"
+                  disabled={isLoading}
+                  maxLength={MAX_PRESENTED_BY_LENGTH}
+                />
+                <div className="flex justify-between items-center mt-1">
+                  {errors.presented_by && <span className="text-sm text-red-600">{errors.presented_by}</span>}
+                  <span className={`text-xs ml-auto ${formData.presented_by.length > MAX_PRESENTED_BY_LENGTH * 0.9 ? 'text-orange-600' : 'text-slate-500'}`}>
+                    {formData.presented_by.length}/{MAX_PRESENTED_BY_LENGTH}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.category_id}
+                  onChange={(e) => {
+                    setFormData({ ...formData, category_id: e.target.value })
+                    if (errors.category_id) setErrors({ ...errors, category_id: '' })
+                  }}
+                  className={`w-full px-4 py-2.5 border rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 ${
+                    errors.category_id ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                  disabled={isLoading}
+                  required
+                >
+                  <option value="">Select a category</option>
+                  {categories && categories.length > 0 ? (
+                    categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>No categories available</option>
+                  )}
+                </select>
+                {errors.category_id && <span className="text-sm text-red-600 mt-1 block">{errors.category_id}</span>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => {
+                    setFormData({ ...formData, description: e.target.value })
+                    if (errors.description) setErrors({ ...errors, description: '' })
+                  }}
+                  className={`w-full px-4 py-2.5 border rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none ${
+                    errors.description ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                  placeholder="Optional description"
+                  rows={5}
+                  disabled={isLoading}
+                  maxLength={MAX_DESCRIPTION_LENGTH}
+                />
+                <div className="flex justify-between items-center mt-1">
+                  {errors.description && <span className="text-sm text-red-600">{errors.description}</span>}
+                  <span className={`text-xs ml-auto ${formData.description.length > MAX_DESCRIPTION_LENGTH * 0.9 ? 'text-orange-600' : 'text-slate-500'}`}>
+                    {formData.description.length}/{MAX_DESCRIPTION_LENGTH}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        )}
-        {errors.file && (
-          <span className="text-sm text-red-600 mt-1 block">{errors.file}</span>
-        )}
-      </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-black mb-2">
-          Thumbnail Image
-        </label>
-        <ThumbnailUpload
-          onUpload={handleThumbnailUpload}
-          preview={thumbnailPreview}
-          maxSize={5}
-          isLoading={isLoading}
-          onRemove={handleThumbnailRemove}
-        />
-      </div>
+          {/* Files */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+            <h4 className="text-lg font-bold text-slate-900">Files</h4>
+            <p className="text-sm text-slate-600 mt-1">Drag & drop or click to choose.</p>
 
-      <button
-        type="submit"
-        disabled={isLoading || !formData.title.trim() || !formData.category_id || !formData.file}
-        className="w-full py-3 px-4 bg-blue-700 text-white rounded-lg hover:from-gold-700 hover:to-gold-800 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-      >
-        {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Uploading...
-          </span>
-        ) : (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            Upload Video
-          </span>
-        )}
-      </button>
+            <div className="mt-5 space-y-5">
+              <div>
+                <FileUpload
+                  accept="video/*"
+                  maxSize={FILE_SIZE_LIMITS.VIDEO_FILE / (1024 * 1024)}
+                  onUpload={async () => {}}
+                  onFileSelect={(file) => {
+                    setFormData({ ...formData, file })
+                    if (errors.file) setErrors({ ...errors, file: '' })
+                  }}
+                  onFileClear={() => {
+                    setFormData({ ...formData, file: null })
+                    if (errors.file) setErrors({ ...errors, file: '' })
+                  }}
+                  hideUploadButton={true}
+                  label="Upload your Video"
+                  description={`Supported formats: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()} (Max ${formatFileSize(FILE_SIZE_LIMITS.VIDEO_FILE)})`}
+                  isLoading={isLoading}
+                />
+                {errors.file && <span className="text-sm text-red-600 mt-1 block">{errors.file}</span>}
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-slate-900 mb-2">Thumbnail Image (optional)</p>
+                <ThumbnailUpload
+                  onUpload={handleThumbnailUpload}
+                  preview={thumbnailPreview}
+                  maxSize={5}
+                  isLoading={isLoading}
+                  onRemove={handleThumbnailRemove}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              variant="submit"
+              type="submit"
+              disabled={isLoading || !formData.title.trim() || !formData.category_id || !formData.file}
+              isLoading={isLoading}
+            >
+              Submit
+            </Button>
+          </div>
+        </div>
+      </div>
     </form>
   )
 }

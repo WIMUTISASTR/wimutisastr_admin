@@ -21,6 +21,11 @@ export const createVideoSchema = z.object({
     .min(1, 'Title is required')
     .max(200, 'Title must be less than 200 characters')
     .trim(),
+  presented_by: z.string()
+    .max(100, 'Presented by must be less than 100 characters')
+    .trim()
+    .optional()
+    .nullable(),
   description: z.string()
     .max(1000, 'Description must be less than 1000 characters')
     .trim()
@@ -39,6 +44,11 @@ export const updateVideoSchema = z.object({
     .max(200, 'Title must be less than 200 characters')
     .trim()
     .optional(),
+  presented_by: z.string()
+    .max(100, 'Presented by must be less than 100 characters')
+    .trim()
+    .optional()
+    .nullable(),
   description: z.string()
     .max(1000, 'Description must be less than 1000 characters')
     .trim()

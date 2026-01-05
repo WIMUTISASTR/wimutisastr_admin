@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
       .from('videos')
       .insert([{
         title: videoData.title,
+        presented_by: videoData.presented_by || null,
         description: videoData.description || null,
         file_name: videoData.file_name,
         file_url: videoData.file_url,

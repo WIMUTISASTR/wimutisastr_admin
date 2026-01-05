@@ -35,6 +35,7 @@ export interface VideoCategory {
 export interface Video {
   id: string
   title: string
+  presented_by?: string | null
   description: string
   file_name: string
   file_url: string

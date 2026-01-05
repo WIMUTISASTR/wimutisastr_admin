@@ -3,6 +3,7 @@ import { ButtonHTMLAttributes, ReactNode } from 'react'
 type ButtonVariant =
   | 'primary'
   | 'secondary'
+  |  'submit'
   | 'ghost'
   | 'danger'
   | 'success'
@@ -47,6 +48,7 @@ export default function Button({
   const variantClasses: Record<ButtonVariant, string> = {
     primary: 'bg-blue-700 hover:bg-blue-800 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
     secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-700 shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    submit: 'bg-green-600 hover:bg-green-800 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
     ghost: 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
     danger: 'bg-red-600 hover:bg-red-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
     success: 'bg-green-600 hover:bg-green-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',

@@ -15,6 +15,7 @@ interface VideoCategory {
 interface Video {
   id: string
   title: string
+  presented_by?: string | null
   description: string
   file_name: string
   file_url: string
@@ -36,26 +37,30 @@ interface VideoEditModalProps {
 export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categories }: VideoEditModalProps) {
   const [formData, setFormData] = useState({
     title: '',
+    presented_by: '',
     description: '',
     category_id: null as string | null,
   })
   const [isLoading, setIsLoading] = useState(false)
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
+  const [isThumbnailRemoved, setIsThumbnailRemoved] = useState(false)
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
   const videoFileInputRef = useRef<HTMLInputElement>(null)
+  const [videoDragActive, setVideoDragActive] = useState(false)
 
   useEffect(() => {
     if (video) {
       setFormData({
         title: video.title,
+        presented_by: video.presented_by || '',
         description: video.description || '',
         category_id: video.category_id || null,
       })
       setThumbnailPreview(video.thumbnail_url)
       setThumbnailFile(null)
+      setIsThumbnailRemoved(false)
       setVideoFile(null)
     }
   }, [video])
@@ -77,6 +82,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
 
   const handleThumbnailUpload = (file: File) => {
     setThumbnailFile(file)
+    setIsThumbnailRemoved(false)
     const reader = new FileReader()
     reader.onloadend = () => {
       setThumbnailPreview(reader.result as string)
@@ -86,12 +92,39 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
 
   const handleThumbnailRemove = () => {
     setThumbnailFile(null)
-    setThumbnailPreview(video.thumbnail_url || null)
+    setIsThumbnailRemoved(true)
+    setThumbnailPreview(null)
   }
 
-  const handleCategorySelect = (categoryId: string) => {
-    setFormData({ ...formData, category_id: categoryId })
-    setIsCategoryOpen(false)
+  const formatMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+  const VIDEO_MAX_BYTES = 500 * 1024 * 1024
+
+  const validateAndSetVideoFile = (file: File) => {
+    if (file.size > VIDEO_MAX_BYTES) {
+      toast.error('File size must be less than 500MB')
+      return
+    }
+    setVideoFile(file)
+  }
+
+  const handleVideoDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setVideoDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setVideoDragActive(false)
+    }
+  }
+
+  const handleVideoDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setVideoDragActive(false)
+    if (isLoading) return
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      validateAndSetVideoFile(e.dataTransfer.files[0])
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,7 +138,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
     try {
       setIsLoading(true)
 
-      let thumbnailUrl = video.thumbnail_url
+      let thumbnailUrl = isThumbnailRemoved ? null : video.thumbnail_url
       let fileUrl = video.file_url
       let fileName = video.file_name
       let fileSize = video.file_size
@@ -169,6 +202,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
         },
         body: JSON.stringify({
           title: formData.title.trim(),
+          presented_by: formData.presented_by.trim() || null,
           description: formData.description.trim() || null,
           category_id: formData.category_id,
           thumbnail_url: thumbnailUrl,
@@ -192,6 +226,7 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
       const updatedVideo: Video = {
         ...video,
         title: formData.title.trim(),
+        presented_by: formData.presented_by.trim() || null,
         description: formData.description.trim() || '',
         category_id: formData.category_id,
         thumbnail_url: thumbnailUrl,
@@ -221,237 +256,243 @@ export default function VideoEditModal({ video, isOpen, onClose, onUpdate, categ
       variant="fullscreen"
       isDismissable={!isLoading}
     >
-      <div className="p-6">
-          {/* Video Player Section */}
-          <div className="mb-6 bg-black rounded-lg overflow-hidden shadow-xl">
-            <video
-              src={videoPreviewUrl || video.file_url}
-              controls
-              className="w-full h-auto max-h-[500px]"
-              preload="metadata"
-              key={videoPreviewUrl || video.file_url}
-            >
-              Your browser does not support the video tag.
-            </video>
-            {videoFile && (
-              <div className="bg-blue-50 border-t border-blue-200 p-3">
-                <p className="text-sm text-blue-800 font-medium">
-                  <strong>Preview:</strong> New video file selected - showing preview above
-                </p>
-              </div>
-            )}
-          </div>
+      <div className="bg-slate-50">
+        <div className="mx-auto w-full max-w-5xl p-4 md:p-6">
+          {/* Top summary */}
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-100">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-xl md:text-2xl font-bold text-slate-900">{video.title}</h3>
+                    {video.presented_by && <p className="truncate text-slate-600">Presented by {video.presented_by}</p>}
+                  </div>
+                </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6 mb-6">
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Video Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black bg-white transition-all"
-              required
-            />
-          </div>
-
-          <div className="relative">
-            <label className="block text-sm font-semibold text-black mb-2">
-              Category <span className="text-red-500">*</span>
-            </label>
-            <Button
-              type="button"
-              onClick={() => !isLoading && setIsCategoryOpen(!isCategoryOpen)}
-              disabled={isLoading}
-              variant="secondary"
-              fullWidth
-              className={`flex items-center justify-between transform-none ${!formData.category_id ? 'text-gray-500' : 'text-black'}`}
-            >
-              <span>
-                {formData.category_id 
-                  ? categories.find(c => c.id === formData.category_id)?.name || 'Select a category'
-                  : 'Select a category'
-                }
-              </span>
-              <svg
-                className={`w-5 h-5 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </Button>
-
-            {isCategoryOpen && !isLoading && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setIsCategoryOpen(false)}
-                />
-                <div className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {categories && categories.length > 0 ? (
-                    categories.map((category) => (
-                      <Button
-                        key={category.id}
-                        type="button"
-                        onClick={() => handleCategorySelect(category.id)}
-                        variant="ghost"
-                        size="sm"
-                        className={`w-full justify-start transform-none px-4 py-3 ${formData.category_id === category.id ? 'bg-indigo-50 font-semibold' : 'hover:bg-gray-100'}`}
-                      >
-                        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gold-200 bg-slate-50">
-                          {category.cover_url ? (
-                            <img
-                              src={category.cover_url}
-                              alt={category.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-linear-to-br from-gold-100 to-gold-200 flex items-center justify-center">
-                              <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                        <span className="flex-1 text-left">{category.name}</span>
-                        {formData.category_id === category.id && (
-                          <svg className="w-5 h-5 text-gold-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </Button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-3 text-gray-500 text-sm">
-                      No categories available
-                    </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800 border border-slate-200">
+                    {video.file_name}
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800 border border-slate-200">
+                    {formatMb(video.file_size)}
+                  </span>
+                  {video.category?.name && (
+                    <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 border border-blue-100">
+                      {video.category.name}
+                    </span>
                   )}
                 </div>
-              </>
-            )}
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-black bg-white transition-all"
-              rows={4}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Video File <span className="text-gray-500 text-xs font-normal">(Optional - Leave empty to keep current video)</span>
-            </label>
-            {!videoFile && video && (
-              <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  <strong>Current file:</strong> {video.file_name} ({(video.file_size / (1024 * 1024)).toFixed(2)} MB)
+          {/* Video preview */}
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-3 md:p-4 shadow-sm">
+            <div className="bg-black rounded-xl overflow-hidden">
+              <video
+                src={videoPreviewUrl || video.file_url}
+                controls
+                className="w-full h-auto max-h-[520px]"
+                preload="metadata"
+                key={videoPreviewUrl || video.file_url}
+              >
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            {videoFile && (
+              <div className="mt-3 rounded-xl bg-blue-50 border border-blue-200 p-3">
+                <p className="text-sm text-blue-800 font-medium">
+                  Previewing newly selected file: <span className="font-semibold">{videoFile.name}</span>
                 </p>
               </div>
             )}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gold-400 transition-colors">
-              <input
-                ref={videoFileInputRef}
-                type="file"
-                accept="video/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    if (file.size > 500 * 1024 * 1024) {
-                      toast.error('File size must be less than 500MB')
-                      return
-                    }
-                    setVideoFile(file)
-                  }
-                }}
-                className="hidden"
-                disabled={isLoading}
-              />
-              <svg
-                className="mx-auto h-12 w-12 text-gray-400 mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <Button
-                type="button"
-                onClick={() => videoFileInputRef.current?.click()}
-                disabled={isLoading}
-                variant="ghost"
-                size="sm"
-                className="transform-none underline text-blue-700 hover:text-blue-800"
-              >
-                Click to select a new video file
-              </Button>
-              <p className="text-xs text-gray-500 mt-2">
-                Supported formats: MP4, AVI, MOV, WMV, FLV (Max 500MB)
-              </p>
-            </div>
-            {videoFile && (
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center justify-between">
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Details */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+                <h4 className="text-lg font-bold text-slate-900">Details</h4>
+                <p className="text-sm text-slate-600 mt-1">Update the video information.</p>
+
+                <div className="mt-5 grid grid-cols-1 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-blue-800">
-                      New file selected: {videoFile.name}
-                    </p>
-                    <p className="text-xs text-blue-600">
-                      Size: {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
-                    </p>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      required
+                      disabled={isLoading}
+                    />
                   </div>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setVideoFile(null)
-                      if (videoFileInputRef.current) {
-                        videoFileInputRef.current.value = ''
-                      }
-                    }}
-                    disabled={isLoading}
-                    variant="ghost"
-                    size="sm"
-                    className="transform-none underline text-blue-700 hover:text-blue-800"
-                  >
-                    Remove
-                  </Button>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Presented by
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.presented_by}
+                      onChange={(e) => setFormData({ ...formData, presented_by: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      placeholder="e.g., John Doe"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Category <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.category_id || ''}
+                      onChange={(e) => setFormData({ ...formData, category_id: e.target.value || null })}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      required
+                      disabled={isLoading}
+                    >
+                      <option value="">Select a category</option>
+                      {categories && categories.length > 0 ? (
+                        categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No categories available</option>
+                      )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none"
+                      rows={5}
+                      disabled={isLoading}
+                      placeholder="Optional description"
+                    />
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Thumbnail Image
-            </label>
-            <ThumbnailUpload
-              onUpload={handleThumbnailUpload}
-              preview={thumbnailPreview}
-              maxSize={5}
-              isLoading={isLoading}
-              onRemove={handleThumbnailRemove}
-            />
-          </div>
+              {/* Files */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+                <h4 className="text-lg font-bold text-slate-900">Files</h4>
+                <p className="text-sm text-slate-600 mt-1">Replace the video or thumbnail (optional).</p>
 
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 -mx-6 px-6 pb-6 mt-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button type="button" onClick={onClose} variant="secondary" fullWidth className="transform-none">
-                Cancel
-              </Button>
-              <Button type="submit" isLoading={isLoading} fullWidth className="transform-none">
-                Update Video
-              </Button>
+                <div className="mt-5 space-y-5">
+                  {/* Video file */}
+                  <div
+                    className={`
+                      rounded-xl border p-4 transition-colors
+                      ${videoDragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-slate-50'}
+                      ${isLoading ? 'opacity-50' : 'cursor-pointer'}
+                    `}
+                    onDragEnter={handleVideoDrag}
+                    onDragLeave={handleVideoDrag}
+                    onDragOver={handleVideoDrag}
+                    onDrop={handleVideoDrop}
+                    onClick={() => !isLoading && videoFileInputRef.current?.click()}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900">Video file</p>
+                        <p className="mt-1 text-sm text-slate-700 truncate">{video.file_name}</p>
+                        <p className="text-xs text-slate-500 mt-1">{formatMb(video.file_size)}</p>
+                        {videoFile && (
+                          <p className="text-xs text-blue-700 mt-2">
+                            New file: <span className="font-semibold">{videoFile.name}</span> ({formatMb(videoFile.size)})
+                          </p>
+                        )}
+                      </div>
+                      <div className="shrink-0 flex flex-col gap-2">
+                        <input
+                          ref={videoFileInputRef}
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              validateAndSetVideoFile(file)
+                            }
+                          }}
+                          className="hidden"
+                          disabled={isLoading}
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="transform-none"
+                          onClick={() => videoFileInputRef.current?.click()}
+                          disabled={isLoading}
+                        >
+                          Change file
+                        </Button>
+                        {videoFile && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="transform-none"
+                            onClick={() => {
+                              setVideoFile(null)
+                              if (videoFileInputRef.current) {
+                                videoFileInputRef.current.value = ''
+                              }
+                            }}
+                            disabled={isLoading}
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-3">Drag & drop a file here, or click to choose. Max 500MB.</p>
+                  </div>
+
+                  {/* Thumbnail */}
+                  <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                    <p className="text-sm font-semibold text-slate-900 mb-3">Thumbnail image</p>
+                    <ThumbnailUpload
+                      onUpload={handleThumbnailUpload}
+                      preview={thumbnailPreview}
+                      maxSize={5}
+                      isLoading={isLoading}
+                      onRemove={handleThumbnailRemove}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+
+            {/* Sticky footer */}
+            <div className="sticky bottom-0 -mx-4 md:-mx-6 mt-6 border-t border-slate-200 bg-white/90 backdrop-blur px-4 md:px-6 py-4">
+              <div className="mx-auto w-full max-w-5xl flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <Button type="button" onClick={onClose} variant="secondary" disabled={isLoading} className="transform-none">
+                  Cancel
+                </Button>
+                <Button type="submit" isLoading={isLoading} className="transform-none">
+                  Save changes
+                </Button>
+              </div>
+            </div>
           </form>
+        </div>
       </div>
     </Modal>
   )

@@ -78,87 +78,91 @@ export default function ThumbnailUpload({
 
   return (
     <div className="space-y-4">
-      {preview ? (
-        <div className="relative group">
-          <div className="w-full h-48 border-2 border-gray-300 rounded-lg overflow-hidden bg-slate-50">
-            <img
-              src={preview}
-              alt="Thumbnail preview"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          {onRemove && (
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors opacity-0 group-hover:opacity-100"
-              disabled={isLoading}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-      ) : (
-        <div
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          className={`
-            border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer
-            ${dragActive ? 'border-gold-500 bg-gold-50' : 'border-gray-300 bg-slate-50 hover:border-gold-400 hover:bg-gold-50/30'}
-            ${error ? 'border-red-300' : ''}
-            ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-          `}
-          onClick={() => !isLoading && fileInputRef.current?.click()}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-            onChange={handleChange}
-            className="hidden"
-            disabled={isLoading}
-          />
-          
-          <div className="space-y-4">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            
-            <div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  fileInputRef.current?.click()
-                }}
-                className="text-black hover:text-slate-700 font-medium underline"
-                disabled={isLoading}
-              >
-                Click to upload
-              </button>
-              <span className="text-gray-600"> or drag and drop</span>
+      <div
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        className={`
+          border-2 rounded-lg transition-colors
+          ${preview ? 'border-gray-300 bg-slate-50' : 'border-dashed border-gray-300 bg-slate-50 hover:bg-slate-100'}
+          ${dragActive ? 'border-blue-500 bg-blue-50' : ''}
+          ${error ? 'border-red-300' : ''}
+          ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+        `}
+        onClick={() => !isLoading && fileInputRef.current?.click()}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+          onChange={handleChange}
+          className="hidden"
+          disabled={isLoading}
+        />
+
+        {preview ? (
+          <div className="p-3">
+            <div className="relative group w-full h-48 rounded-lg overflow-hidden bg-white border border-gray-200">
+              <img src={preview} alt="Thumbnail preview" className="w-full h-full object-cover" />
+
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors" />
+
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    fileInputRef.current?.click()
+                  }}
+                  className="px-3 py-2 text-sm font-semibold bg-white text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+                  disabled={isLoading}
+                >
+                  Change
+                </button>
+
+                {onRemove && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleRemove()
+                    }}
+                    className="px-3 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    disabled={isLoading}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
-            
-            <p className="text-xs text-gray-500">
-              Supported: JPG, PNG, WEBP, GIF. Max {maxSize}MB
+
+            <p className="mt-2 text-xs text-gray-500">
+              Tip: drag & drop a new image here to replace it. Max {maxSize}MB.
             </p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="p-8 text-center">
+            <div className="space-y-4">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+
+              <div className="text-sm">
+                <span className="font-semibold text-slate-900 underline">Click to upload</span>
+                <span className="text-gray-600"> or drag and drop</span>
+              </div>
+
+              <p className="text-xs text-gray-500">Supported: JPG, PNG, WEBP, GIF. Max {maxSize}MB</p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3">

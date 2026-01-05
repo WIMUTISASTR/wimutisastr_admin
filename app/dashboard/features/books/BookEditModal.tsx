@@ -1,12 +1,13 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { Book, Category } from '../../shared/types'
 import { formatFileSize } from '../../shared/utils'
 import Modal from '../../../components/feedback/Modal'
 import { useZodForm } from '@/app/lib/useZodForm'
+import { Button } from '../../../components/ui'
 
 interface BookEditModalProps {
   book: Book | null
@@ -47,8 +48,21 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
 
   const [isLoading, setIsLoading] = useState(false)
   const [coverFile, setCoverFile] = useState<File | null>(null)
-  const [coverPreview, setCoverPreview] = useState<string | null>(null)
   const [bookFile, setBookFile] = useState<File | null>(null)
+  const bookInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
+
+  const getFileNameFromUrl = (url: string | null | undefined) => {
+    if (!url) return null
+    try {
+      const u = new URL(url)
+      const last = u.pathname.split('/').filter(Boolean).pop()
+      return last || null
+    } catch {
+      const last = String(url).split('/').filter(Boolean).pop()
+      return last || null
+    }
+  }
 
   useEffect(() => {
     if (book) {
@@ -59,7 +73,6 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
         description: book.description || '',
         category_id: book.category_id || '',
       } as any)
-      setCoverPreview(book.cover_url)
       setCoverFile(null)
       setBookFile(null)
     }
@@ -222,11 +235,6 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
         return
       }
       setCoverFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setCoverPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -251,218 +259,291 @@ export default function BookEditModal({ book, isOpen, onClose, onUpdate, categor
       variant="fullscreen"
       isDismissable={!isLoading}
     >
-      <div className="p-6">
-          {/* Book Preview Section */}
-          <div className="mb-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-lg p-4 md:p-6 border border-gray-200 shadow-sm">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
-              {(coverPreview || book.cover_url) && (
-                <div className="shrink-0 mx-auto md:mx-0">
-                  <div className="w-24 h-36 md:w-32 md:h-48 rounded-lg overflow-hidden border-2 border-gray-300 shadow-md">
-                    <img
-                      src={coverPreview || book.cover_url || ''}
-                      alt={`${book.title} cover`}
-                      className="w-full h-full object-cover"
-                    />
+      <div className="bg-slate-50">
+        <div className="mx-auto w-full max-w-5xl p-4 md:p-6">
+          {/* Top summary */}
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-100">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-xl md:text-2xl font-bold text-slate-900">{book.title}</h3>
+                    <p className="truncate text-slate-600">by {book.author}</p>
                   </div>
                 </div>
-              )}
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-xl md:text-2xl font-bold text-slate-800 mb-2">{book.title}</h3>
-                <p className="text-base md:text-lg text-slate-600 mb-3">by {book.author}</p>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-4 mb-4">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-lg border border-gray-200">
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800 border border-slate-200">
+                    <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span className="text-sm font-semibold text-slate-800">{book.year}</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-lg border border-gray-200">
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {book.year}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800 border border-slate-200">
+                    <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    <span className="text-sm font-semibold text-slate-800">{formatFileSize(book.file_size)}</span>
+                    {formatFileSize(book.file_size)}
+                  </span>
+                  {book.category?.name && (
+                    <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 border border-blue-100">
+                      {book.category.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="transform-none"
+                  onClick={() => window.open(book.file_url, '_blank', 'noopener,noreferrer')}
+                >
+                  View file
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Details */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+                <h4 className="text-lg font-bold text-slate-900">Details</h4>
+                <p className="text-sm text-slate-600 mt-1">Update the book metadata.</p>
+
+                <div className="mt-5 grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={(form.values as any).title}
+                      onChange={(e) => form.setValue('title' as any, e.target.value)}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      required
+                      disabled={isLoading}
+                    />
+                    {form.errors.title && <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.title}</p>}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-900 mb-2">
+                        Author <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={(form.values as any).author}
+                        onChange={(e) => form.setValue('author' as any, e.target.value)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        required
+                        disabled={isLoading}
+                      />
+                      {form.errors.author && <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.author}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-900 mb-2">
+                        Year <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={(form.values as any).year}
+                        onChange={(e) => form.setValue('year' as any, e.target.value)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        min="1000"
+                        max="9999"
+                        required
+                        disabled={isLoading}
+                      />
+                      {form.errors.year && <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.year}</p>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Category <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={(form.values as any).category_id || ''}
+                      onChange={(e) => form.setValue('category_id' as any, e.target.value)}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      required
+                      disabled={isLoading}
+                    >
+                      <option value="">Select a category</option>
+                      {categories && categories.length > 0 ? (
+                        categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No categories available</option>
+                      )}
+                    </select>
+                    {form.errors.category_id && (
+                      <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.category_id}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={(form.values as any).description}
+                      onChange={(e) => form.setValue('description' as any, e.target.value)}
+                      rows={5}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none"
+                      disabled={isLoading}
+                      placeholder="Optional description"
+                    />
+                    {form.errors.description && (
+                      <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.description}</p>
+                    )}
                   </div>
                 </div>
-                <a
-                  href={book.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors font-semibold shadow-md hover:bg-blue-400"
-                >
-                  View Book
-                </a>
               </div>
-            </div>
-          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6 mb-6">
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={(form.values as any).title}
-              onChange={(e) => form.setValue('title' as any, e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-              required
-            />
-            {form.errors.title && <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.title}</p>}
-          </div>
+              {/* Files */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+                <h4 className="text-lg font-bold text-slate-900">Files</h4>
+                <p className="text-sm text-slate-600 mt-1">Replace the document or cover (optional).</p>
 
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Author <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={(form.values as any).author}
-              onChange={(e) => form.setValue('author' as any, e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-              required
-            />
-            {form.errors.author && <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.author}</p>}
-          </div>
+                <div className="mt-5 space-y-5">
+                  {/* Book file */}
+                  <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900">Book file</p>
+                        <p className="mt-1 text-sm text-slate-700 truncate">{book.file_name}</p>
+                        <p className="text-xs text-slate-500 mt-1">{formatFileSize(book.file_size)}</p>
+                        {bookFile && (
+                          <p className="text-xs text-blue-700 mt-2">
+                            New file: <span className="font-semibold">{bookFile.name}</span> ({formatFileSize(bookFile.size)})
+                          </p>
+                        )}
+                      </div>
+                      <div className="shrink-0 flex flex-col gap-2">
+                        <input
+                          ref={bookInputRef}
+                          type="file"
+                          accept=".pdf,.doc,.docx,.epub,.mobi,.txt"
+                          onChange={handleBookFileChange}
+                          className="hidden"
+                          disabled={isLoading}
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="transform-none"
+                          onClick={() => bookInputRef.current?.click()}
+                          disabled={isLoading}
+                        >
+                          Change file
+                        </Button>
+                        {bookFile && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="transform-none"
+                            onClick={() => {
+                              setBookFile(null)
+                              if (bookInputRef.current) bookInputRef.current.value = ''
+                            }}
+                            disabled={isLoading}
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-3">
+                      Supported: PDF, DOC, DOCX, EPUB, MOBI, TXT. Max 500MB.
+                    </p>
+                  </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Year <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={(form.values as any).year}
-              onChange={(e) => form.setValue('year' as any, e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-              min="1000"
-              max="9999"
-              required
-            />
-            {form.errors.year && <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.year}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Category <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={(form.values as any).category_id || ''}
-              onChange={(e) => form.setValue('category_id' as any, e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-              required
-            >
-              <option value="">Select a category</option>
-              {categories && categories.length > 0 ? (
-                categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))
-              ) : (
-                <option value="" disabled>No categories available</option>
-              )}
-            </select>
-            {form.errors.category_id && (
-              <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.category_id}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Description
-            </label>
-            <textarea
-              value={(form.values as any).description}
-              onChange={(e) => form.setValue('description' as any, e.target.value)}
-              rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-            />
-            {form.errors.description && (
-              <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.description}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Book File (optional)
-            </label>
-            <div className="space-y-2">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <p className="text-sm text-slate-600 mb-1">Current file:</p>
-                <p className="font-semibold text-slate-800 text-sm">{book.file_name}</p>
-                <p className="text-xs text-slate-500 mt-1">{formatFileSize(book.file_size)}</p>
-              </div>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.epub,.mobi,.txt"
-                onChange={handleBookFileChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-                disabled={isLoading}
-              />
-              {bookFile && (
-                <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                  <p className="text-sm text-blue-800 font-semibold">New file selected:</p>
-                  <p className="text-xs text-blue-600">{bookFile.name} ({formatFileSize(bookFile.size)})</p>
+                  {/* Cover file (no preview) */}
+                  <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900">Cover image</p>
+                        <p className="mt-1 text-sm text-slate-700 truncate">
+                          {book.cover_url ? (getFileNameFromUrl(book.cover_url) || 'Existing cover image') : 'No cover image'}
+                        </p>
+                        {coverFile && (
+                          <p className="text-xs text-blue-700 mt-2">
+                            New image: <span className="font-semibold">{coverFile.name}</span>
+                          </p>
+                        )}
+                      </div>
+                      <div className="shrink-0 flex flex-col gap-2">
+                        <input
+                          ref={coverInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverChange}
+                          className="hidden"
+                          disabled={isLoading}
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="transform-none"
+                          onClick={() => coverInputRef.current?.click()}
+                          disabled={isLoading}
+                        >
+                          Change image
+                        </Button>
+                        {coverFile && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="transform-none"
+                            onClick={() => {
+                              setCoverFile(null)
+                              if (coverInputRef.current) coverInputRef.current.value = ''
+                            }}
+                            disabled={isLoading}
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-3">Images only. Max 5MB.</p>
+                  </div>
                 </div>
-              )}
-              <p className="text-xs text-gray-500">Supported: PDF, DOC, DOCX, EPUB, MOBI, TXT. Max 500MB. Leave empty to keep current file.</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-black mb-2">
-              Cover Image (optional)
-            </label>
-            <div className="flex gap-4">
-              {coverPreview && (
-                <div className="w-32 h-40 border border-gray-300 rounded overflow-hidden">
-                  <img
-                    src={coverPreview}
-                    alt="Cover preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCoverChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-gray-500 mt-1">Max 5MB. Leave empty to keep current cover.</p>
               </div>
             </div>
-          </div>
 
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 -mx-6 px-6 pb-6 mt-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isLoading}
-                className="flex-1 px-6 py-3 border-2 border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg transition-all  disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/30"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Updating...
-                  </span>
-                ) : 'Update'}
-              </button>
+            {/* Sticky footer */}
+            <div className="sticky bottom-0 -mx-4 md:-mx-6 mt-6 border-t border-slate-200 bg-white/90 backdrop-blur px-4 md:px-6 py-4">
+              <div className="mx-auto w-full max-w-5xl flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading} className="transform-none">
+                  Cancel
+                </Button>
+                <Button type="submit" isLoading={isLoading} className="transform-none">
+                  Save changes
+                </Button>
+              </div>
             </div>
-          </div>
           </form>
+        </div>
       </div>
     </Modal>
   )

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { DataTable, Pagination } from '../../../components/data-display'
 import { DeleteConfirmationModal } from '../../../components/feedback'
 import { PageHeader } from '../../../components/layout'
-import { Card, Badge } from '../../../components/ui'
+import { Card, Badge, Button } from '../../../components/ui'
 import { User } from '../../shared/types'
 import { useUsers } from '../../shared/hooks/useUsers'
 import { formatDate } from '../../shared/utils'
@@ -31,9 +31,6 @@ export default function UsersContent() {
       width: '35%',
       render: (value: string, row: User) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-linear-to-br from-gold-500 to-gold-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-            {value?.charAt(0).toUpperCase() || 'U'}
-          </div>
           <div>
             <div className="font-medium text-slate-900">{value || 'N/A'}</div>
             <div className="text-xs text-slate-500">User ID: {row.id.slice(0, 8)}...</div>
@@ -95,19 +92,20 @@ export default function UsersContent() {
       width: '10%',
       render: (value: string, row: User) => (
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="danger"
             onClick={(e) => {
               e.stopPropagation()
               setUserToDelete({ id: row.id, email: row.email })
               setDeleteModalOpen(true)
             }}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 rounded-lg transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
             Delete
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -155,57 +153,6 @@ export default function UsersContent() {
             <h4 className="text-sm font-semibold text-red-800 mb-1">Error Loading Users</h4>
             <p className="text-sm text-red-700">{error}</p>
           </div>
-        </div>
-      )}
-
-      {/* Stats Overview */}
-      {!isLoading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card padding="md" hover>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gold-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-slate-600 font-medium">Total Users</p>
-                <p className="text-2xl font-bold text-slate-900">{users.length}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card padding="md" hover>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-slate-600 font-medium">Verified</p>
-                <p className="text-2xl font-bold text-slate-900">
-                  {users.filter(u => u.email_confirmed_at).length}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card padding="md" hover>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-slate-600 font-medium">Pending</p>
-                <p className="text-2xl font-bold text-slate-900">
-                  {users.filter(u => !u.email_confirmed_at).length}
-                </p>
-              </div>
-            </div>
-          </Card>
         </div>
       )}
 
