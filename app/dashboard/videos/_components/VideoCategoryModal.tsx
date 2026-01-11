@@ -143,7 +143,7 @@ export default function VideoCategoryModal({
       isDismissable={!isLoading}
       className="p-6"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-black mb-2">
               Category Name <span className="text-red-500">*</span>
@@ -217,7 +217,7 @@ export default function VideoCategoryModal({
               )}
             </button>
           </div>
-      </form>
+        </form>
     </Modal>
   )
 }

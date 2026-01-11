@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Button } from '../../../components/ui'
 import { Category } from '../../shared/types'
 import { formatFileSize } from '../../shared/utils'
 import { FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from '../../shared/constants'
+
 
 interface BookData {
   title: string
@@ -32,15 +33,39 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     cover: null,
     category_id: null,
   })
+  const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string>('')
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
   const [coverDragActive, setCoverDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
+  // Get main categories (categories without parent_id)
+  const mainCategories = useMemo(() => {
+    return categories.filter(cat => !cat.parent_id)
+  }, [categories])
+
+  // Get subcategories for selected main category
+  const availableSubcategories = useMemo(() => {
+    if (!selectedMainCategoryId) return []
+    return categories.filter(cat => cat.parent_id === selectedMainCategoryId)
+  }, [categories, selectedMainCategoryId])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    setError('')
+  }
+
+  const handleMainCategoryChange = (mainCategoryId: string) => {
+    setSelectedMainCategoryId(mainCategoryId)
+    // Reset subcategory selection when main category changes
+    setFormData(prev => ({ ...prev, category_id: null }))
+    setError('')
+  }
+
+  const handleSubcategoryChange = (subcategoryId: string) => {
+    setFormData(prev => ({ ...prev, category_id: subcategoryId || null }))
     setError('')
   }
 
@@ -158,13 +183,21 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
       setError('Please select a file')
       return
     }
-    if (!formData.category_id) {
+    // Determine final category_id: use subcategory if selected, otherwise use main category
+    const finalCategoryId = formData.category_id || selectedMainCategoryId
+    
+    if (!finalCategoryId) {
       setError('Please select a category')
       return
     }
 
     try {
-      await onUpload(formData)
+      // Use subcategory if selected, otherwise use main category
+      const finalCategoryId = formData.category_id || selectedMainCategoryId
+      await onUpload({
+        ...formData,
+        category_id: finalCategoryId || null,
+      })
       // Reset form after successful upload
       setFormData({
         title: '',
@@ -175,6 +208,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
         cover: null,
         category_id: null,
       })
+      setSelectedMainCategoryId('')
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -202,101 +236,120 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
             <p className="text-sm text-slate-600 mt-1">Book metadata.</p>
 
             <div className="mt-5 grid grid-cols-1 gap-4">
-              <div>
+      <div>
                 <label htmlFor="title" className="block text-sm font-semibold text-slate-900 mb-2">
-                  Book Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="title"
-                  name="title"
-                  type="text"
-                  value={formData.title}
-                  onChange={handleInputChange}
+          Book Title <span className="text-red-500">*</span>
+        </label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          value={formData.title}
+          onChange={handleInputChange}
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="Enter book title"
-                  disabled={isLoading}
-                  required
-                />
-              </div>
+          placeholder="Enter book title"
+          disabled={isLoading}
+          required
+        />
+      </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
                   <label htmlFor="author" className="block text-sm font-semibold text-slate-900 mb-2">
-                    Author <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="author"
-                    name="author"
-                    type="text"
-                    value={formData.author}
-                    onChange={handleInputChange}
+            Author <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="author"
+            name="author"
+            type="text"
+            value={formData.author}
+            onChange={handleInputChange}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="Enter author name"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
+            placeholder="Enter author name"
+            disabled={isLoading}
+            required
+          />
+        </div>
 
-                <div>
+        <div>
                   <label htmlFor="year" className="block text-sm font-semibold text-slate-900 mb-2">
-                    Year <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="year"
-                    name="year"
-                    type="number"
-                    value={formData.year}
-                    onChange={handleInputChange}
-                    min="1000"
-                    max={new Date().getFullYear()}
+            Year <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="year"
+            name="year"
+            type="number"
+            value={formData.year}
+            onChange={handleInputChange}
+            min="1000"
+            max={new Date().getFullYear()}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g., 2024"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-              </div>
+            placeholder="e.g., 2024"
+            disabled={isLoading}
+            required
+          />
+        </div>
+      </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Category <span className="text-red-500">*</span>
-                </label>
+                  Main Category <span className="text-red-500">*</span>
+        </label>
                 <select
-                  value={formData.category_id || ''}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, category_id: e.target.value || null }))
-                    setError('')
-                  }}
+                  value={selectedMainCategoryId}
+                  onChange={(e) => handleMainCategoryChange(e.target.value)}
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  disabled={isLoading}
+          disabled={isLoading}
                   required
                 >
-                  <option value="">Select a category</option>
-                  {categories && categories.length > 0 ? (
-                    categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))
-                  ) : (
-                    <option value="" disabled>No categories available</option>
-                  )}
+                  <option value="">Select a main category</option>
+                  {mainCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              <div>
+              {selectedMainCategoryId && availableSubcategories.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Subcategory (Optional)
+                  </label>
+                  <select
+                    value={formData.category_id || ''}
+                    onChange={(e) => handleSubcategoryChange(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    disabled={isLoading}
+                  >
+                    <option value="">None (Use main category)</option>
+                    {availableSubcategories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Optional: Select a subcategory for more specific organization
+                  </p>
+                </div>
+              )}
+
+      <div>
                 <label htmlFor="description" className="block text-sm font-semibold text-slate-900 mb-2">
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
+          Description
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleInputChange}
                   rows={5}
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none"
                   placeholder="Optional description"
-                  disabled={isLoading}
-                />
-              </div>
+          disabled={isLoading}
+        />
+      </div>
             </div>
           </div>
 
@@ -307,41 +360,41 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
 
             <div className="mt-5 space-y-5">
               {/* Cover image (no preview, just filename) */}
-              <div
-                onDragEnter={handleCoverDrag}
-                onDragLeave={handleCoverDrag}
-                onDragOver={handleCoverDrag}
-                onDrop={handleCoverDrop}
+        <div
+          onDragEnter={handleCoverDrag}
+          onDragLeave={handleCoverDrag}
+          onDragOver={handleCoverDrag}
+          onDrop={handleCoverDrop}
                 onClick={() => !isLoading && coverInputRef.current?.click()}
-                className={`
+          className={`
                   rounded-xl border-2 border-dashed p-6 text-center transition-colors
                   ${coverDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white hover:bg-slate-50'}
                   ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                `}
-              >
-                <input
-                  ref={coverInputRef}
-                  id="cover"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleChange}
-                  className="hidden"
-                  disabled={isLoading}
-                />
-
+          `}
+        >
+          <input
+            ref={coverInputRef}
+            id="cover"
+            type="file"
+            accept="image/*"
+            onChange={handleChange}
+            className="hidden"
+            disabled={isLoading}
+          />
+          
                 {!formData.cover ? (
                   <div className="space-y-2">
                     <div className="text-sm font-semibold text-slate-900">Upload your Cover Image</div>
                     <div className="mx-auto h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
                       <svg className="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
+                  </svg>
+              </div>
                     <div className="text-base font-semibold text-slate-900">Upload a File</div>
                     <div className="text-sm text-slate-500">Drag and drop files here</div>
                     <div className="text-xs text-slate-400">Images only. Max 5MB.</div>
-                  </div>
-                ) : (
+            </div>
+          ) : (
                   <div className="space-y-3">
                     <div className="text-sm font-semibold text-slate-900 truncate">{formData.cover.name}</div>
                     <div className="text-xs text-slate-500">{formatFileSize(formData.cover.size)}</div>
@@ -360,7 +413,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                         Change
                       </Button>
                       <Button
-                        type="button"
+                  type="button"
                         variant="ghost"
                         size="sm"
                         className="transform-none text-red-600 hover:text-red-700"
@@ -369,39 +422,39 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                           setFormData(prev => ({ ...prev, cover: null }))
                           if (coverInputRef.current) coverInputRef.current.value = ''
                         }}
-                        disabled={isLoading}
-                      >
+                  disabled={isLoading}
+                >
                         Remove
                       </Button>
-                    </div>
-                  </div>
-                )}
               </div>
+            </div>
+          )}
+      </div>
 
               {/* Book file */}
-              <div
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
+        <div
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
                 onClick={() => !isLoading && fileInputRef.current?.click()}
-                className={`
+          className={`
                   rounded-xl border-2 border-dashed p-6 text-center transition-colors
                   ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white hover:bg-slate-50'}
-                  ${error ? 'border-red-300' : ''}
+            ${error ? 'border-red-300' : ''}
                   ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                `}
-              >
-                <input
-                  ref={fileInputRef}
-                  id="book-file"
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.epub,.mobi"
-                  onChange={handleChange}
-                  className="hidden"
-                  disabled={isLoading}
-                />
-
+          `}
+        >
+          <input
+            ref={fileInputRef}
+            id="book-file"
+            type="file"
+            accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.epub,.mobi"
+            onChange={handleChange}
+            className="hidden"
+            disabled={isLoading}
+          />
+          
                 {!formData.file ? (
                   <div className="space-y-2">
                     <div className="text-sm font-semibold text-slate-900">Upload your Book File</div>
@@ -435,7 +488,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                         Change
                       </Button>
                       <Button
-                        type="button"
+                type="button"
                         variant="ghost"
                         size="sm"
                         className="transform-none text-red-600 hover:text-red-700"
@@ -444,34 +497,34 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                           setFormData(prev => ({ ...prev, file: null }))
                           if (fileInputRef.current) fileInputRef.current.value = ''
                         }}
-                        disabled={isLoading}
-                      >
+                disabled={isLoading}
+              >
                         Remove
                       </Button>
-                    </div>
-                  </div>
+          </div>
+        </div>
                 )}
               </div>
             </div>
           </div>
-        </div>
+      </div>
 
-        {error && (
+      {error && (
           <div className="rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm p-3">
-            {error}
-          </div>
-        )}
+          {error}
+        </div>
+      )}
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button
+      <Button
               variant="submit"
-              type="submit"
-              disabled={isLoading || !formData.title || !formData.author || !formData.year || !formData.file || !formData.category_id}
-              isLoading={isLoading}
+        type="submit"
+              disabled={isLoading || !formData.title || !formData.author || !formData.year || !formData.file || !selectedMainCategoryId}
+        isLoading={isLoading}
               >
               Submit
-            </Button>
+      </Button>
           </div>
         </div>
       </div>

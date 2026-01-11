@@ -128,6 +128,7 @@ export const createCategorySchema = z.object({
     .optional()
     .nullable(),
   cover_url: z.string().url('Invalid cover URL').optional().nullable(),
+  parent_id: z.string().uuid('Invalid parent category ID').optional().nullable(),
 })
 
 export const updateCategorySchema = z.object({
@@ -141,6 +142,7 @@ export const updateCategorySchema = z.object({
     .trim()
     .optional()
     .nullable(),
+  parent_id: z.string().uuid('Invalid parent category ID').optional().nullable(),
   cover_url: z.string().url('Invalid cover URL').optional().nullable(),
 })
 

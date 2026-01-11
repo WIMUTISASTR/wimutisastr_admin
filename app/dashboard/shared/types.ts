@@ -3,8 +3,12 @@ export interface Category {
   id: string
   name: string
   description: string | null
+  parent_id: string | null
+  cover_url: string | null
   created_at: string
   updated_at: string
+  subcategories?: Category[] // Optional array for hierarchical display
+  parent?: Category | null // Optional parent category reference
 }
 
 export interface Book {

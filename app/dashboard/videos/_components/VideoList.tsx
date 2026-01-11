@@ -206,17 +206,17 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
             ))}
           </div>
         ) : categories.length === 0 ? (
-          <Card padding="none">
+        <Card padding="none">
             <EmptyState
               title="No categories available"
               description="Create categories first to organize your videos."
               icon={
                 <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-              }
-            />
-          </Card>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            }
+          />
+        </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {categories.map((cat) => {
@@ -377,14 +377,14 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
                 type="button"
                 variant="ghost"
                 className="transform-none justify-start"
-                onClick={handleBackToCategories}
-              >
+            onClick={handleBackToCategories}
+          >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
                 Back to categories
               </Button>
-
+          
               <div>
                 <div className="text-2xl font-extrabold text-slate-900">{selectedCategory?.name}</div>
                 {selectedCategory?.description ? (
@@ -418,27 +418,27 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       <Card padding="md" className="mb-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-xl">
-            <input
-              type="text"
+          <input
+            type="text"
               placeholder="Search videos by title..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white pl-10 pr-10 py-2.5 border border-slate-300 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-200"
-            />
+          />
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            {searchQuery && (
-              <button
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {searchQuery && (
+            <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+              onClick={() => setSearchQuery('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg"
                 aria-label="Clear search"
-              >
+            >
                 <UIIcons.Close className="w-5 h-5" />
-              </button>
-            )}
-          </div>
+            </button>
+          )}
+        </div>
 
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between lg:justify-end lg:text-right">
             <div className="text-sm text-slate-600">

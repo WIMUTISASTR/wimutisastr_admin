@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { ReactNode } from 'react'
 
 interface PageHeaderProps {
@@ -20,16 +21,31 @@ export default function PageHeader({ title, description, action, breadcrumbs }: 
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
                 )}
-                <span className={`text-sm ${index === breadcrumbs.length - 1 ? 'text-slate-700 font-medium' : 'text-slate-500 hover:text-slate-700'}`}>
-                  {crumb.label}
-                </span>
+                {crumb.href ? (
+                  <Link 
+                    href={crumb.href}
+                    className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+                  >
+                    {crumb.label}
+                  </Link>
+                ) : (
+                  <span className="text-sm text-slate-700 font-medium">
+                    {crumb.label}
+                  </span>
+                )}
               </li>
             ))}
           </ol>
         </nav>
       )}
       
-      <div className="flex justify-between items-start">        
+      <div className="flex justify-between items-start gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{title}</h1>
+          {description && (
+            <p className="mt-1 text-slate-600">{description}</p>
+          )}
+        </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
     </div>

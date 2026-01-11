@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Logo } from '../auth'
 import { Button } from '../ui'
 
@@ -7,13 +9,12 @@ interface MenuItem {
   id: string
   label: string
   icon: string
+  href: string
 }
 
 interface SidebarProps {
   isOpen: boolean
   onClose: () => void
-  activeMenu: string
-  onMenuChange: (menuId: string) => void
   onLogout: () => void
   menuItems: MenuItem[]
 }
@@ -21,11 +22,18 @@ interface SidebarProps {
 export default function Sidebar({
   isOpen,
   onClose,
-  activeMenu,
-  onMenuChange,
   onLogout,
   menuItems,
 }: SidebarProps) {
+  const pathname = usePathname()
+
+  const isActive = (href: string) => {
+    if (href === '/dashboard') {
+      return pathname === '/dashboard'
+    }
+    return pathname.startsWith(href)
+  }
+
   return (
     <>
       <aside
@@ -49,7 +57,7 @@ export default function Sidebar({
             </div>
             <button
               onClick={onClose}
-              className="lg:hidden text-white hover:text-gold-100 transition-colors"
+              className="lg:hidden text-slate-700 hover:text-slate-900 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -61,26 +69,30 @@ export default function Sidebar({
         {/* Navigation Menu */}
         <nav className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-2">
-            {menuItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => onMenuChange(item.id)}
-                  className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-lg
-                    transition-all duration-200
-                    ${activeMenu === item.id
-                      ? 'bg-gold-500 text-white'
-                      : 'text-slate-700 hover:bg-gold-50 hover:text-gold-700'
-                    }
-                  `}
-                >
-                  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                  </svg>
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              </li>
-            ))}
+            {menuItems.map((item) => {
+              const active = isActive(item.href)
+              return (
+                <li key={item.id}>
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 rounded-lg
+                      transition-all duration-200
+                      ${active
+                        ? 'bg-gold-500 text-white'
+                        : 'text-slate-700 hover:bg-gold-50 hover:text-gold-700'
+                      }
+                    `}
+                  >
+                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                    </svg>
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         </nav>
 

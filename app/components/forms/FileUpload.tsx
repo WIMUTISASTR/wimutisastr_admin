@@ -162,24 +162,24 @@ export default function FileUpload({
                   Change
                 </Button>
                 <Button
-                  type="button"
+                type="button"
                   variant="ghost"
                   size="sm"
                   className="transform-none text-red-600 hover:text-red-700"
                   onClick={(e) => {
                     e.stopPropagation()
-                    setFile(null)
+                  setFile(null)
                     if (fileInputRef.current) fileInputRef.current.value = ''
                     if (onFileClear) onFileClear()
-                  }}
-                  disabled={isLoading}
-                >
+                }}
+                disabled={isLoading}
+              >
                   Remove
                 </Button>
               </div>
             </div>
           )}
-        </div>
+          </div>
 
         {error && (
           <div className="mt-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3">
