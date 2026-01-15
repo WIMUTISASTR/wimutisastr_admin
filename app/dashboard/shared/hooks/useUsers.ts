@@ -49,12 +49,11 @@ export function useUsers() {
 
   const deleteUser = async (userId: string) => {
     try {
-      const response = await fetch('/api/users', {
+      const response = await fetch(`/api/users?id=${userId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId }),
       })
 
       const data = await response.json()
@@ -64,6 +63,7 @@ export function useUsers() {
       }
 
       setUsers(users.filter(user => user.id !== userId))
+      toast.success('User deleted successfully!')
       return true
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete user')
@@ -73,6 +73,7 @@ export function useUsers() {
 
   return {
     users,
+    setUsers,
     isLoading,
     error,
     pagination,

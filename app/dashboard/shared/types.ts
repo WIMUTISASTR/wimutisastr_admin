@@ -59,5 +59,38 @@ export interface User {
   email_confirmed_at: string | null
   phone?: string | null
   user_metadata?: any
+  membership_status?: 'pending' | 'approved' | 'denied'
+  membership_approved_at?: string | null
+  membership_denied_at?: string | null
+  membership_notes?: string | null
 }
 
+// Payment Proof types
+export interface PaymentProof {
+  id: string
+  user_id: string
+  payment_reference: string
+  plan_id: string
+  amount: string
+  proof_url: string
+  file_name: string
+  file_size: string
+  file_type: string
+  status: 'pending' | 'verified' | 'rejected'
+  uploaded_at: string
+  verified_at: string | null
+  verified_by: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  membership_starts_at: string | null
+  membership_ends_at: string | null
+  // Joined user data (from auth.users + user_profiles)
+  user?: {
+    email: string
+    membership_status: 'pending' | 'approved' | 'denied'
+    membership_approved_at: string | null
+    membership_denied_at: string | null
+    registered_at: string | null
+  } | null
+}

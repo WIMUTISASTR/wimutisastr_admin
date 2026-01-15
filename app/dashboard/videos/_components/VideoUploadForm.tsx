@@ -141,10 +141,6 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
   return (
     <form onSubmit={handleSubmit} className="bg-slate-50">
       <div className="mx-auto w-full max-w-5xl p-4 md:p-6 space-y-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
-          <h3 className="text-xl font-bold text-slate-900">Upload Video</h3>
-          <p className="text-sm text-slate-600 mt-1">Fill in details and upload files.</p>
-        </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Details */}
@@ -304,8 +300,6 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
             </div>
           </div>
         </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               variant="submit"
@@ -317,7 +311,6 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
             </Button>
           </div>
         </div>
-      </div>
     </form>
   )
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import { verifyMembership, isAdminEmail, getSupabaseAdmin } from '@/app/lib/auth-middleware'
+import { handleApiError } from '@/app/lib/errors'
 
 // Cloudflare R2 configuration
 const r2AccountId = process.env.R2_ACCOUNT_ID!
@@ -43,6 +45,40 @@ export async function GET(request: NextRequest) {
         { error: 'Missing key parameter' },
         { status: 400 }
       )
+    }
+
+    // Verify membership before serving content
+    // Allow admins to bypass membership check
+    let isAdmin = false
+    
+    // Check 1: PIN-based admin authentication (for admin panel)
+    const pinVerified = request.cookies.get('pinVerified')?.value
+    if (pinVerified === 'true') {
+      isAdmin = true
+    }
+    
+    // Check 2: Supabase token-based admin authentication (for API calls)
+    if (!isAdmin) {
+      try {
+        const authHeader = request.headers.get('authorization')
+        const token = authHeader?.replace('Bearer ', '')
+        
+        if (token) {
+          const supabaseAdmin = getSupabaseAdmin()
+          const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+          
+          if (user && user.email && isAdminEmail(user.email)) {
+            isAdmin = true
+          }
+        }
+      } catch (error) {
+        // Ignore admin check errors, will fall through to membership check
+      }
+    }
+
+    // If not admin, verify membership
+    if (!isAdmin) {
+      await verifyMembership(request)
     }
 
     // Determine which bucket to use

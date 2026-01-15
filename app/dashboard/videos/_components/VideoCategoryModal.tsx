@@ -6,6 +6,7 @@ import ThumbnailUpload from '../../../components/forms/ThumbnailUpload'
 import Modal from '../../../components/feedback/Modal'
 import { useZodForm } from '@/app/lib/useZodForm'
 import { createCategorySchema, updateCategorySchema } from '@/app/lib/validations'
+import Button from '@/app/components/ui/Button'
 
 interface VideoCategory {
   id: string
@@ -88,7 +89,7 @@ export default function VideoCategoryModal({
         const coverUploadResult = await coverUploadResponse.json()
 
         if (coverUploadResponse.ok) {
-          coverUrl = coverUploadResult.publicUrl || coverUploadResult.url
+          coverUrl = coverUploadResult.data?.publicUrl || coverUploadResult.data?.url
         } else {
           toast.warning('Failed to upload cover image, continuing without it')
         }
@@ -190,19 +191,14 @@ export default function VideoCategoryModal({
               <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.cover_url}</p>
             )}
           </div>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
-            >
-              Cancel
-            </button>
-            <button
+          <div className="flex gap-3 justify-center">
+            <Button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg transition-all  disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/30"
+              variant="submit"
+              size="lg"
+              fullWidth
+              isLoading={isLoading}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -213,9 +209,9 @@ export default function VideoCategoryModal({
                   {editingCategory ? 'Updating...' : 'Creating...'}
                 </span>
               ) : (
-                editingCategory ? 'Update' : 'Create'
+                editingCategory ? 'Submit' : 'Create'
               )}
-            </button>
+            </Button>
           </div>
         </form>
     </Modal>

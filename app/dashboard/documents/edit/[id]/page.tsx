@@ -9,13 +9,14 @@ import { formatFileSize } from '../../../shared/utils'
 import { useZodForm } from '@/app/lib/useZodForm'
 import { Button } from '../../../../components/ui'
 import { PageHeader } from '../../../../components/layout'
+import { LoadingSkeleton } from '../../../../components/feedback'
 import { useCategories } from '../../../shared/hooks/useCategories'
 
 export default function EditDocumentPage() {
   const router = useRouter()
   const params = useParams()
   const bookId = params.id as string
-  const { categories } = useCategories()
+  const { categories, fetchCategories } = useCategories()
   
   const [book, setBook] = useState<Book | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -23,6 +24,12 @@ export default function EditDocumentPage() {
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [bookFile, setBookFile] = useState<File | null>(null)
   const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string>('')
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const formSchema = useMemo(
     () =>
@@ -190,7 +197,7 @@ export default function EditDocumentPage() {
         const fileUploadResult = await fileUploadResponse.json()
 
         if (fileUploadResponse.ok) {
-          fileUrl = fileUploadResult.publicUrl
+          fileUrl = fileUploadResult.data?.publicUrl || fileUploadResult.data?.url || ''
           fileName = bookFile.name
           fileSize = bookFile.size
         } else {
@@ -221,7 +228,7 @@ export default function EditDocumentPage() {
         const coverUploadResult = await coverUploadResponse.json()
 
         if (coverUploadResponse.ok) {
-          coverUrl = coverUploadResult.publicUrl
+          coverUrl = coverUploadResult.data?.publicUrl || coverUploadResult.data?.url || null
         } else {
           toast.warning('Failed to upload new cover image, keeping existing one')
         }
@@ -302,9 +309,35 @@ export default function EditDocumentPage() {
 
   if (isFetching || !book) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <>
+        <PageHeader
+          title="Edit Document"
+          showBackButton
+          backHref="/dashboard/documents"
+        />
+        <div className="mt-6 max-w-5xl mx-auto">
+          <div className="space-y-6">
+            {/* Summary skeleton */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-pulse">
+              <div className="h-6 bg-slate-200 rounded w-1/3 mb-3"></div>
+              <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+            </div>
+            {/* Form skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-pulse space-y-4">
+                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                <div className="h-10 bg-slate-200 rounded w-full"></div>
+                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                <div className="h-10 bg-slate-200 rounded w-full"></div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-pulse space-y-4">
+                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                <div className="h-32 bg-slate-200 rounded w-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
     )
   }
 
@@ -312,13 +345,8 @@ export default function EditDocumentPage() {
     <>
       <PageHeader
         title="Edit Document"
-        description="Update document information and files"
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Documents', href: '/dashboard/documents' },
-          { label: 'List', href: '/dashboard/documents/list' },
-          { label: 'Edit' },
-        ]}
+        showBackButton
+        backHref="/dashboard/documents"
       />
 
       <div className="mt-6 max-w-5xl mx-auto">

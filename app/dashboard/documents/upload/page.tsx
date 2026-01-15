@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
 import BookUploadForm from '../_components/BookUploadForm'
@@ -8,7 +9,14 @@ import { useCategories } from '../../shared/hooks/useCategories'
 
 export default function DocumentsUploadPage() {
   const router = useRouter()
-  const { categories } = useCategories()
+  const { categories, fetchCategories } = useCategories()
+  const [isUploading, setIsUploading] = useState(false)
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleUpload = async (bookData: {
     title: string
@@ -23,6 +31,8 @@ export default function DocumentsUploadPage() {
       throw new Error('File is required')
     }
 
+    setIsUploading(true)
+    
     try {
       const category = categories.find(cat => cat.id === bookData.category_id)
       const categoryName = category?.name || 'uncategorized'
@@ -66,6 +76,8 @@ export default function DocumentsUploadPage() {
       console.error('Upload error:', error)
       toast.error(message)
       throw error
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -73,18 +85,14 @@ export default function DocumentsUploadPage() {
     <>
       <PageHeader
         title="Upload Document"
-        description="Add a new document to your library"
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Documents', href: '/dashboard/documents' },
-          { label: 'Upload' },
-        ]}
+        showBackButton
+        backHref="/dashboard/documents"
       />
 
       <div className="mt-6">
         <BookUploadForm
           onUpload={handleUpload}
-          isLoading={false}
+          isLoading={isUploading}
           categories={categories}
         />
       </div>
@@ -126,5 +134,5 @@ async function uploadFile(
     throw new Error(result.error || `Failed to upload ${folder}`)
   }
 
-  return result.publicUrl
+  return result.data?.publicUrl || result.data?.url || ''
 }

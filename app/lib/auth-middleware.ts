@@ -105,3 +105,44 @@ export function withAdminAuth<T>(
   }
 }
 
+/**
+ * Verify that the user has an approved membership
+ * Used for protecting content access (books, videos)
+ */
+export async function verifyMembership(request: NextRequest): Promise<string> {
+  const authHeader = request.headers.get('authorization')
+  const token = authHeader?.replace('Bearer ', '')
+  
+  if (!token) {
+    throw new AuthenticationError('Authentication required to access content')
+  }
+
+  const supabaseAdmin = getSupabaseAdmin()
+  
+  // Verify the token and get user
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+  
+  if (authError || !user) {
+    throw new AuthenticationError('Invalid authentication token')
+  }
+
+  // Check membership status
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('user_profiles')
+    .select('membership_status')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError) {
+    console.error('Error fetching user profile:', profileError)
+    throw new AuthorizationError('Unable to verify membership status')
+  }
+
+  if (!profile || profile.membership_status !== 'approved') {
+    throw new AuthorizationError(
+      'Active membership required to access content. Please subscribe or contact support.'
+    )
+  }
+
+  return user.id
+}

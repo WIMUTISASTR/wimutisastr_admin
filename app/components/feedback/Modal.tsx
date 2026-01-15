@@ -145,7 +145,7 @@ export default function Modal({
 
   return createPortal(
     <div className={backdropClasses} onClick={handleBackdropClick}>
-      <div className={panelClasses}>
+      <div className={panelClasses} onClick={(e) => e.stopPropagation()}>
         <div
           ref={dialogRef}
           role="dialog"

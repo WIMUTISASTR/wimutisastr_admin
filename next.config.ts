@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDevelopment = process.env.NODE_ENV === 'development'
+
 const nextConfig: NextConfig = {
   /* config options here */
   
@@ -43,10 +45,12 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https: blob:",
+              // Allow http: in development, only https: in production
+              isDevelopment ? "img-src 'self' data: http: https: blob:" : "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
               "connect-src 'self' https://*.supabase.co https://*.r2.cloudflarestorage.com",
-              "media-src 'self' https: blob:",
+              // Allow http: in development for media as well
+              isDevelopment ? "media-src 'self' http: https: blob:" : "media-src 'self' https: blob:",
               "frame-ancestors 'self'",
             ].join('; ')
           }

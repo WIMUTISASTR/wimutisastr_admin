@@ -92,7 +92,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       throw new Error(result.error || 'Failed to upload category image')
     }
 
-    return result.publicUrl
+    return result.data?.publicUrl || result.data?.url
   }
 
   const handleCategorySubmit = async (e: React.FormEvent) => {

@@ -13,7 +13,8 @@ export default function DocumentsListPage() {
 
   useEffect(() => {
     fetchBooks(1, 20)
-  }, [fetchBooks])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handlePageChange = (page: number) => {
     fetchBooks(page, pagination.limit)
@@ -27,12 +28,8 @@ export default function DocumentsListPage() {
     <>
       <PageHeader
         title="Documents"
-        description="Browse and manage your document library"
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Documents', href: '/dashboard/documents' },
-          { label: 'List' },
-        ]}
+        showBackButton
+        backHref="/dashboard/documents"
         action={
           <Button onClick={() => router.push('/dashboard/documents/upload')}>
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

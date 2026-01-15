@@ -35,21 +35,16 @@ export default function DocumentsPage() {
     <>
       <PageHeader
         title="Document Management"
-        description="Upload, organize, and manage your document library"
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Documents' },
-        ]}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
         {sections.map((section) => (
-          <Card
+          <div
             key={section.href}
-            className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
             onClick={() => router.push(section.href)}
+            className="cursor-pointer hover:-translate-y-1 transition-all duration-200"
           >
-            <div className="p-6">
+            <Card className="h-full hover:shadow-lg transition-shadow duration-200">
               <div
                 className={`
                   w-12 h-12 rounded-xl flex items-center justify-center mb-4
@@ -64,8 +59,8 @@ export default function DocumentsPage() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">{section.title}</h3>
               <p className="text-slate-600">{section.description}</p>
-            </div>
-          </Card>
+            </Card>
+          </div>
         ))}
       </div>
     </>

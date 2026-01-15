@@ -16,6 +16,43 @@ interface VideoCategory {
   updated_at: string
 }
 
+// Component to handle image loading with fallback
+function CategoryCoverImage({ name, cover_url, getCategoryColor }: { name: string, cover_url: string | null, getCategoryColor: (name: string) => string }) {
+  const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+  
+  const showFallback = !cover_url || imageError
+
+  return (
+    <div className={`w-16 h-16 rounded-lg shadow-md overflow-hidden shrink-0 ${showFallback ? getCategoryColor(name) : ''}`}>
+      {cover_url && !imageError ? (
+        <>
+          {!imageLoaded && (
+            <div className={`absolute inset-0 w-full h-full flex items-center justify-center ${getCategoryColor(name)}`}>
+              <span className="text-white font-bold text-lg">
+                {name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+          <img
+            src={cover_url}
+            alt={`${name} cover`}
+            className={`w-full h-full object-cover transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
+          />
+        </>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <span className="text-white font-bold text-lg">
+            {name.charAt(0).toUpperCase()}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface VideoCategoryManagementProps {
   categories: VideoCategory[]
   isLoading: boolean
@@ -100,21 +137,11 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
       accessor: 'name',
       render: (value: string, row: VideoCategory) => (
         <div className="flex items-center gap-3">
-          <div className={`w-16 h-16 rounded-lg shadow-md overflow-hidden shrink-0 ${!row.cover_url ? getCategoryColor(value) : ''}`}>
-            {row.cover_url ? (
-              <img
-                src={row.cover_url}
-                alt={`${value} cover`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="text-white font-bold text-lg">
-                  {value.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
-          </div>
+          <CategoryCoverImage 
+            name={value}
+            cover_url={row.cover_url}
+            getCategoryColor={getCategoryColor}
+          />
           <div>
             <span className="font-bold text-slate-900 text-base">{value}</span>
             {row.description && (

@@ -26,7 +26,7 @@ export default function EditVideoPage() {
   const router = useRouter()
   const params = useParams()
   const videoId = params.id as string
-  const { categories } = useVideoCategories()
+  const { categories, fetchCategories } = useVideoCategories()
 
   const [video, setVideo] = useState<Video | null>(null)
   const [isFetching, setIsFetching] = useState(true)
@@ -44,6 +44,12 @@ export default function EditVideoPage() {
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
   const videoFileInputRef = useRef<HTMLInputElement>(null)
   const [videoDragActive, setVideoDragActive] = useState(false)
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch video data
   useEffect(() => {
@@ -176,7 +182,7 @@ export default function EditVideoPage() {
         const fileUploadResult = await fileUploadResponse.json()
 
         if (fileUploadResponse.ok) {
-          fileUrl = fileUploadResult.publicUrl || fileUploadResult.url
+          fileUrl = fileUploadResult.data?.publicUrl || fileUploadResult.data?.url || ''
           fileName = videoFile.name
           fileSize = videoFile.size
         } else {
@@ -202,7 +208,7 @@ export default function EditVideoPage() {
 
         const thumbnailUploadResult = await thumbnailUploadResponse.json()
         if (thumbnailUploadResponse.ok) {
-          thumbnailUrl = thumbnailUploadResult.publicUrl || thumbnailUploadResult.url
+          thumbnailUrl = thumbnailUploadResult.data?.publicUrl || thumbnailUploadResult.data?.url || null
         } else {
           toast.warning('Failed to upload thumbnail, continuing without it')
         }
@@ -256,13 +262,8 @@ export default function EditVideoPage() {
     <>
       <PageHeader
         title="Edit Video"
-        description="Update video information and files"
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Videos', href: '/dashboard/videos' },
-          { label: 'List', href: '/dashboard/videos/list' },
-          { label: 'Edit' },
-        ]}
+        showBackButton
+        backHref="/dashboard/videos"
       />
 
       <div className="mt-6 max-w-5xl mx-auto">

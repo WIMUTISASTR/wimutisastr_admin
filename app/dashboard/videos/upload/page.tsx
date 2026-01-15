@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
 import VideoUploadForm from '../_components/VideoUploadForm'
@@ -10,12 +10,18 @@ import { useVideoCategories } from '../../shared/hooks/useVideos'
 
 export default function VideosUploadPage() {
   const router = useRouter()
-  const { categories } = useVideoCategories()
+  const { categories, fetchCategories } = useVideoCategories()
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStep, setUploadStep] = useState('')
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
   const [uploadingFileName, setUploadingFileName] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Helper function to upload file with progress tracking
   const uploadFileWithProgress = (
@@ -126,8 +132,8 @@ export default function VideosUploadPage() {
           }
         )
 
-        if (thumbnailUploadResult) {
-          thumbnailUrl = thumbnailUploadResult.publicUrl || thumbnailUploadResult.url
+        if (thumbnailUploadResult && thumbnailUploadResult.data) {
+          thumbnailUrl = thumbnailUploadResult.data.publicUrl || thumbnailUploadResult.data.url
         }
       }
 
@@ -140,7 +146,7 @@ export default function VideosUploadPage() {
         presented_by: videoData.presented_by.trim() || null,
         description: videoData.description.trim() || null,
         file_name: videoData.file.name,
-        file_url: videoUploadResult.publicUrl || videoUploadResult.url,
+        file_url: videoUploadResult.data?.publicUrl || videoUploadResult.data?.url || '',
         file_size: videoData.file.size,
         thumbnail_url: thumbnailUrl,
         category_id: videoData.category_id,
@@ -186,12 +192,8 @@ export default function VideosUploadPage() {
     <>
       <PageHeader
         title="Upload Video"
-        description="Add a new video to your library"
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Videos', href: '/dashboard/videos' },
-          { label: 'Upload' },
-        ]}
+        showBackButton
+        backHref="/dashboard/videos"
       />
 
       <div className="mt-6">
