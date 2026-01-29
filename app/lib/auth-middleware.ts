@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { AuthenticationError, AuthorizationError } from './errors'
+import { getPinCookieName, verifyPinSessionToken } from './pin-session'
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL
 
@@ -11,12 +12,10 @@ if (!ADMIN_EMAIL) {
 /**
  * Verify that the request has a valid PIN verification cookie
  */
-export function verifyPinCookie(request: NextRequest): void {
-  const pinVerified = request.cookies.get('pinVerified')?.value
-  
-  if (pinVerified !== 'true') {
-    throw new AuthenticationError('PIN verification required')
-  }
+export async function verifyPinCookie(request: NextRequest): Promise<void> {
+  const pinCookie = request.cookies.get(getPinCookieName())?.value
+  const ok = await verifyPinSessionToken(pinCookie)
+  if (!ok) throw new AuthenticationError('PIN verification required')
 }
 
 /**
@@ -48,28 +47,22 @@ export function getSupabaseAdmin() {
  */
 export async function verifyAdminAuth(request: NextRequest): Promise<void> {
   // First check PIN
-  verifyPinCookie(request)
+  await verifyPinCookie(request)
 
-  // Get the session token from the Authorization header or cookies
+  // Require a Supabase access token (sent by the client)
   const authHeader = request.headers.get('authorization')
   const token = authHeader?.replace('Bearer ', '')
   
   if (!token) {
-    // Try to get from cookies (Supabase auth cookie)
-    const cookies = request.cookies.getAll()
-    const supabaseAuthCookie = cookies.find(cookie => 
-      cookie.name.includes('supabase-auth-token') || 
-      cookie.name.includes('sb-') && cookie.name.includes('-auth-token')
-    )
-    
-    if (!supabaseAuthCookie) {
-      throw new AuthenticationError('Authentication required')
-    }
+    throw new AuthenticationError('Authentication required')
   }
 
-  // Verify the user is the admin email
-  // Note: In a production app, you'd verify the token here
-  // For now, we trust the PIN + Supabase session verification done on the client
+  const supabaseAdmin = getSupabaseAdmin()
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  if (error || !user) throw new AuthenticationError('Invalid authentication token')
+  if (!user.email || !isAdminEmail(user.email)) {
+    throw new AuthorizationError('Access denied')
+  }
 }
 
 /**
@@ -87,7 +80,7 @@ export function withPinAuth<T>(
   handler: (request: NextRequest, ...args: any[]) => Promise<T>
 ) {
   return async (request: NextRequest, ...args: any[]): Promise<T> => {
-    verifyPinCookie(request)
+    await verifyPinCookie(request)
     return handler(request, ...args)
   }
 }

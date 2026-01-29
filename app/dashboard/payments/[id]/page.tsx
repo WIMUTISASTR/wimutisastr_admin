@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { PageHeader } from '../../../components/layout'
 import { Card, Badge, Button } from '../../../components/ui'
+import { apiFetch } from '../../shared/api'
 import { PaymentProof } from '../../shared/types'
 import { formatFileSize } from '../../shared/utils'
 
@@ -25,7 +26,7 @@ export default function PaymentProofDetailPage() {
   const fetchProof = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/payment-proofs?id=${proofId}`)
+      const response = await apiFetch(`/api/payment-proofs?id=${proofId}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -47,7 +48,7 @@ export default function PaymentProofDetailPage() {
 
     setIsProcessing(true)
     try {
-      const response = await fetch(`/api/payment-proofs?id=${proof.id}`, {
+      const response = await apiFetch(`/api/payment-proofs?id=${proof.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +82,7 @@ export default function PaymentProofDetailPage() {
 
     setIsProcessing(true)
     try {
-      const response = await fetch(`/api/payment-proofs?id=${proof.id}`, {
+      const response = await apiFetch(`/api/payment-proofs?id=${proof.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -275,8 +276,17 @@ export default function PaymentProofDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Plan</label>
-              <Badge variant="default" size="lg">{proof.plan_id}</Badge>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">Subscription Plan</label>
+              {proof.subscription_plan ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="font-bold text-slate-900 text-lg">{proof.subscription_plan.name}</div>
+                  <div className="text-sm text-slate-600 mt-1">
+                    ${proof.subscription_plan.price} {proof.subscription_plan.currency} · {proof.subscription_plan.duration_days} days
+                  </div>
+                </div>
+              ) : (
+                <Badge variant="default" size="lg">{proof.plan_id}</Badge>
+              )}
             </div>
 
             <div>

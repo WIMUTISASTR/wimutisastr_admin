@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
+import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, NotFoundError, ValidationError } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 
 // GET - Fetch payment proofs with pagination and filtering
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -57,10 +57,25 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Add user data to response
+      // Fetch subscription plan data if subscription_plan_id exists
+      let subscriptionPlanData = null
+      if (data.subscription_plan_id) {
+        const { data: planData } = await supabaseAdmin
+          .from('subscription_plans')
+          .select('id, name, price, duration_days, currency')
+          .eq('id', data.subscription_plan_id)
+          .single()
+
+        if (planData) {
+          subscriptionPlanData = planData
+        }
+      }
+
+      // Add user data and subscription plan data to response
       const transformedData = {
         ...data,
-        user: userData
+        user: userData,
+        subscription_plan: subscriptionPlanData
       }
 
       return NextResponse.json({ data: transformedData })
@@ -83,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     if (proofsError) throw proofsError
 
-    // Fetch user data (email + profile) for all proofs
+    // Fetch user data (email + profile) and subscription plan for all proofs
     const transformedProofs = await Promise.all(
       (proofs || []).map(async (proof) => {
         let userData = null
@@ -111,9 +126,29 @@ export async function GET(request: NextRequest) {
             console.error(`Failed to fetch user data for ${proof.user_id}:`, error)
           }
         }
+
+        // Fetch subscription plan data if subscription_plan_id exists
+        let subscriptionPlanData = null
+        if (proof.subscription_plan_id) {
+          try {
+            const { data: planData } = await supabaseAdmin
+              .from('subscription_plans')
+              .select('id, name, price, duration_days, currency')
+              .eq('id', proof.subscription_plan_id)
+              .single()
+
+            if (planData) {
+              subscriptionPlanData = planData
+            }
+          } catch (error) {
+            console.error(`Failed to fetch subscription plan for ${proof.subscription_plan_id}:`, error)
+          }
+        }
+
         return {
           ...proof,
-          user: userData
+          user: userData,
+          subscription_plan: subscriptionPlanData
         }
       })
     )
@@ -135,8 +170,8 @@ export async function GET(request: NextRequest) {
 // PUT - Update payment proof status (verify or reject)
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -246,10 +281,25 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Add user data to response
+    // Fetch subscription plan data if subscription_plan_id exists
+    let subscriptionPlanData = null
+    if (data.subscription_plan_id) {
+      const { data: planData } = await supabaseAdmin
+        .from('subscription_plans')
+        .select('id, name, price, duration_days, currency')
+        .eq('id', data.subscription_plan_id)
+        .single()
+
+      if (planData) {
+        subscriptionPlanData = planData
+      }
+    }
+
+    // Add user data and subscription plan data to response
     const transformedData = {
       ...data,
-      user: userData
+      user: userData,
+      subscription_plan: subscriptionPlanData
     }
 
     return NextResponse.json({ data: transformedData })

@@ -6,6 +6,7 @@ import { DataTable, Pagination } from '../../../components/data-display'
 import { DeleteConfirmationModal } from '../../../components/feedback'
 import { PageHeader } from '../../../components/layout'
 import { Card, Badge, Button } from '../../../components/ui'
+import { apiFetch } from '../../shared/api'
 import { User } from '../../shared/types'
 import { useUsers } from '../../shared/hooks/useUsers'
 import { formatDate } from '../../shared/utils'
@@ -45,7 +46,7 @@ export default function UsersContent() {
   const updateMembershipStatus = async (userId: string, status: 'pending' | 'approved' | 'denied', notes?: string) => {
     try {
       setUpdatingUserId(userId)
-      const response = await fetch(`/api/users?id=${userId}`, {
+      const response = await apiFetch(`/api/users?id=${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

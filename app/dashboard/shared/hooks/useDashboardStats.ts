@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { apiFetch } from '../api'
 
 interface DashboardStats {
   users: number
@@ -28,9 +29,9 @@ export function useDashboardStats(): UseDashboardStatsReturn {
       setError(null)
 
       const [usersResponse, booksResponse, videosResponse] = await Promise.all([
-        fetch('/api/users'),
-        fetch('/api/books'),
-        fetch('/api/videos'),
+        apiFetch('/api/users'),
+        apiFetch('/api/books'),
+        apiFetch('/api/videos'),
       ])
 
       const [usersData, booksData, videosData] = await Promise.all([

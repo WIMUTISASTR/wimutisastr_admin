@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getPinCookieName, verifyPinSessionToken } from '@/app/lib/pin-session'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Protect dashboard route
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    const pinVerified = request.cookies.get('pinVerified')?.value
+    const pinCookie = request.cookies.get(getPinCookieName())?.value
     
     // Check if PIN is verified (using cookie instead of localStorage for SSR)
-    if (pinVerified !== 'true') {
+    const ok = await verifyPinSessionToken(pinCookie)
+    if (!ok) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }

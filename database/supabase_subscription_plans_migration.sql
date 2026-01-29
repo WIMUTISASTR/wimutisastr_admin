@@ -24,17 +24,19 @@ CREATE INDEX IF NOT EXISTS idx_subscription_plans_sort_order ON public.subscript
 ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Allow authenticated users to read active plans
+DROP POLICY IF EXISTS "Allow authenticated users to read active plans" ON public.subscription_plans;
 CREATE POLICY "Allow authenticated users to read active plans"
   ON public.subscription_plans
   FOR SELECT
   USING (is_active = true);
 
 -- Policy: Allow service role full access (for admin operations)
+DROP POLICY IF EXISTS "Allow service role full access to subscription plans" ON public.subscription_plans;
 CREATE POLICY "Allow service role full access to subscription plans"
   ON public.subscription_plans
   FOR ALL
-  USING (true)
-  WITH CHECK (true);
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
 
 -- Add updated_at trigger
 CREATE OR REPLACE FUNCTION update_subscription_plans_updated_at()
@@ -43,8 +45,10 @@ BEGIN
   NEW.updated_at = CURRENT_TIMESTAMP;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+SET search_path = public;
 
+DROP TRIGGER IF EXISTS set_subscription_plans_updated_at ON public.subscription_plans;
 CREATE TRIGGER set_subscription_plans_updated_at
   BEFORE UPDATE ON public.subscription_plans
   FOR EACH ROW

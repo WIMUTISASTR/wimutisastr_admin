@@ -6,6 +6,7 @@ import ThumbnailUpload from '../../../components/forms/ThumbnailUpload'
 import Modal from '../../../components/feedback/Modal'
 import { useZodForm } from '@/app/lib/useZodForm'
 import { createCategorySchema, updateCategorySchema } from '@/app/lib/validations'
+import { apiFetch } from '../../shared/api'
 import Button from '@/app/components/ui/Button'
 
 interface VideoCategory {
@@ -72,16 +73,15 @@ export default function VideoCategoryModal({
 
       // Upload cover if a new file is provided
       if (coverFile) {
-        const coverExt = coverFile.name.split('.').pop()
-        const coverFileName = `category_cover_${Date.now()}_${Math.random().toString(36).substring(7)}.${coverExt}`
-        const coverPath = `video-category-covers/${coverFileName}`
+        // `path` is treated as a server-side hint only; the server generates a safe unique key.
+        const coverPath = `video-category-covers/${coverFile.name}`
 
         const coverFormData = new FormData()
         coverFormData.append('file', coverFile)
         coverFormData.append('bucket', 'video-category-covers')
         coverFormData.append('path', coverPath)
 
-        const coverUploadResponse = await fetch('/api/storage/upload', {
+        const coverUploadResponse = await apiFetch('/api/storage/upload', {
           method: 'POST',
           body: coverFormData,
         })
@@ -112,7 +112,7 @@ export default function VideoCategoryModal({
         : '/api/video-categories'
       const method = editingCategory ? 'PUT' : 'POST'
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',

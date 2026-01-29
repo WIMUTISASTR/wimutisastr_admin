@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
 import BookUploadForm from '../_components/BookUploadForm'
 import { PageHeader } from '../../../components/layout'
+import { apiFetch } from '../../shared/api'
 import { useCategories } from '../../shared/hooks/useCategories'
 
 export default function DocumentsUploadPage() {
@@ -47,7 +48,7 @@ export default function DocumentsUploadPage() {
       }
 
       // Save book metadata
-      const response = await fetch('/api/books', {
+      const response = await apiFetch('/api/books', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -109,9 +110,8 @@ async function uploadFile(
   categoryId: string | null,
   categoryName: string
 ): Promise<string> {
-  const fileExt = file.name.split('.').pop()
-  const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
-  const filePath = `${folder}/${fileName}`
+  // `path` is treated as a server-side hint only; the server generates a safe unique key.
+  const filePath = `${folder}/${file.name}`
 
   const formData = new FormData()
   formData.append('file', file)
@@ -123,7 +123,7 @@ async function uploadFile(
     formData.append('category_name', categoryName)
   }
 
-  const response = await fetch('/api/storage/upload', {
+  const response = await apiFetch('/api/storage/upload', {
     method: 'POST',
     body: formData,
   })

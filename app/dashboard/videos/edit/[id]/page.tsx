@@ -6,6 +6,7 @@ import { toast } from 'react-toastify'
 import ThumbnailUpload from '../../../../components/forms/ThumbnailUpload'
 import { Button } from '../../../../components/ui'
 import { PageHeader } from '../../../../components/layout'
+import { apiFetch } from '../../../shared/api'
 import { useVideoCategories } from '../../../shared/hooks/useVideos'
 
 interface Video {
@@ -56,7 +57,7 @@ export default function EditVideoPage() {
     const fetchVideo = async () => {
       try {
         setIsFetching(true)
-        const response = await fetch(`/api/videos?id=${videoId}`)
+        const response = await apiFetch(`/api/videos?id=${videoId}`)
         const result = await response.json()
 
         if (!response.ok) {
@@ -165,16 +166,15 @@ export default function EditVideoPage() {
 
       // Upload new video file if provided
       if (videoFile) {
-        const fileExt = videoFile.name.split('.').pop()
-        const newFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
-        const filePath = `videos/${newFileName}`
+        // `path` is treated as a server-side hint only; the server generates a safe unique key.
+        const filePath = `videos/${videoFile.name}`
 
         const fileFormData = new FormData()
         fileFormData.append('file', videoFile)
         fileFormData.append('bucket', 'videos')
         fileFormData.append('path', filePath)
 
-        const fileUploadResponse = await fetch('/api/storage/upload', {
+        const fileUploadResponse = await apiFetch('/api/storage/upload', {
           method: 'POST',
           body: fileFormData,
         })
@@ -192,16 +192,15 @@ export default function EditVideoPage() {
 
       // Upload new thumbnail if provided
       if (thumbnailFile) {
-        const thumbnailExt = thumbnailFile.name.split('.').pop()
-        const thumbnailFileName = `thumb_${Date.now()}_${Math.random().toString(36).substring(7)}.${thumbnailExt}`
-        const thumbnailPath = `video-thumbnails/${thumbnailFileName}`
+        // `path` is treated as a server-side hint only; the server generates a safe unique key.
+        const thumbnailPath = `video-thumbnails/${thumbnailFile.name}`
 
         const thumbnailFormData = new FormData()
         thumbnailFormData.append('file', thumbnailFile)
         thumbnailFormData.append('bucket', 'video-thumbnails')
         thumbnailFormData.append('path', thumbnailPath)
 
-        const thumbnailUploadResponse = await fetch('/api/storage/upload', {
+        const thumbnailUploadResponse = await apiFetch('/api/storage/upload', {
           method: 'POST',
           body: thumbnailFormData,
         })
@@ -215,7 +214,7 @@ export default function EditVideoPage() {
       }
 
       // Update video metadata
-      const response = await fetch(`/api/videos?id=${video.id}`, {
+      const response = await apiFetch(`/api/videos?id=${video.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

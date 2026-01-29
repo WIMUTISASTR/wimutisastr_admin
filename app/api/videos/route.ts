@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
-import { getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
+import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, successResponse, NotFoundError, ValidationError } from '@/app/lib/errors'
 import { createVideoSchema, updateVideoSchema, validateData } from '@/app/lib/validations'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
@@ -28,8 +28,8 @@ function getR2Client() {
 // GET - Fetch videos with pagination
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -84,8 +84,8 @@ export async function GET(request: NextRequest) {
 // POST - Create a new video
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -129,8 +129,8 @@ export async function POST(request: NextRequest) {
 // PUT - Update a video
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -178,8 +178,8 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a video
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'react-toastify'
+import { apiFetch } from '../api'
 import { Video, VideoCategory } from '../types'
 
 interface PaginationInfo {
@@ -24,7 +25,7 @@ export function useVideos() {
     try {
       setIsLoading(true)
       setError(null)
-      const response = await fetch(`/api/videos?page=${page}&limit=${limit}`)
+      const response = await apiFetch(`/api/videos?page=${page}&limit=${limit}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -49,7 +50,7 @@ export function useVideos() {
 
   const deleteVideo = async (videoId: string) => {
     try {
-      const response = await fetch(`/api/videos?id=${videoId}`, {
+      const response = await apiFetch(`/api/videos?id=${videoId}`, {
         method: 'DELETE',
       })
 
@@ -93,7 +94,7 @@ export function useVideoCategories() {
   const fetchCategories = async (page = 1, limit = 50) => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/video-categories?page=${page}&limit=${limit}`)
+      const response = await apiFetch(`/api/video-categories?page=${page}&limit=${limit}`)
       const result = await response.json()
       if (response.ok && result.data) {
         setCategories(result.data)

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
+import { apiFetch } from '../api'
 import type { Book } from '../types'
 
 interface PaginationInfo {
@@ -39,7 +40,7 @@ export function useBooks(): UseBooksReturn {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/books?page=${page}&limit=${limit}`)
+      const response = await apiFetch(`/api/books?page=${page}&limit=${limit}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -82,7 +83,7 @@ export function useBooks(): UseBooksReturn {
 
   const deleteBook = useCallback(async (bookId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/books?id=${bookId}`, {
+      const response = await apiFetch(`/api/books?id=${bookId}`, {
         method: 'DELETE',
       })
 

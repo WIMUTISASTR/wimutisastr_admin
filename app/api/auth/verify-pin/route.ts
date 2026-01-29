@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pinSchema, validateData } from '@/app/lib/validations'
 import { handleApiError, AuthenticationError, successResponse } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
+import { createPinSessionToken, getPinCookieName, parsePinSessionFromCookieValue } from '@/app/lib/pin-session'
 
 const VALID_PIN = process.env.ADMIN_PIN
 
@@ -35,7 +36,9 @@ export async function POST(request: NextRequest) {
 
     // Set secure HTTP-only cookie
     const response = NextResponse.json({ success: true })
-    response.cookies.set('pinVerified', 'true', {
+    const cookieName = getPinCookieName()
+    const token = await createPinSessionToken(60 * 60 * 24) // 24 hours
+    response.cookies.set(cookieName, token, {
       httpOnly: true, // Prevents JavaScript access
       secure: process.env.NODE_ENV === 'production', // HTTPS only in production
       sameSite: 'strict',
@@ -52,11 +55,10 @@ export async function POST(request: NextRequest) {
 // GET - Check if PIN is verified
 export async function GET(request: NextRequest) {
   try {
-    const pinVerified = request.cookies.get('pinVerified')?.value
-    
-    if (pinVerified === 'true') {
-      return NextResponse.json({ verified: true })
-    }
+    const cookieName = getPinCookieName()
+    const pinCookie = request.cookies.get(cookieName)?.value
+    const { valid } = await parsePinSessionFromCookieValue(pinCookie)
+    if (valid) return NextResponse.json({ verified: true })
     
     return NextResponse.json(
       { verified: false },
@@ -74,7 +76,7 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const response = NextResponse.json({ success: true })
-    response.cookies.delete('pinVerified')
+    response.cookies.delete(getPinCookieName())
     
     return response
   } catch (error) {

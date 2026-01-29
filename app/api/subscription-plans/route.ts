@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
+import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, NotFoundError, ValidationError, successResponse } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 import { z } from 'zod'
@@ -22,8 +22,8 @@ const updatePlanSchema = createPlanSchema.partial()
 // GET - Fetch subscription plans
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
 // POST - Create a new subscription plan
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validation = createPlanSchema.safeParse(body)
     if (!validation.success) {
-      throw new ValidationError(validation.error.errors.map(e => e.message).join(', '))
+      throw new ValidationError(validation.error.issues.map((e) => e.message).join(', '))
     }
 
     const planData = validation.data
@@ -119,8 +119,8 @@ export async function POST(request: NextRequest) {
 // PUT - Update a subscription plan
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -138,7 +138,7 @@ export async function PUT(request: NextRequest) {
     // Validate request body
     const validation = updatePlanSchema.safeParse(body)
     if (!validation.success) {
-      throw new ValidationError(validation.error.errors.map(e => e.message).join(', '))
+      throw new ValidationError(validation.error.issues.map((e) => e.message).join(', '))
     }
 
     const updateData = validation.data
@@ -164,8 +164,8 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a subscription plan
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)

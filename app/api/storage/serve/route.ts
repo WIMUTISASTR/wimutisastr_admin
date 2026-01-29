@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
-import { verifyMembership, isAdminEmail, getSupabaseAdmin } from '@/app/lib/auth-middleware'
+import { verifyMembership, isAdminEmail, getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
 import { handleApiError } from '@/app/lib/errors'
 
 // Cloudflare R2 configuration
@@ -52,9 +52,11 @@ export async function GET(request: NextRequest) {
     let isAdmin = false
     
     // Check 1: PIN-based admin authentication (for admin panel)
-    const pinVerified = request.cookies.get('pinVerified')?.value
-    if (pinVerified === 'true') {
+    try {
+      await verifyPinCookie(request)
       isAdmin = true
+    } catch {
+      // Not admin via PIN, continue checking other auth methods
     }
     
     // Check 2: Supabase token-based admin authentication (for API calls)
@@ -132,22 +134,14 @@ export async function GET(request: NextRequest) {
         'Content-Type': contentType,
         'Content-Length': buffer.length.toString(),
         'Cache-Control': 'public, max-age=31536000, immutable',
+        // Allow embedding in same-origin iframes (used by admin preview UI)
+        'X-Frame-Options': 'SAMEORIGIN',
+        'Content-Security-Policy': "frame-ancestors 'self'",
       },
     })
   } catch (error: any) {
     console.error('R2 serve error:', error)
-    
-    if (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json(
-      { error: error.message || 'Failed to serve file' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 

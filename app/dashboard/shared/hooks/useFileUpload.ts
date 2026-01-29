@@ -10,7 +10,7 @@ interface UseFileUploadReturn {
   file: File | null
   preview: string | null
   dragActive: boolean
-  fileInputRef: React.RefObject<HTMLInputElement>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
   handleFile: (file: File) => void
   handleDrag: (e: React.DragEvent) => void
   handleDrop: (e: React.DragEvent) => void

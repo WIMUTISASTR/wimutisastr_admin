@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { PageHeader } from '../../../components/layout'
 import { Card, Button, UIIcons } from '../../../components/ui'
 import { ThumbnailUpload } from '../../../components/forms'
+import { apiFetch } from '../../shared/api'
 import { useSubscriptionPlans } from '../../shared/hooks/useSubscriptionPlans'
 
 export default function CreateSubscriptionPlanPage() {
@@ -77,9 +78,10 @@ export default function CreateSubscriptionPlanPage() {
         const qrFormData = new FormData()
         qrFormData.append('file', qrCodeFile)
         qrFormData.append('bucket', 'documents')
-        qrFormData.append('path', `qr-codes/qr_${Date.now()}_${Math.random().toString(36).substring(7)}.${qrCodeFile.name.split('.').pop()}`)
+        // `path` is treated as a server-side hint only; the server generates a safe unique key.
+        qrFormData.append('path', `qr-codes/${qrCodeFile.name}`)
 
-        const uploadResponse = await fetch('/api/storage/upload', {
+        const uploadResponse = await apiFetch('/api/storage/upload', {
           method: 'POST',
           body: qrFormData,
         })

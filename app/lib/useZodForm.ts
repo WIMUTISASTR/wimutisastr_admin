@@ -23,7 +23,9 @@ export function useZodForm<TSchema extends z.ZodTypeAny>(
   const [errors, setErrors] = useState<FieldErrors>({})
 
   const setValue = useCallback(<K extends keyof TInput>(key: K, value: TInput[K]) => {
-    setValues((prev) => ({ ...prev, [key]: value }))
+    // Forms in this app use object-like schemas; keep the helper flexible while
+    // satisfying TS when TInput is not inferred as an object.
+    setValues((prev) => ({ ...(prev as Record<string, unknown>), [String(key)]: value } as TInput))
     setErrors((prev) => {
       if (!prev[String(key)]) return prev
       const { [String(key)]: _removed, ...rest } = prev

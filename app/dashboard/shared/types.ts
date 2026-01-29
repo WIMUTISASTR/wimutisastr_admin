@@ -8,14 +8,14 @@ export interface Category {
   created_at: string
   updated_at: string
   subcategories?: Category[] // Optional array for hierarchical display
-  parent?: Category | null // Optional parent category reference
+  parent?: { id: string; name: string } | null // Optional parent category reference
 }
 
 export interface Book {
   id: string
   title: string
   author: string
-  year: string
+  year: number
   description: string
   file_name: string
   file_url: string
@@ -70,7 +70,8 @@ export interface PaymentProof {
   id: string
   user_id: string
   payment_reference: string
-  plan_id: string
+  plan_id: string // Legacy field - kept for backward compatibility
+  subscription_plan_id: string | null // New UUID foreign key to subscription_plans
   amount: string
   proof_url: string
   file_name: string
@@ -92,5 +93,13 @@ export interface PaymentProof {
     membership_approved_at: string | null
     membership_denied_at: string | null
     registered_at: string | null
+  } | null
+  // Joined subscription plan data
+  subscription_plan?: {
+    id: string
+    name: string
+    price: number
+    duration_days: number
+    currency: string
   } | null
 }

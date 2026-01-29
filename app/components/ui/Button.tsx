@@ -47,14 +47,16 @@ export default function Button({
   
   const variantClasses: Record<ButtonVariant, string> = {
     primary: 'bg-blue-700 hover:bg-blue-800 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
-    secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-700 shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    // Neutral / secondary action (Cancel, Back, Close, etc.)
+    // Keep it clean (outline) so functional buttons can carry color meaning.
+    secondary: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-sm',
     submit: 'bg-green-600 hover:bg-green-800 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
     ghost: 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
     danger: 'bg-red-600 hover:bg-red-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
     success: 'bg-green-600 hover:bg-green-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
     warning: 'bg-yellow-600 hover:bg-yellow-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
     info: 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
-    light: 'bg-gray-200 hover:bg-gray-300 text-gray-700 shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
+    light: 'bg-slate-100 hover:bg-slate-200 text-slate-800',
     dark: 'bg-gray-800 hover:bg-gray-900 text-white shadow-lg transform hover:scale-[1.02] active:scale-[0.98]',
   }
 

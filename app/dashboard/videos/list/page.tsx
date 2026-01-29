@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import VideoList from '../_components/VideoList'
 import { PageHeader } from '../../../components/layout'
 import { useVideos, useVideoCategories } from '../../shared/hooks/useVideos'
+import { apiFetch } from '../../shared/api'
 import { Button } from '../../../components/ui'
 import { toast } from 'react-toastify'
 
@@ -29,7 +30,7 @@ export default function VideosListPage() {
 
   const handleDelete = async (videoId: string) => {
     try {
-      const response = await fetch(`/api/videos?id=${videoId}`, {
+      const response = await apiFetch(`/api/videos?id=${videoId}`, {
         method: 'DELETE',
       })
 

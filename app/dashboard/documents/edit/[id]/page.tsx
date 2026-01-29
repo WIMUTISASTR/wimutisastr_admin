@@ -4,13 +4,15 @@ import { useMemo, useRef, useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
+import { apiFetch } from '../../../shared/api'
 import { Book, Category } from '../../../shared/types'
 import { formatFileSize } from '../../../shared/utils'
 import { useZodForm } from '@/app/lib/useZodForm'
 import { Button } from '../../../../components/ui'
 import { PageHeader } from '../../../../components/layout'
-import { LoadingSkeleton } from '../../../../components/feedback'
+import { LoadingSkeleton, Modal } from '../../../../components/feedback'
 import { useCategories } from '../../../shared/hooks/useCategories'
+import { renderAsync } from 'docx-preview'
 
 export default function EditDocumentPage() {
   const router = useRouter()
@@ -24,6 +26,105 @@ export default function EditDocumentPage() {
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [bookFile, setBookFile] = useState<File | null>(null)
   const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string>('')
+  const [isFilePreviewOpen, setIsFilePreviewOpen] = useState(false)
+  const [isFilePreviewFullscreenOpen, setIsFilePreviewFullscreenOpen] = useState(false)
+
+  const filePreviewUrl = useMemo(() => {
+    if (!book?.file_url) return ''
+
+    // Already served via our same-origin endpoint
+    if (book.file_url.includes('/api/storage/serve')) {
+      return book.file_url
+    }
+
+    // Convert a public URL into a same-origin serve URL to avoid iframe blocking (X-Frame-Options/CSP).
+    try {
+      const url = new URL(book.file_url)
+      const key = url.pathname.replace(/^\//, '')
+      if (!key) return book.file_url
+      return `/api/storage/serve?key=${encodeURIComponent(key)}`
+    } catch {
+      return book.file_url
+    }
+  }, [book?.file_url])
+
+  const fileExtension = useMemo(() => {
+    const name = (book?.file_name || '').trim()
+    const source = name || book?.file_url || ''
+    const lower = source.toLowerCase()
+    const withoutQuery = lower.split('?')[0].split('#')[0]
+    const parts = withoutQuery.split('.')
+    if (parts.length < 2) return ''
+    return parts[parts.length - 1]
+  }, [book?.file_name, book?.file_url])
+
+  const filePreviewIframeSrc = useMemo(() => {
+    const url = filePreviewUrl || book?.file_url || ''
+    if (!url) return ''
+    if (fileExtension !== 'pdf') return url
+    // Improve PDF embed UX in most browsers
+    return url.includes('#') ? url : `${url}#zoom=page-width&toolbar=0&navpanes=0`
+  }, [book?.file_url, filePreviewUrl, fileExtension])
+
+  const filePreviewFetchUrl = useMemo(() => {
+    // For formats that require fetching (docx), prefer same-origin serve URL.
+    return filePreviewUrl || book?.file_url || ''
+  }, [book?.file_url, filePreviewUrl])
+
+  const DocxPreview = ({ src }: { src: string }) => {
+    const containerRef = useRef<HTMLDivElement | null>(null)
+    const [isRendering, setIsRendering] = useState(false)
+    const [renderError, setRenderError] = useState<string | null>(null)
+
+    useEffect(() => {
+      let cancelled = false
+      const el = containerRef.current
+      if (!el || !src) return
+
+      el.innerHTML = ''
+      setIsRendering(true)
+      setRenderError(null)
+
+      ;(async () => {
+        try {
+          const res = await fetch(src)
+          if (!res.ok) throw new Error('Failed to load document')
+          const buffer = await res.arrayBuffer()
+          if (cancelled) return
+          el.innerHTML = ''
+          await renderAsync(buffer, el, undefined, {
+            inWrapper: true,
+            ignoreWidth: false,
+            ignoreHeight: false,
+            ignoreFonts: false,
+            breakPages: false,
+          })
+        } catch (e: any) {
+          if (cancelled) return
+          setRenderError(e?.message || 'Failed to render document')
+        } finally {
+          if (cancelled) return
+          setIsRendering(false)
+        }
+      })()
+
+      return () => {
+        cancelled = true
+      }
+    }, [src])
+
+    return (
+      <div className="h-full w-full bg-white overflow-auto">
+        {isRendering && (
+          <div className="p-4 text-sm text-slate-600">Loading document preview…</div>
+        )}
+        {renderError && (
+          <div className="p-4 text-sm text-red-600">{renderError}</div>
+        )}
+        <div ref={containerRef} className="p-4" />
+      </div>
+    )
+  }
 
   // Fetch categories on mount
   useEffect(() => {
@@ -78,7 +179,7 @@ export default function EditDocumentPage() {
     const fetchBook = async () => {
       try {
         setIsFetching(true)
-        const response = await fetch(`/api/books?id=${bookId}`)
+        const response = await apiFetch(`/api/books?id=${bookId}`)
         const result = await response.json()
 
         if (!response.ok) {
@@ -114,6 +215,8 @@ export default function EditDocumentPage() {
       } as any)
       setCoverFile(null)
       setBookFile(null)
+      setIsFilePreviewOpen(false)
+      setIsFilePreviewFullscreenOpen(false)
     }
   }, [book, reset])
 
@@ -176,9 +279,8 @@ export default function EditDocumentPage() {
 
       // Upload new book file if provided
       if (bookFile) {
-        const fileExt = bookFile.name.split('.').pop()
-        const newFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
-        const filePath = `documents/${newFileName}`
+        // `path` is treated as a server-side hint only; the server generates a safe unique key.
+        const filePath = `documents/${bookFile.name}`
 
         const fileFormData = new FormData()
         fileFormData.append('file', bookFile)
@@ -189,7 +291,7 @@ export default function EditDocumentPage() {
           fileFormData.append('category_name', categoryName)
         }
 
-        const fileUploadResponse = await fetch('/api/storage/upload', {
+        const fileUploadResponse = await apiFetch('/api/storage/upload', {
           method: 'POST',
           body: fileFormData,
         })
@@ -207,9 +309,8 @@ export default function EditDocumentPage() {
 
       // Upload new cover if provided
       if (coverFile) {
-        const coverExt = coverFile.name.split('.').pop()
-        const coverFileName = `cover_${Date.now()}_${Math.random().toString(36).substring(7)}.${coverExt}`
-        const coverPath = `covers/${coverFileName}`
+        // `path` is treated as a server-side hint only; the server generates a safe unique key.
+        const coverPath = `covers/${coverFile.name}`
 
         const coverFormData = new FormData()
         coverFormData.append('file', coverFile)
@@ -220,7 +321,7 @@ export default function EditDocumentPage() {
           coverFormData.append('category_name', categoryName)
         }
 
-        const coverUploadResponse = await fetch('/api/storage/upload', {
+        const coverUploadResponse = await apiFetch('/api/storage/upload', {
           method: 'POST',
           body: coverFormData,
         })
@@ -235,7 +336,7 @@ export default function EditDocumentPage() {
       }
 
       // Update book via API
-      const response = await fetch(`/api/books?id=${book.id}`, {
+      const response = await apiFetch(`/api/books?id=${book.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -390,16 +491,118 @@ export default function EditDocumentPage() {
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 type="button"
-                variant="secondary"
+                variant="ghost"
                 size="sm"
-                className="transform-none"
-                onClick={() => window.open(book.file_url, '_blank', 'noopener,noreferrer')}
+                className="transform-none h-10 w-10 p-0 border border-slate-200 hover:bg-slate-50"
+                onClick={() => setIsFilePreviewOpen((v) => !v)}
+                aria-label={isFilePreviewOpen ? 'Collapse file preview' : 'Expand file preview'}
+                title={isFilePreviewOpen ? 'Collapse' : 'Expand'}
               >
-                View file
+                {isFilePreviewOpen ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
               </Button>
             </div>
           </div>
         </div>
+
+        {isFilePreviewOpen && (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b border-slate-200">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-slate-900 truncate">File preview</div>
+                <div className="text-xs text-slate-600 truncate">{book.file_name}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="transform-none"
+                  onClick={() => setIsFilePreviewFullscreenOpen(true)}
+                >
+                  Full screen
+                </Button>
+                <a
+                  href={filePreviewUrl || book.file_url}
+                  className="text-sm font-semibold text-blue-700 hover:text-blue-800"
+                  download
+                >
+                  Download
+                </a>
+              </div>
+            </div>
+            <div className="flex flex-col h-[70vh] bg-slate-50">
+              {fileExtension === 'docx' ? (
+                <DocxPreview src={filePreviewFetchUrl} />
+              ) : (
+                <iframe
+                  title={`Preview: ${book.title}`}
+                  src={filePreviewIframeSrc || filePreviewUrl || book.file_url}
+                  className="w-full flex-1 bg-white"
+                />
+              )}
+              <div className="p-3 text-sm text-slate-600 border-t border-slate-200 bg-white">
+                If the preview does not load, use “Full screen” or “Download” above.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {book && (
+          <Modal
+            isOpen={isFilePreviewFullscreenOpen}
+            onClose={() => setIsFilePreviewFullscreenOpen(false)}
+            variant="fullscreen"
+            className="p-0"
+            showCloseButton={false}
+          >
+            <div className="h-dvh flex flex-col">
+              <div className="sticky top-0 z-10 bg-white border-b border-slate-200">
+                <div className="flex items-start justify-between gap-4 p-4">
+                  <div className="min-w-0">
+                    <div className="text-xl font-bold text-slate-900 truncate">File preview</div>
+                    <div className="text-sm text-slate-600 truncate">{book.file_name}</div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <a
+                      href={filePreviewUrl || book.file_url}
+                      className="text-sm font-semibold text-blue-700 hover:text-blue-800"
+                      download
+                    >
+                      Download
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setIsFilePreviewFullscreenOpen(false)}
+                      aria-label="Close"
+                      className="h-10 w-10 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      <span className="text-2xl leading-none">×</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 bg-slate-50 overflow-hidden">
+                {fileExtension === 'docx' ? (
+                  <DocxPreview src={filePreviewFetchUrl} />
+                ) : (
+                  <iframe
+                    title={`Fullscreen preview: ${book.title}`}
+                    src={filePreviewIframeSrc || filePreviewUrl || book.file_url}
+                    className="w-full h-full bg-white"
+                  />
+                )}
+              </div>
+            </div>
+          </Modal>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

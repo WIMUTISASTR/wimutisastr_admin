@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'react-toastify'
+import { apiFetch } from '../api'
 import { PaymentProof } from '../types'
 
 interface PaginationInfo {
@@ -30,7 +31,7 @@ export function usePaymentProofs() {
         url += `&status=${status}`
       }
       
-      const response = await fetch(url)
+      const response = await apiFetch(url)
       const result = await response.json()
 
       if (!response.ok) {
@@ -61,7 +62,7 @@ export function usePaymentProofs() {
     membership_ends_at?: string
   ) => {
     try {
-      const response = await fetch(`/api/payment-proofs?id=${proofId}`, {
+      const response = await apiFetch(`/api/payment-proofs?id=${proofId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
+import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, successResponse, NotFoundError, ValidationError } from '@/app/lib/errors'
 import { createCategorySchema, updateCategorySchema, validateData } from '@/app/lib/validations'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
@@ -19,6 +19,7 @@ function organizeCategoriesHierarchically(categories: any[]): Category[] {
       name: cat.name,
       description: cat.description,
       parent_id: cat.parent_id,
+      cover_url: cat.cover_url ?? null,
       created_at: cat.created_at,
       updated_at: cat.updated_at,
       parent: cat.parent ? { id: cat.parent.id, name: cat.parent.name } : null,
@@ -52,8 +53,8 @@ function organizeCategoriesHierarchically(categories: any[]): Category[] {
 // GET - Fetch all categories
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -111,8 +112,8 @@ export async function GET(request: NextRequest) {
 // POST - Create a new category
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -176,8 +177,8 @@ export async function POST(request: NextRequest) {
 // PUT - Update a category
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -263,8 +264,8 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a category
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)

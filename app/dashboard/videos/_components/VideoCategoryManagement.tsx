@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { DataTable } from '../../../components/data-display'
 import { DeleteConfirmationModal } from '../../../components/feedback'
 import VideoCategoryModal from './VideoCategoryModal'
+import { apiFetch } from '../../shared/api'
 import { Card, Button, UIIcons } from '../../../components/ui'
 
 interface VideoCategory {
@@ -86,7 +87,7 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
 
     try {
       setIsDeleting(true)
-      const response = await fetch(`/api/video-categories?id=${categoryToDelete.id}`, {
+      const response = await apiFetch(`/api/video-categories?id=${categoryToDelete.id}`, {
         method: 'DELETE',
       })
 

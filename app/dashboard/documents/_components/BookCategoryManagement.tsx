@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { DataTable } from '../../../components/data-display'
 import { DeleteConfirmationModal, Modal } from '../../../components/feedback'
 import { Card, Button, UIIcons } from '../../../components/ui'
+import { apiFetch } from '../../shared/api'
 import { Category } from '../../shared/types'
 import ThumbnailUpload from '../../../components/forms/ThumbnailUpload'
 
@@ -72,16 +73,15 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
   
 
   const uploadCategoryImage = async (file: File, categoryName: string): Promise<string> => {
-    const fileExt = file.name.split('.').pop()
-    const fileName = `category_cover_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
-    const filePath = `category-covers/${fileName}`
+    // `path` is treated as a server-side hint only; the server generates a safe unique key.
+    const filePath = `category-covers/${file.name}`
 
     const formData = new FormData()
     formData.append('file', file)
     formData.append('bucket', 'covers')
     formData.append('path', filePath)
 
-    const response = await fetch('/api/storage/upload', {
+    const response = await apiFetch('/api/storage/upload', {
       method: 'POST',
       body: formData,
     })
@@ -116,13 +116,12 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
       if (editingCategory) {
         // Update existing main category
-        const response = await fetch('/api/categories', {
+        const response = await apiFetch(`/api/categories?id=${editingCategory.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            id: editingCategory.id,
             name: categoryFormData.name,
             description: categoryFormData.description || null,
             cover_url: mainCategoryCoverUrl,
@@ -140,7 +139,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         toast.success('Main category updated successfully!')
       } else {
         // Create new main category
-        const response = await fetch('/api/categories', {
+        const response = await apiFetch('/api/categories', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -175,13 +174,12 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
           if (sub.id) {
             // Update existing subcategory
-            const response = await fetch('/api/categories', {
+            const response = await apiFetch(`/api/categories?id=${sub.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                id: sub.id,
                 name: sub.name,
                 description: sub.description || null,
                 cover_url: subcategoryCoverUrl,
@@ -194,7 +192,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
             }
           } else {
             // Create new subcategory
-            const response = await fetch('/api/categories', {
+            const response = await apiFetch('/api/categories', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -272,7 +270,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
     try {
       setIsDeleting(true)
-      const response = await fetch(`/api/categories?id=${categoryToDelete.id}`, {
+      const response = await apiFetch(`/api/categories?id=${categoryToDelete.id}`, {
         method: 'DELETE',
       })
 

@@ -205,17 +205,17 @@ export function validateEnv(throwOnError: boolean = true): ValidationResult {
 
   // Log results
   if (errors.length > 0) {
-    console.error('❌ Environment variable validation failed:')
+    console.error('Environment variable validation failed:')
     errors.forEach(error => console.error(`  ${error}`))
   }
 
   if (warnings.length > 0) {
-    console.warn('⚠️  Environment variable warnings:')
+    console.warn('Environment variable warnings:')
     warnings.forEach(warning => console.warn(`  ${warning}`))
   }
 
   if (errors.length === 0 && warnings.length === 0) {
-    console.log('✅ Environment variables validated successfully')
+    console.log('Environment variables validated successfully')
   }
 
   // Throw error if requested and validation failed

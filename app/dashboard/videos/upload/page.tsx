@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import VideoUploadForm from '../_components/VideoUploadForm'
 import { UploadProgressModal } from '../../../components/feedback'
 import { PageHeader } from '../../../components/layout'
+import { apiFetch, getAuthToken } from '../../shared/api'
 import { useVideoCategories } from '../../shared/hooks/useVideos'
 
 export default function VideosUploadPage() {
@@ -23,13 +24,14 @@ export default function VideosUploadPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Helper function to upload file with progress tracking
-  const uploadFileWithProgress = (
+  // Helper function to upload file with progress tracking (includes auth token)
+  const uploadFileWithProgress = async (
     file: File,
     formData: FormData,
     url: string,
     onProgress: (progress: number) => void
   ): Promise<any> => {
+    const token = await getAuthToken()
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
 
@@ -67,6 +69,9 @@ export default function VideosUploadPage() {
       })
 
       xhr.open('POST', url)
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      }
       xhr.send(formData)
     })
   }
@@ -86,9 +91,8 @@ export default function VideosUploadPage() {
       setUploadingFileName(videoData.file.name)
 
       // Upload video file with progress
-      const fileExt = videoData.file.name.split('.').pop()
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = `videos/${fileName}`
+      // `path` is treated as a server-side hint only; the server generates a safe unique key.
+      const filePath = `videos/${videoData.file.name}`
 
       const videoFormDataToSend = new FormData()
       videoFormDataToSend.append('file', videoData.file)
@@ -111,9 +115,8 @@ export default function VideosUploadPage() {
       // Upload thumbnail if provided
       let thumbnailUrl: string | null = null
       if (videoData.thumbnail) {
-        const thumbnailExt = videoData.thumbnail.name.split('.').pop()
-        const thumbnailFileName = `thumb_${Date.now()}_${Math.random().toString(36).substring(7)}.${thumbnailExt}`
-        const thumbnailPath = `video-thumbnails/${thumbnailFileName}`
+        // `path` is treated as a server-side hint only; the server generates a safe unique key.
+        const thumbnailPath = `video-thumbnails/${videoData.thumbnail.name}`
 
         const thumbnailFormData = new FormData()
         thumbnailFormData.append('file', videoData.thumbnail)
@@ -152,7 +155,7 @@ export default function VideosUploadPage() {
         category_id: videoData.category_id,
       }
 
-      const response = await fetch('/api/videos', {
+      const response = await apiFetch('/api/videos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

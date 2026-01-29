@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
+import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, successResponse } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 
 // GET - Fetch all users with pagination
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -78,8 +78,8 @@ export async function GET(request: NextRequest) {
 // PUT - Update user membership status
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -148,8 +148,8 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete user
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)

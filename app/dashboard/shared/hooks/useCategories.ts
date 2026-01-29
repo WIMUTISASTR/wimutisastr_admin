@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { apiFetch } from '../api'
 import type { Category } from '../types'
 
 interface PaginationInfo {
@@ -35,7 +36,7 @@ export function useCategories(): UseCategoriesReturn {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/categories?page=${page}&limit=${limit}`)
+      const response = await apiFetch(`/api/categories?page=${page}&limit=${limit}`)
       const result = await response.json()
       
       if (response.ok && result.data) {

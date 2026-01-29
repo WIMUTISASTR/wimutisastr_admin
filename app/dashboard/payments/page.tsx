@@ -65,13 +65,26 @@ export default function PaymentsPage() {
     },
     {
       header: 'Plan',
-      accessor: 'plan_id',
-      width: '10%',
-      render: (value: string) => (
-        <Badge variant="default" size="sm">
-          {value}
-        </Badge>
-      ),
+      accessor: 'subscription_plan',
+      width: '15%',
+      render: (value: PaymentProof['subscription_plan'], row: PaymentProof) => {
+        if (value) {
+          return (
+            <div>
+              <div className="font-medium text-slate-900">{value.name}</div>
+              <div className="text-xs text-slate-500">
+                ${value.price} · {value.duration_days} days
+              </div>
+            </div>
+          )
+        }
+        // Fallback to legacy plan_id if subscription_plan is not available
+        return (
+          <Badge variant="default" size="sm">
+            {row.plan_id}
+          </Badge>
+        )
+      },
     },
     {
       header: 'Amount',

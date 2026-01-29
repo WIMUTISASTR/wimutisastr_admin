@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
+import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, successResponse, NotFoundError, ValidationError } from '@/app/lib/errors'
 import { createCategorySchema, updateCategorySchema, validateData } from '@/app/lib/validations'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
@@ -7,8 +7,8 @@ import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate
 // GET - Fetch all video categories
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
 // POST - Create a new video category
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -114,8 +114,8 @@ export async function POST(request: NextRequest) {
 // PUT - Update a video category
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -173,8 +173,8 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a video category
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication
-    verifyPinCookie(request)
+    // Verify admin authentication
+    await verifyAdminAuth(request)
 
     // Rate limiting
     const clientId = getClientIdentifier(request)

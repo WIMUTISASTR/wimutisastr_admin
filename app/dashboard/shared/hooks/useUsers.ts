@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
+import { apiFetch } from '../api'
 import { User } from '../types'
 
 interface PaginationInfo {
@@ -25,7 +26,7 @@ export function useUsers() {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/users?page=${page}&limit=${limit}`)
+      const response = await apiFetch(`/api/users?page=${page}&limit=${limit}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -49,7 +50,7 @@ export function useUsers() {
 
   const deleteUser = async (userId: string) => {
     try {
-      const response = await fetch(`/api/users?id=${userId}`, {
+      const response = await apiFetch(`/api/users?id=${userId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

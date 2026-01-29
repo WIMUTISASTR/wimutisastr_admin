@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
+import { apiFetch } from '../api'
 
 export interface SubscriptionPlan {
   id: string
@@ -40,7 +41,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         ? '/api/subscription-plans?active_only=true'
         : '/api/subscription-plans'
       
-      const response = await fetch(url)
+      const response = await apiFetch(url)
       const result = await response.json()
 
       if (!response.ok) {
@@ -60,7 +61,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
 
   const createPlan = useCallback(async (planData: Partial<SubscriptionPlan>): Promise<boolean> => {
     try {
-      const response = await fetch('/api/subscription-plans', {
+      const response = await apiFetch('/api/subscription-plans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(planData),
@@ -85,7 +86,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
 
   const updatePlan = useCallback(async (id: string, planData: Partial<SubscriptionPlan>): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/subscription-plans?id=${id}`, {
+      const response = await apiFetch(`/api/subscription-plans?id=${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(planData),
@@ -110,7 +111,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
 
   const deletePlan = useCallback(async (planId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/subscription-plans?id=${planId}`, {
+      const response = await apiFetch(`/api/subscription-plans?id=${planId}`, {
         method: 'DELETE',
       })
 
