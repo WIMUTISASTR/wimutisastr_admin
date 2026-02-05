@@ -323,6 +323,16 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       ),
     },
     {
+      header: 'Access',
+      accessor: 'access_level',
+      width: '10%',
+      render: (value: 'free' | 'members' | undefined) => (
+        <Badge variant={value === 'free' ? 'info' : 'default'} size="sm">
+          {value === 'free' ? 'Free' : 'Members'}
+        </Badge>
+      ),
+    },
+    {
       header: 'File Size',
       accessor: 'file_size',
       width: '15%',

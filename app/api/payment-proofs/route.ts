@@ -185,13 +185,23 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { status, notes, membership_starts_at, membership_ends_at } = body
+    const { status, notes } = body
 
     if (!status || !['verified', 'rejected'].includes(status)) {
       throw new ValidationError('Status must be either "verified" or "rejected"')
     }
 
     const supabaseAdmin = getSupabaseAdmin()
+
+    // Fetch current payment proof (needed to compute membership end date from plan)
+    const { data: existingProof, error: existingError } = await supabaseAdmin
+      .from('payment_proofs')
+      .select('id, user_id, subscription_plan_id, plan_id, membership_starts_at, membership_ends_at, uploaded_at, verified_at')
+      .eq('id', id)
+      .single()
+
+    if (existingError) throw existingError
+    if (!existingProof) throw new NotFoundError('Payment proof not found')
 
     // Prepare update data
     const updateData: any = {
@@ -201,9 +211,51 @@ export async function PUT(request: NextRequest) {
     }
 
     if (status === 'verified') {
-      updateData.verified_at = new Date().toISOString()
-      updateData.membership_starts_at = membership_starts_at || null
-      updateData.membership_ends_at = membership_ends_at || null
+      const nowIso = new Date().toISOString()
+      updateData.verified_at = nowIso
+
+      // Rule:
+      // - membership starts when admin approves (now)
+      // - membership ends based on subscription plan duration
+      const startsAt = nowIso
+
+      // Get duration_days from subscription_plans.
+      // Prefer subscription_plan_id, fallback to legacy plan_id mapping.
+      let durationDays = 0
+
+      if (existingProof.subscription_plan_id) {
+        const { data: plan, error: planError } = await supabaseAdmin
+          .from('subscription_plans')
+          .select('duration_days')
+          .eq('id', existingProof.subscription_plan_id)
+          .single()
+        if (planError) throw planError
+        durationDays = Number(plan?.duration_days || 0)
+      } else if (existingProof.plan_id) {
+        const legacy = String(existingProof.plan_id).toLowerCase()
+        // common legacy values
+        if (legacy === 'monthly') durationDays = 30
+        if (legacy === 'yearly') durationDays = 365
+
+        if (!durationDays) {
+          const { data: plan, error: planError } = await supabaseAdmin
+            .from('subscription_plans')
+            .select('duration_days')
+            .ilike('name', `%${legacy}%`)
+            .order('duration_days', { ascending: true })
+            .limit(1)
+            .single()
+          if (!planError && plan) durationDays = Number(plan.duration_days || 0)
+        }
+      }
+
+      if (!durationDays || durationDays <= 0) {
+        throw new ValidationError('Unable to determine membership duration from subscription plan')
+      }
+
+      const endDate = new Date(Date.parse(startsAt) + durationDays * 24 * 60 * 60 * 1000)
+      updateData.membership_starts_at = startsAt
+      updateData.membership_ends_at = endDate.toISOString()
       // TODO: Add verified_by with admin user ID when auth is implemented
     } else {
       // Reset verification fields if rejected
@@ -232,6 +284,8 @@ export async function PUT(request: NextRequest) {
           membership_status: 'approved',
           membership_approved_at: new Date().toISOString(),
           membership_denied_at: null, // Clear any previous denial
+          membership_starts_at: data.membership_starts_at || null,
+          membership_ends_at: data.membership_ends_at || null,
         })
         .eq('id', data.user_id)
 
@@ -249,6 +303,8 @@ export async function PUT(request: NextRequest) {
           membership_status: 'denied',
           membership_denied_at: new Date().toISOString(),
           membership_approved_at: null, // Clear any previous approval
+          membership_starts_at: null,
+          membership_ends_at: null,
         })
         .eq('id', data.user_id)
 

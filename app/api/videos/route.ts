@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
         file_size: videoData.file_size || null,
         thumbnail_url: videoData.thumbnail_url || null,
         category_id: videoData.category_id,
+        access_level: videoData.access_level,
       }])
       .select('*, category:video_categories(id, name, cover_url)')
       .single()

@@ -27,6 +27,7 @@ export default function DocumentsUploadPage() {
     file: File | null
     cover: File | null
     category_id: string | null
+    access_level: 'free' | 'members'
   }) => {
     if (!bookData.file) {
       throw new Error('File is required')
@@ -61,6 +62,7 @@ export default function DocumentsUploadPage() {
           file_size: bookData.file.size,
           cover_url: coverUrl,
           category_id: bookData.category_id || null,
+          access_level: bookData.access_level,
         }),
       })
 

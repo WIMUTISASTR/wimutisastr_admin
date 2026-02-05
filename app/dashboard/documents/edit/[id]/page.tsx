@@ -147,6 +147,7 @@ export default function EditDocumentPage() {
           .optional()
           .nullable(),
         category_id: z.string().uuid('Category is required').optional(),
+        access_level: z.enum(['free', 'members']),
       }),
     []
   )
@@ -157,6 +158,7 @@ export default function EditDocumentPage() {
     year: '' as any,
     description: '',
     category_id: '',
+    access_level: 'members',
   } as any)
   const { reset } = form
 
@@ -212,6 +214,7 @@ export default function EditDocumentPage() {
         year: (book.year as any) ?? '',
         description: book.description || '',
         category_id: '',
+        access_level: book.access_level || 'members',
       } as any)
       setCoverFile(null)
       setBookFile(null)
@@ -261,6 +264,7 @@ export default function EditDocumentPage() {
           ? (form.values as any).description
           : null,
         category_id: (form.values as any).category_id,
+        access_level: (form.values as any).access_level,
       })
 
       if (!validated.success) {
@@ -351,6 +355,7 @@ export default function EditDocumentPage() {
           file_name: fileName,
           file_size: fileSize,
           category_id: finalCategoryId,
+          access_level: validated.data.access_level,
         }),
       })
 
@@ -707,6 +712,25 @@ export default function EditDocumentPage() {
                     </p>
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Access Level <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={(form.values as any).access_level}
+                    onChange={(e) => form.setValue('access_level' as any, e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    required
+                    disabled={isLoading}
+                  >
+                    <option value="members">Members only</option>
+                    <option value="free">Free</option>
+                  </select>
+                  {form.errors.access_level && (
+                    <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.access_level}</p>
+                  )}
+                </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">

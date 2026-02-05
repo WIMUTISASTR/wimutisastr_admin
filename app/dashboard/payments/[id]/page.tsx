@@ -56,8 +56,6 @@ export default function PaymentProofDetailPage() {
         body: JSON.stringify({
           status: 'verified',
           notes: 'Approved by admin',
-          membership_starts_at: proof.membership_starts_at || new Date().toISOString(),
-          membership_ends_at: proof.membership_ends_at || null,
         }),
       })
 

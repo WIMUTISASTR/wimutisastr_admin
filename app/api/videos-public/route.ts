@@ -6,8 +6,13 @@ import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate
 // GET - Fetch videos for members (requires approved membership)
 export async function GET(request: NextRequest) {
   try {
-    // Verify user has approved membership
-    await verifyMembership(request)
+    const authHeader = request.headers.get('authorization')
+    const hasAuthToken = Boolean(authHeader?.replace('Bearer ', '').trim())
+
+    // If token exists, require approved membership. If no token, allow free content only.
+    if (hasAuthToken) {
+      await verifyMembership(request)
+    }
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -24,11 +29,16 @@ export async function GET(request: NextRequest) {
 
     if (id) {
       // Fetch single video
-      const { data, error } = await supabaseAdmin
+      const query = supabaseAdmin
         .from('videos')
         .select('*, category:video_categories(id, name, cover_url)')
         .eq('id', id)
-        .single()
+
+      if (!hasAuthToken) {
+        query.eq('access_level', 'free')
+      }
+
+      const { data, error } = await query.single()
 
       if (error) throw error
       if (!data) throw new NotFoundError('Video not found')
@@ -37,11 +47,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch videos with pagination
-    const { data: videos, error: videosError, count } = await supabaseAdmin
+    const query = supabaseAdmin
       .from('videos')
       .select('*, category:video_categories(id, name, cover_url)', { count: 'exact' })
       .order('uploaded_at', { ascending: false })
       .range(offset, offset + limit - 1)
+
+    if (!hasAuthToken) {
+      query.eq('access_level', 'free')
+    }
+
+    const { data: videos, error: videosError, count } = await query
 
     if (videosError) throw videosError
 

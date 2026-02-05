@@ -66,14 +66,16 @@ export default function UsersContent() {
       toast.success(`User membership ${status}!`)
       
       // Update local state
-      setUsers(users.map(user => 
-        user.id === userId 
-          ? { 
-              ...user, 
-              membership_status: status,
-              membership_approved_at: status === 'approved' ? new Date().toISOString() : null,
-              membership_denied_at: status === 'denied' ? new Date().toISOString() : null,
-            } 
+      const updatedProfile = result.data as any
+      setUsers(users.map(user =>
+        user.id === userId
+          ? {
+              ...user,
+              membership_status: updatedProfile?.membership_status ?? status,
+              membership_approved_at: updatedProfile?.membership_approved_at ?? null,
+              membership_denied_at: updatedProfile?.membership_denied_at ?? null,
+              membership_ends_at: updatedProfile?.membership_ends_at ?? null,
+            }
           : user
       ))
     } catch (error: any) {
@@ -168,6 +170,27 @@ export default function UsersContent() {
             </svg>
             Pending
           </Badge>
+        )
+      },
+    },
+    {
+      header: 'Membership Ends',
+      accessor: 'membership_ends_at',
+      width: '15%',
+      render: (value: string | null | undefined, row: User) => {
+        if (!value) return <span className="text-sm text-slate-400">—</span>
+        const ms = Date.parse(value)
+        const isExpired = Number.isFinite(ms) && ms <= Date.now()
+        return (
+          <div>
+            <div className={`text-sm ${isExpired ? 'text-red-700 font-semibold' : 'text-slate-900'}`}>
+              {formatDate(value)}
+            </div>
+            <div className="text-xs text-slate-500">
+              {new Date(value).toLocaleTimeString()}
+              {isExpired ? ' (expired)' : ''}
+            </div>
+          </div>
         )
       },
     },

@@ -18,6 +18,7 @@ interface VideoUploadFormProps {
     category_id: string
     file: File
     thumbnail: File | null
+    access_level: 'free' | 'members'
   }) => Promise<void>
 }
 
@@ -29,6 +30,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
     category_id: '',
     file: null as File | null,
     thumbnail: null as File | null,
+    access_level: 'members' as 'free' | 'members',
   })
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
@@ -53,6 +55,11 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
     // Validate category
     if (!formData.category_id) {
       newErrors.category_id = 'Please select a category'
+    }
+
+    // Validate access level
+    if (!formData.access_level) {
+      newErrors.access_level = 'Please select an access level'
     }
 
     // Validate presented by (optional)
@@ -103,6 +110,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
         category_id: formData.category_id,
         file: formData.file!,
         thumbnail: formData.thumbnail,
+        access_level: formData.access_level,
       })
 
       // Reset form only on success
@@ -113,6 +121,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
         category_id: '',
         file: null,
         thumbnail: null,
+        access_level: 'members',
       })
       setThumbnailPreview(null)
       setErrors({})
@@ -230,6 +239,28 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                   )}
                 </select>
                 {errors.category_id && <span className="text-sm text-red-600 mt-1 block">{errors.category_id}</span>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                  Access Level <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.access_level}
+                  onChange={(e) => {
+                    setFormData({ ...formData, access_level: e.target.value as 'free' | 'members' })
+                    if (errors.access_level) setErrors({ ...errors, access_level: '' })
+                  }}
+                  className={`w-full px-4 py-2.5 border rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 ${
+                    errors.access_level ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                  disabled={isLoading}
+                  required
+                >
+                  <option value="members">Members only</option>
+                  <option value="free">Free</option>
+                </select>
+                {errors.access_level && <span className="text-sm text-red-600 mt-1 block">{errors.access_level}</span>}
               </div>
 
               <div>

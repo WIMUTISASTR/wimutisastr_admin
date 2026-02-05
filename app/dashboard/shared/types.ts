@@ -21,6 +21,7 @@ export interface Book {
   file_url: string
   file_size: number
   cover_url: string | null
+  access_level?: 'free' | 'members'
   uploaded_at: string
   category_id?: string | null
   category?: { id: string; name: string } | null
@@ -45,6 +46,7 @@ export interface Video {
   file_url: string
   file_size: number
   thumbnail_url: string | null
+  access_level?: 'free' | 'members'
   uploaded_at: string
   category_id?: string | null
   category?: { id: string; name: string } | null
@@ -63,6 +65,7 @@ export interface User {
   membership_approved_at?: string | null
   membership_denied_at?: string | null
   membership_notes?: string | null
+  membership_ends_at?: string | null
 }
 
 // Payment Proof types

@@ -36,6 +36,7 @@ export const createVideoSchema = z.object({
   file_size: z.number().positive('File size must be positive').optional(),
   thumbnail_url: z.string().url('Invalid thumbnail URL').optional().nullable(),
   category_id: z.string().uuid('Invalid category ID'),
+  access_level: z.enum(['free', 'members']).default('members'),
 })
 
 export const updateVideoSchema = z.object({
@@ -59,6 +60,7 @@ export const updateVideoSchema = z.object({
   file_size: z.number().positive().optional(),
   thumbnail_url: z.string().url().optional().nullable(),
   category_id: z.string().uuid('Invalid category ID'),
+  access_level: z.enum(['free', 'members']).optional(),
 })
 
 // Book validations
@@ -86,6 +88,7 @@ export const createBookSchema = z.object({
   file_size: z.number().positive('File size must be positive').optional(),
   cover_url: z.string().url('Invalid cover URL').optional().nullable(),
   category_id: z.string().uuid('Invalid category ID'),
+  access_level: z.enum(['free', 'members']).default('members'),
 })
 
 export const updateBookSchema = z.object({
@@ -114,6 +117,7 @@ export const updateBookSchema = z.object({
   file_size: z.number().positive().optional(),
   cover_url: z.string().url().optional().nullable(),
   category_id: z.string().uuid('Invalid category ID'),
+  access_level: z.enum(['free', 'members']).optional(),
 })
 
 // Category validations

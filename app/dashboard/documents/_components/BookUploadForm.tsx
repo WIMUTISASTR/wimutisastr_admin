@@ -15,6 +15,7 @@ interface BookData {
   file: File | null
   cover: File | null
   category_id: string | null
+  access_level: 'free' | 'members'
 }
 
 interface BookUploadFormProps {
@@ -32,6 +33,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     file: null,
     cover: null,
     category_id: null,
+    access_level: 'members',
   })
   const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string>('')
   const [error, setError] = useState('')
@@ -190,6 +192,10 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
       setError('Please select a category')
       return
     }
+    if (!formData.access_level) {
+      setError('Please select an access level')
+      return
+    }
 
     try {
       // Use subcategory if selected, otherwise use main category
@@ -207,6 +213,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
         file: null,
         cover: null,
         category_id: null,
+        access_level: 'members',
       })
       setSelectedMainCategoryId('')
       if (fileInputRef.current) {
@@ -334,6 +341,27 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                   </p>
                 </div>
               )}
+
+              <div>
+                <label htmlFor="access_level" className="block text-sm font-semibold text-slate-900 mb-2">
+                  Access Level <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="access_level"
+                  name="access_level"
+                  value={formData.access_level}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  disabled={isLoading}
+                  required
+                >
+                  <option value="members">Members only</option>
+                  <option value="free">Free</option>
+                </select>
+                <p className="text-xs text-slate-500 mt-1">
+                  Choose who can access this document.
+                </p>
+              </div>
 
       <div>
                 <label htmlFor="description" className="block text-sm font-semibold text-slate-900 mb-2">

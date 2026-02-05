@@ -18,6 +18,7 @@ interface Video {
   file_url: string
   file_size: number
   thumbnail_url: string | null
+  access_level?: 'free' | 'members'
   uploaded_at: string
   category_id?: string | null
   category?: { id: string; name: string } | null
@@ -37,6 +38,7 @@ export default function EditVideoPage() {
     presented_by: '',
     description: '',
     category_id: null as string | null,
+    access_level: 'members' as 'free' | 'members',
   })
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
@@ -71,6 +73,7 @@ export default function EditVideoPage() {
             presented_by: result.data.presented_by || '',
             description: result.data.description || '',
             category_id: result.data.category_id || null,
+            access_level: result.data.access_level || 'members',
           })
           setThumbnailPreview(result.data.thumbnail_url)
         }
@@ -151,8 +154,8 @@ export default function EditVideoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!video || !formData.title.trim() || !formData.category_id) {
-      toast.error('Please fill in all required fields including category')
+    if (!video || !formData.title.trim() || !formData.category_id || !formData.access_level) {
+      toast.error('Please fill in all required fields including category and access level')
       return
     }
 
@@ -224,6 +227,7 @@ export default function EditVideoPage() {
           presented_by: formData.presented_by.trim() || null,
           description: formData.description.trim() || null,
           category_id: formData.category_id,
+          access_level: formData.access_level,
           thumbnail_url: thumbnailUrl,
           ...(videoFile && {
             file_url: fileUrl,
@@ -378,6 +382,22 @@ export default function EditVideoPage() {
                     ) : (
                       <option value="" disabled>No categories available</option>
                     )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Access Level <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.access_level}
+                    onChange={(e) => setFormData({ ...formData, access_level: e.target.value as 'free' | 'members' })}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    required
+                    disabled={isLoading}
+                  >
+                    <option value="members">Members only</option>
+                    <option value="free">Free</option>
                   </select>
                 </div>
 

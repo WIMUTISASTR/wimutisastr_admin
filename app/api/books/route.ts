@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
         file_size: bookData.file_size || null,
         cover_url: bookData.cover_url || null,
         category_id: bookData.category_id,
+        access_level: bookData.access_level,
       }])
       .select('*, category:categories(id, name)')
       .single()

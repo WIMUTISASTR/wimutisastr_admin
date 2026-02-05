@@ -119,10 +119,10 @@ export async function verifyMembership(request: NextRequest): Promise<string> {
     throw new AuthenticationError('Invalid authentication token')
   }
 
-  // Check membership status
+  // Check membership status + expiry window
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('user_profiles')
-    .select('membership_status')
+    .select('membership_status, membership_ends_at')
     .eq('id', user.id)
     .single()
 
@@ -134,6 +134,22 @@ export async function verifyMembership(request: NextRequest): Promise<string> {
   if (!profile || profile.membership_status !== 'approved') {
     throw new AuthorizationError(
       'Active membership required to access content. Please subscribe or contact support.'
+    )
+  }
+
+  // If membership_ends_at exists and is in the past -> revoke access.
+  // If it's null, treat as not active (until a verified payment sets it).
+  const endsAt = profile.membership_ends_at as string | null | undefined
+  if (!endsAt) {
+    throw new AuthorizationError(
+      'Active membership required to access content. Please subscribe or contact support.'
+    )
+  }
+
+  const endsAtMs = Date.parse(endsAt)
+  if (!Number.isFinite(endsAtMs) || endsAtMs <= Date.now()) {
+    throw new AuthorizationError(
+      'Your membership has expired. Please make a payment to renew access.'
     )
   }
 

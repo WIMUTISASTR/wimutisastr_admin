@@ -83,6 +83,7 @@ export default function VideosUploadPage() {
     category_id: string
     file: File
     thumbnail: File | null
+    access_level: 'free' | 'members'
   }) => {
     try {
       setIsUploading(true)
@@ -153,6 +154,7 @@ export default function VideosUploadPage() {
         file_size: videoData.file.size,
         thumbnail_url: thumbnailUrl,
         category_id: videoData.category_id,
+        access_level: videoData.access_level,
       }
 
       const response = await apiFetch('/api/videos', {

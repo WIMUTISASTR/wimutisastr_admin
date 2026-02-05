@@ -6,8 +6,13 @@ import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate
 // GET - Fetch books for members (requires approved membership)
 export async function GET(request: NextRequest) {
   try {
-    // Verify user has approved membership
-    await verifyMembership(request)
+    const authHeader = request.headers.get('authorization')
+    const hasAuthToken = Boolean(authHeader?.replace('Bearer ', '').trim())
+
+    // If token exists, require approved membership. If no token, allow free content only.
+    if (hasAuthToken) {
+      await verifyMembership(request)
+    }
 
     // Rate limiting
     const clientId = getClientIdentifier(request)
@@ -24,11 +29,16 @@ export async function GET(request: NextRequest) {
 
     if (id) {
       // Fetch single book
-      const { data, error } = await supabaseAdmin
+      const query = supabaseAdmin
         .from('books')
         .select('*, category:categories(id, name)')
         .eq('id', id)
-        .single()
+
+      if (!hasAuthToken) {
+        query.eq('access_level', 'free')
+      }
+
+      const { data, error } = await query.single()
 
       if (error) throw error
       if (!data) throw new NotFoundError('Book not found')
@@ -37,11 +47,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch books with pagination
-    const { data: books, error: booksError, count } = await supabaseAdmin
+    const query = supabaseAdmin
       .from('books')
       .select('*, category:categories(id, name)', { count: 'exact' })
       .order('uploaded_at', { ascending: false })
       .range(offset, offset + limit - 1)
+
+    if (!hasAuthToken) {
+      query.eq('access_level', 'free')
+    }
+
+    const { data: books, error: booksError, count } = await query
 
     if (booksError) throw booksError
 

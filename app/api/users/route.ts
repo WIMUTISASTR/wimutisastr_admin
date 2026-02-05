@@ -3,6 +3,52 @@ import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, successResponse } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 
+function addDaysIso(startIso: string, days: number): string {
+  const ms = Date.parse(startIso)
+  const d = new Date(Number.isFinite(ms) ? ms : Date.now())
+  const end = new Date(d.getTime() + days * 24 * 60 * 60 * 1000)
+  return end.toISOString()
+}
+
+async function getDurationDaysForUser(supabaseAdmin: ReturnType<typeof getSupabaseAdmin>, userId: string): Promise<number> {
+  // Prefer the most recent pending proof (user just paid), otherwise fallback to latest verified.
+  const { data: proof } = await supabaseAdmin
+    .from('payment_proofs')
+    .select('subscription_plan_id, plan_id, uploaded_at')
+    .eq('user_id', userId)
+    .in('status', ['pending', 'verified'])
+    .order('uploaded_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (proof?.subscription_plan_id) {
+    const { data: plan, error: planError } = await supabaseAdmin
+      .from('subscription_plans')
+      .select('duration_days')
+      .eq('id', proof.subscription_plan_id)
+      .single()
+    if (planError) throw planError
+    const days = Number(plan?.duration_days || 0)
+    if (days > 0) return days
+  }
+
+  const legacy = String(proof?.plan_id || '').toLowerCase()
+  if (legacy === 'monthly') return 30
+  if (legacy === 'yearly') return 365
+
+  // Last resort: use the first active plan by sort_order.
+  const { data: defaultPlan } = await supabaseAdmin
+    .from('subscription_plans')
+    .select('duration_days')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  return Number(defaultPlan?.duration_days || 0)
+}
+
 // GET - Fetch all users with pagination
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +75,7 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
-    // Fetch user profiles with membership status
+    // Fetch user profiles with membership status and expiry
     const userIds = data.users.map(u => u.id)
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('user_profiles')
@@ -58,6 +104,7 @@ export async function GET(request: NextRequest) {
         membership_approved_at: profile?.membership_approved_at || null,
         membership_denied_at: profile?.membership_denied_at || null,
         membership_notes: profile?.membership_notes || null,
+        membership_ends_at: profile?.membership_ends_at || null,
       }
     })
 
@@ -111,15 +158,32 @@ export async function PUT(request: NextRequest) {
 
     // Set appropriate timestamp based on status
     if (membership_status === 'approved') {
-      updateData.membership_approved_at = new Date().toISOString()
+      const nowIso = new Date().toISOString()
+      updateData.membership_approved_at = nowIso
       updateData.membership_denied_at = null
+
+      // When admin approves in User Management:
+      // membership starts NOW and ends based on plan duration.
+      const durationDays = await getDurationDaysForUser(supabaseAdmin, userId)
+      if (!durationDays || durationDays <= 0) {
+        return NextResponse.json(
+          { error: 'Cannot approve: no active subscription plan found for this user.' },
+          { status: 400 }
+        )
+      }
+      updateData.membership_starts_at = nowIso
+      updateData.membership_ends_at = addDaysIso(nowIso, durationDays)
     } else if (membership_status === 'denied') {
       updateData.membership_denied_at = new Date().toISOString()
       updateData.membership_approved_at = null
+      updateData.membership_starts_at = null
+      updateData.membership_ends_at = null
     } else {
       // pending status clears both timestamps
       updateData.membership_approved_at = null
       updateData.membership_denied_at = null
+      updateData.membership_starts_at = null
+      updateData.membership_ends_at = null
     }
 
     // Update or insert user profile
