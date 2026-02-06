@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pinSchema, validateData } from '@/app/lib/validations'
-import { handleApiError, AuthenticationError, successResponse } from '@/app/lib/errors'
+import { handleApiError, AuthenticationError } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 import { createPinSessionToken, getPinCookieName, parsePinSessionFromCookieValue } from '@/app/lib/pin-session'
 
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       { verified: false },
       { status: 401 }
     )
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -73,13 +73,13 @@ export async function GET(request: NextRequest) {
 }
 
 // DELETE - Clear PIN verification cookie
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   try {
     const response = NextResponse.json({ success: true })
     response.cookies.delete(getPinCookieName())
     
     return response
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

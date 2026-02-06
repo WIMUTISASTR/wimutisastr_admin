@@ -16,7 +16,7 @@ interface TabNavigationProps {
 
 export default function TabNavigation({ tabs, activeTab, onTabChange, className = '' }: TabNavigationProps) {
   return (
-    <div className="mb-6 inline-flex bg-gray-400 rounded-[100px]">
+    <div className={`mb-6 inline-flex bg-gray-400 rounded-[100px] ${className}`}>
       <div>
         <nav className="flex -mb-px space-x-1" aria-label="Tabs">
           {tabs.map((tab) => {

@@ -42,14 +42,14 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               // Avoid unsafe-* in production.
               isDevelopment
-                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-                : "script-src 'self'",
+                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live"
+                : "script-src 'self' 'unsafe-inline' https://vercel.live",
               "style-src 'self' 'unsafe-inline'",
               // Allow http: in development, only https: in production
               isDevelopment ? "img-src 'self' data: http: https: blob:" : "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
               // Include wss for Supabase realtime if enabled.
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://vercel.live wss://vercel.live",
               // Allow http: in development for media as well
               isDevelopment ? "media-src 'self' http: https: blob:" : "media-src 'self' https: blob:",
               "frame-ancestors 'self'",

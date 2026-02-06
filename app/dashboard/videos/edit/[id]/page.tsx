@@ -245,9 +245,10 @@ export default function EditVideoPage() {
 
       toast.success('Video updated successfully!')
       router.push('/dashboard/videos/list')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Update error:', error)
-      toast.error(error.message || 'Failed to update video')
+      const message = error instanceof Error ? error.message : 'Failed to update video'
+      toast.error(message)
     } finally {
       setIsLoading(false)
     }

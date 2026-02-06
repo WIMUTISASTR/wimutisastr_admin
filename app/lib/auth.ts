@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { Session } from '@supabase/supabase-js'
 
 // Get admin email from environment variable - no fallback for security
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL
@@ -10,7 +11,7 @@ if (!ADMIN_EMAIL) {
 export interface AuthUser {
   id: string
   email?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export function isAdminEmail(email: string): boolean {
@@ -90,6 +91,6 @@ export async function verifyAdminAccess(): Promise<boolean> {
   }
 }
 
-export function onAuthStateChange(callback: (event: string, session: any) => void) {
+export function onAuthStateChange(callback: (event: string, session: Session | null) => void) {
   return supabase.auth.onAuthStateChange(callback)
 }

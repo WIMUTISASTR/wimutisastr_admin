@@ -35,6 +35,10 @@ export async function optimizeImage(
     format = 'jpeg'
   } = options
 
+  void quality
+  void maxWidth
+  void maxHeight
+
   const arrayBuffer = await file.arrayBuffer()
   const originalSize = arrayBuffer.byteLength
 

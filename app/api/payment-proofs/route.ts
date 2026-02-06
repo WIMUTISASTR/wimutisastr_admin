@@ -204,7 +204,7 @@ export async function PUT(request: NextRequest) {
     if (!existingProof) throw new NotFoundError('Payment proof not found')
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       status,
       notes: notes || null,
       updated_at: new Date().toISOString(),

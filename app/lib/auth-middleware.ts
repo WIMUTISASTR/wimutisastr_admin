@@ -77,9 +77,9 @@ export function isAdminEmail(email: string): boolean {
  * Verifies PIN cookie before processing request
  */
 export function withPinAuth<T>(
-  handler: (request: NextRequest, ...args: any[]) => Promise<T>
+  handler: (request: NextRequest, ...args: unknown[]) => Promise<T>
 ) {
-  return async (request: NextRequest, ...args: any[]): Promise<T> => {
+  return async (request: NextRequest, ...args: unknown[]): Promise<T> => {
     await verifyPinCookie(request)
     return handler(request, ...args)
   }
@@ -90,9 +90,9 @@ export function withPinAuth<T>(
  * Verifies both PIN and Supabase authentication
  */
 export function withAdminAuth<T>(
-  handler: (request: NextRequest, ...args: any[]) => Promise<T>
+  handler: (request: NextRequest, ...args: unknown[]) => Promise<T>
 ) {
-  return async (request: NextRequest, ...args: any[]): Promise<T> => {
+  return async (request: NextRequest, ...args: unknown[]): Promise<T> => {
     await verifyAdminAuth(request)
     return handler(request, ...args)
   }

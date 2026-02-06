@@ -5,7 +5,7 @@ import { toast } from 'react-toastify'
 import { DataTable, Pagination } from '../../../components/data-display'
 import { DeleteConfirmationModal } from '../../../components/feedback'
 import { PageHeader } from '../../../components/layout'
-import { Card, Badge, Button } from '../../../components/ui'
+import { Card, Badge } from '../../../components/ui'
 import { apiFetch } from '../../shared/api'
 import { User } from '../../shared/types'
 import { useUsers } from '../../shared/hooks/useUsers'
@@ -66,7 +66,7 @@ export default function UsersContent() {
       toast.success(`User membership ${status}!`)
       
       // Update local state
-      const updatedProfile = result.data as any
+      const updatedProfile = (result.data as Partial<User> | null) || null
       setUsers(users.map(user =>
         user.id === userId
           ? {
@@ -78,9 +78,10 @@ export default function UsersContent() {
             }
           : user
       ))
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Update error:', error)
-      toast.error(error.message || 'Failed to update membership status')
+      const message = error instanceof Error ? error.message : 'Failed to update membership status'
+      toast.error(message)
     } finally {
       setUpdatingUserId(null)
     }
@@ -106,10 +107,10 @@ export default function UsersContent() {
       header: 'Email',
       accessor: 'email',
       width: '25%',
-      render: (value: string, row: User) => (
+      render: (value: unknown, row: User) => (
         <div className="flex items-center gap-3">
           <div>
-            <div className="font-medium text-slate-900">{value || 'N/A'}</div>
+            <div className="font-medium text-slate-900">{typeof value === 'string' ? value : 'N/A'}</div>
             <div className="text-xs text-slate-500">User ID: {row.id.slice(0, 8)}...</div>
           </div>
         </div>
@@ -119,8 +120,8 @@ export default function UsersContent() {
       header: 'Email Status',
       accessor: 'email_confirmed_at',
       width: '12%',
-      render: (value: string | null) => (
-        value ? (
+      render: (value: unknown) => (
+        typeof value === 'string' && value ? (
           <Badge variant="success" size="sm">
             <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -141,8 +142,8 @@ export default function UsersContent() {
       header: 'Membership',
       accessor: 'membership_status',
       width: '13%',
-      render: (value: string | undefined, row: User) => {
-        const status = value || 'pending'
+      render: (value: unknown) => {
+        const status = value === 'approved' || value === 'denied' ? value : 'pending'
         if (status === 'approved') {
           return (
             <Badge variant="success" size="sm">
@@ -177,8 +178,8 @@ export default function UsersContent() {
       header: 'Membership Ends',
       accessor: 'membership_ends_at',
       width: '15%',
-      render: (value: string | null | undefined, row: User) => {
-        if (!value) return <span className="text-sm text-slate-400">—</span>
+      render: (value: unknown) => {
+        if (typeof value !== 'string' || !value) return <span className="text-sm text-slate-400">—</span>
         const ms = Date.parse(value)
         const isExpired = Number.isFinite(ms) && ms <= Date.now()
         return (
@@ -198,19 +199,24 @@ export default function UsersContent() {
       header: 'Created',
       accessor: 'created_at',
       width: '20%',
-      render: (value: string) => (
-        <div>
-          <div className="text-sm text-slate-900">{formatDate(value)}</div>
-          <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString()}</div>
-        </div>
-      ),
+      render: (value: unknown) => {
+        if (typeof value !== 'string') {
+          return <span className="text-sm text-slate-400">—</span>
+        }
+        return (
+          <div>
+            <div className="text-sm text-slate-900">{formatDate(value)}</div>
+            <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString()}</div>
+          </div>
+        )
+      },
     },
     {
       header: 'Last Sign In',
       accessor: 'last_sign_in_at',
       width: '20%',
-      render: (value: string | null) => (
-        value ? (
+      render: (value: unknown) => (
+        typeof value === 'string' && value ? (
           <div>
             <div className="text-sm text-slate-900">{formatDate(value)}</div>
             <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString()}</div>
@@ -224,7 +230,7 @@ export default function UsersContent() {
       header: 'Actions',
       accessor: 'id',
       width: '12%',
-      render: (value: string, row: User) => {
+      render: (_value: unknown, row: User) => {
         const isUpdating = updatingUserId === row.id
         const membershipStatus = row.membership_status || 'pending'
         const isOpen = openDropdownId === row.id
@@ -388,7 +394,7 @@ export default function UsersContent() {
         setDeleteModalOpen(false)
         setUserToDelete(null)
       }
-    } catch (err: any) {
+    } catch {
       // Error is handled by the hook
     } finally {
       setIsDeleting(false)
@@ -419,7 +425,7 @@ export default function UsersContent() {
       )}
 
       <Card padding="none">
-        <DataTable
+        <DataTable<User>
           columns={columns}
           data={users}
           isLoading={isLoading}

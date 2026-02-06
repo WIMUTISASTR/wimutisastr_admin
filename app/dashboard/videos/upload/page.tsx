@@ -25,12 +25,19 @@ export default function VideosUploadPage() {
   }, [])
 
   // Helper function to upload file with progress tracking (includes auth token)
+  type UploadResult = {
+    data?: {
+      publicUrl?: string
+      url?: string
+    }
+  }
+
   const uploadFileWithProgress = async (
     file: File,
     formData: FormData,
     url: string,
     onProgress: (progress: number) => void
-  ): Promise<any> => {
+  ): Promise<UploadResult> => {
     const token = await getAuthToken()
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
@@ -47,7 +54,7 @@ export default function VideosUploadPage() {
           try {
             const result = JSON.parse(xhr.responseText)
             resolve(result)
-          } catch (error) {
+          } catch {
             reject(new Error('Failed to parse response'))
           }
         } else {
@@ -136,8 +143,8 @@ export default function VideosUploadPage() {
           }
         )
 
-        if (thumbnailUploadResult && thumbnailUploadResult.data) {
-          thumbnailUrl = thumbnailUploadResult.data.publicUrl || thumbnailUploadResult.data.url
+        if (thumbnailUploadResult?.data) {
+          thumbnailUrl = thumbnailUploadResult.data.publicUrl || thumbnailUploadResult.data.url || null
         }
       }
 
@@ -180,10 +187,11 @@ export default function VideosUploadPage() {
       toast.success('Video uploaded successfully!')
       
       router.push('/dashboard/videos/list')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error)
       setIsProgressModalOpen(false)
-      toast.error(error.message || 'Failed to upload video')
+      const message = error instanceof Error ? error.message : 'Failed to upload video'
+      toast.error(message)
       throw error
     } finally {
       setIsUploading(false)

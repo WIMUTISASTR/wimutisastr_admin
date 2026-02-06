@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react'
+import useSWR from 'swr'
 import { toast } from 'react-toastify'
 import { apiFetch } from '../api'
+import { fetcher, swrConfig } from '../swr-config'
 import type { Book } from '../types'
 
 interface PaginationInfo {
@@ -10,78 +12,86 @@ interface PaginationInfo {
   totalPages: number
 }
 
+interface BooksResponse {
+  data: Book[]
+  pagination: PaginationInfo
+}
+
 interface UseBooksReturn {
   books: Book[]
   isLoading: boolean
   error: string | null
   pagination: PaginationInfo
-  fetchBooks: (page?: number, limit?: number) => Promise<void>
+  fetchBooks: (page?: number, limit?: number) => void
   updateBook: (book: Book) => void
   deleteBook: (bookId: string) => Promise<boolean>
-  setBooks: React.Dispatch<React.SetStateAction<Book[]>>
+  setBooks: (books: Book[] | ((prev: Book[]) => Book[])) => void
+  refetch: () => void
 }
 
 /**
- * Custom hook to manage books state and operations
+ * Custom hook to manage books state and operations with SWR caching
  */
 export function useBooks(): UseBooksReturn {
-  const [books, setBooks] = useState<Book[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
-  })
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(20)
 
-  const fetchBooks = useCallback(async (page = 1, limit = 20) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const response = await apiFetch(`/api/books?page=${page}&limit=${limit}`)
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch books')
-      }
-
-      if (result.data) {
-        setBooks(result.data.map((book: any) => ({
-          id: book.id,
-          title: book.title,
-          author: book.author,
-          year: book.year.toString(),
-          description: book.description || '',
-          file_name: book.file_name,
-          file_url: book.file_url,
-          file_size: book.file_size,
-          cover_url: book.cover_url || null,
-          uploaded_at: book.uploaded_at,
-          category_id: book.category_id || null,
-          category: book.category || null,
-        })))
-      }
-
-      if (result.pagination) {
-        setPagination(result.pagination)
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch books'
-      setError(message)
-      console.error('Error fetching books:', err)
-      toast.error(message)
-    } finally {
-      setIsLoading(false)
+  const { data, error, isLoading, isValidating, mutate } = useSWR<BooksResponse>(
+    `/api/books?page=${page}&limit=${limit}`,
+    fetcher,
+    {
+      ...swrConfig,
+      dedupingInterval: 2 * 60 * 1000, // 2 minutes
     }
+  )
+
+  const books = data?.data || []
+  const pagination = data?.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 }
+
+  const fetchBooks = useCallback((newPage = 1, newLimit = 20) => {
+    setPage(newPage)
+    setLimit(newLimit)
   }, [])
+
+  const setBooks = useCallback((newBooks: Book[] | ((prev: Book[]) => Book[])) => {
+    mutate(
+      (current) => {
+        if (!current) return current
+        const updatedBooks = typeof newBooks === 'function' ? newBooks(current.data) : newBooks
+        return { ...current, data: updatedBooks }
+      },
+      { revalidate: false }
+    )
+  }, [mutate])
 
   const updateBook = useCallback((updatedBook: Book) => {
-    setBooks(prevBooks => prevBooks.map(b => b.id === updatedBook.id ? updatedBook : b))
-  }, [])
+    mutate(
+      (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          data: current.data.map(b => b.id === updatedBook.id ? updatedBook : b)
+        }
+      },
+      { revalidate: false }
+    )
+  }, [mutate])
 
   const deleteBook = useCallback(async (bookId: string): Promise<boolean> => {
+    const previousData = data
+    
+    // Optimistic update
+    mutate(
+      (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          data: current.data.filter(b => b.id !== bookId)
+        }
+      },
+      { revalidate: false }
+    )
+
     try {
       const response = await apiFetch(`/api/books?id=${bookId}`, {
         method: 'DELETE',
@@ -90,10 +100,10 @@ export function useBooks(): UseBooksReturn {
       const result = await response.json()
 
       if (!response.ok) {
+        mutate(previousData, { revalidate: false })
         throw new Error(result.error || 'Failed to delete book')
       }
 
-      setBooks(prevBooks => prevBooks.filter(b => b.id !== bookId))
       toast.success('Book deleted successfully!')
       return true
     } catch (err) {
@@ -102,16 +112,17 @@ export function useBooks(): UseBooksReturn {
       toast.error(message)
       return false
     }
-  }, [])
+  }, [data, mutate])
 
   return {
     books,
-    isLoading,
-    error,
+    isLoading: isLoading || isValidating,
+    error: error?.message || null,
     pagination,
     fetchBooks,
     updateBook,
     deleteBook,
     setBooks,
+    refetch: () => mutate(),
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { toast } from 'react-toastify'
 import { DataTable } from '../../../components/data-display'
 import { DeleteConfirmationModal, Modal } from '../../../components/feedback'
@@ -16,12 +17,14 @@ interface CategoryManagementProps {
 }
 
 // Flatten hierarchical categories for table display
-function flattenCategories(categories: Category[], parentName: string = '', level: number = 0): Category[] {
-  const flattened: Category[] = []
+type FlatCategory = Category & { _displayName?: string; _level?: number }
+
+function flattenCategories(categories: Category[], parentName: string = '', level: number = 0): FlatCategory[] {
+  const flattened: FlatCategory[] = []
   
   categories.forEach(category => {
     const displayName = level > 0 ? `${parentName} > ${category.name}` : category.name
-    const categoryWithDisplay = { ...category, _displayName: displayName, _level: level }
+    const categoryWithDisplay: FlatCategory = { ...category, _displayName: displayName, _level: level }
     flattened.push(categoryWithDisplay)
     
     if (category.subcategories && category.subcategories.length > 0) {
@@ -31,20 +34,6 @@ function flattenCategories(categories: Category[], parentName: string = '', leve
   })
   
   return flattened
-}
-
-// Get all categories (including subcategories) for parent selection
-function getAllCategories(categories: Category[]): Category[] {
-  const all: Category[] = []
-  
-  categories.forEach(category => {
-    all.push(category)
-    if (category.subcategories && category.subcategories.length > 0) {
-      all.push(...getAllCategories(category.subcategories))
-    }
-  })
-  
-  return all
 }
 
 interface SubcategoryForm {
@@ -72,7 +61,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
   const flattenedCategories = useMemo(() => flattenCategories(categories), [categories])
   
 
-  const uploadCategoryImage = async (file: File, categoryName: string): Promise<string> => {
+  const uploadCategoryImage = async (file: File): Promise<string> => {
     // `path` is treated as a server-side hint only; the server generates a safe unique key.
     const filePath = `category-covers/${file.name}`
 
@@ -111,7 +100,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
       // Upload main category image if provided
       if (categoryCoverFile) {
-        mainCategoryCoverUrl = await uploadCategoryImage(categoryCoverFile, categoryFormData.name)
+        mainCategoryCoverUrl = await uploadCategoryImage(categoryCoverFile)
       }
 
       if (editingCategory) {
@@ -169,7 +158,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
           // Upload subcategory image if provided
           if (sub.coverFile) {
-            subcategoryCoverUrl = await uploadCategoryImage(sub.coverFile, sub.name)
+            subcategoryCoverUrl = await uploadCategoryImage(sub.coverFile)
           }
 
           if (sub.id) {
@@ -222,9 +211,10 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       setCategoryCoverPreview(null)
       setSubcategories([])
       onRefresh()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving category:', error)
-      toast.error(error.message || 'Failed to save category')
+      const message = error instanceof Error ? error.message : 'Failed to save category'
+      toast.error(message)
     } finally {
       setIsSaving(false)
     }
@@ -291,9 +281,10 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       setDeleteModalOpen(false)
       setCategoryToDelete(null)
       onRefresh()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete error:', error)
-      toast.error(error.message || 'Failed to delete category')
+      const message = error instanceof Error ? error.message : 'Failed to delete category'
+      toast.error(message)
     } finally {
       setIsDeleting(false)
     }
@@ -368,36 +359,21 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
     setEditingSubcategoryIndex(index)
   }
 
-  // Function to get a color based on category name
-  const getCategoryColor = (name: string) => {
-    const colors = [
-      'bg-gradient-to-r from-blue-500 to-indigo-500',
-      'bg-gradient-to-r from-purple-500 to-pink-500',
-      'bg-gradient-to-r from-green-500 to-emerald-500',
-      'bg-gradient-to-r from-orange-500 to-red-500',
-      'bg-gradient-to-r from-cyan-500 to-blue-500',
-      'bg-gradient-to-r from-rose-500 to-pink-500',
-      'bg-gradient-to-r from-amber-500 to-orange-500',
-      'bg-gradient-to-r from-teal-500 to-cyan-500',
-      'bg-gradient-to-r from-violet-500 to-purple-500',
-      'bg-gradient-to-r from-lime-500 to-green-500',
-    ]
-    const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
-    return colors[index]
-  }
-
   const categoryColumns = [
     {
       header: 'Category',
       accessor: 'name',
-      render: (value: string, row: Category & { _displayName?: string; _level?: number }) => (
+      render: (value: unknown, row: FlatCategory) => (
         <div className="flex items-center gap-3">
           {row.cover_url && (
-            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
-              <img
+            <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0">
+              <Image
                 src={row.cover_url}
-                alt={value}
-                className="w-full h-full object-cover"
+                alt={typeof value === 'string' ? value : row.name}
+                fill
+                sizes="40px"
+                className="object-cover"
+                unoptimized
               />
             </div>
           )}
@@ -406,7 +382,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
               <span className="text-slate-400 text-sm">└─</span>
             )}
             <span className={`font-bold text-slate-900 ${row._level && row._level > 0 ? 'text-sm' : ''}`}>
-              {row._displayName || value}
+              {row._displayName || (typeof value === 'string' ? value : row.name)}
             </span>
             {row.parent && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
@@ -420,24 +396,31 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
     {
       header: 'Description',
       accessor: 'description',
-      render: (value: string | null) => (
-        <span className="text-slate-600 text-sm">{value || 'No description'}</span>
+      render: (value: unknown) => (
+        <span className="text-slate-600 text-sm">
+          {typeof value === 'string' && value.trim() ? value : 'No description'}
+        </span>
       ),
     },
     {
       header: 'Created',
       accessor: 'created_at',
-      render: (value: string) => (
-        <div>
-          <div className="text-sm font-medium text-slate-900">{new Date(value).toLocaleDateString()}</div>
-          <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-      ),
+      render: (value: unknown) => {
+        if (typeof value !== 'string') {
+          return <span className="text-sm text-slate-400">-</span>
+        }
+        return (
+          <div>
+            <div className="text-sm font-medium text-slate-900">{new Date(value).toLocaleDateString()}</div>
+            <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
+        )
+      },
     },
     {
       header: 'Actions',
       accessor: 'id',
-      render: (value: string, row: Category) => (
+      render: (_value: unknown, row: FlatCategory) => (
         <div className="relative">
           <Button
             variant="danger"
@@ -471,7 +454,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       
       <Card padding="none">
         <div className="overflow-x-auto overflow-y-visible">
-          <DataTable
+          <DataTable<FlatCategory>
             columns={categoryColumns}
             data={flattenedCategories}
             isLoading={isLoading}
@@ -575,7 +558,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
             </div>
 
             {subcategories.length === 0 ? (
-              <p className="text-sm text-slate-500 italic">No subcategories yet. Click "Add Subcategory" to create one.</p>
+              <p className="text-sm text-slate-500 italic">No subcategories yet. Click &quot;Add Subcategory&quot; to create one.</p>
             ) : (
               <div className="space-y-3">
                 {subcategories.map((sub, index) => (
@@ -654,11 +637,14 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                     ) : (
                       <div className="flex items-center gap-3">
                         {sub.cover_url && (
-                          <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                            <img
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
+                            <Image
                               src={sub.cover_url}
                               alt={sub.name}
-                              className="w-full h-full object-cover"
+                              fill
+                              sizes="48px"
+                              className="object-cover"
+                              unoptimized
                             />
                           </div>
                         )}

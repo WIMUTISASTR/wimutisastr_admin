@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { toast } from 'react-toastify'
 import { FileUpload, ThumbnailUpload } from '../../../components/forms'
 import { VideoCategory } from '../../shared/types'
@@ -72,9 +72,14 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
       newErrors.file = 'Please select a video file'
     } else {
       // Validate file type
-      const fileExt = '.' + formData.file.name.split('.').pop()?.toLowerCase()
-      if (!ALLOWED_FILE_TYPES.VIDEOS.includes(fileExt as any)) {
-        newErrors.file = `Invalid file type. Allowed: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()}`
+      const ext = formData.file.name.split('.').pop()?.toLowerCase()
+      if (!ext) {
+        newErrors.file = 'Invalid file name'
+      } else {
+        const fileExt = `.${ext}` as (typeof ALLOWED_FILE_TYPES.VIDEOS)[number]
+        if (!ALLOWED_FILE_TYPES.VIDEOS.includes(fileExt)) {
+          newErrors.file = `Invalid file type. Allowed: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()}`
+        }
       }
       // Validate file size
       if (formData.file.size > FILE_SIZE_LIMITS.VIDEO_FILE) {
@@ -125,7 +130,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
       })
       setThumbnailPreview(null)
       setErrors({})
-    } catch (error) {
+    } catch {
       // Error is handled by parent component
       // Don't reset form on error so user can fix issues
     }

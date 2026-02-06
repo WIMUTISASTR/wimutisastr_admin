@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import useSWR from 'swr'
 import { toast } from 'react-toastify'
 import { apiFetch } from '../api'
+import { fetcher, swrConfig } from '../swr-config'
 import { PaymentProof } from '../types'
 
 interface PaginationInfo {
@@ -10,53 +12,53 @@ interface PaginationInfo {
   totalPages: number
 }
 
+interface PaymentProofsResponse {
+  data: PaymentProof[]
+  pagination: PaginationInfo
+}
+
 export function usePaymentProofs() {
-  const [proofs, setProofs] = useState<PaymentProof[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
-  })
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(20)
+  const [status, setStatus] = useState<'pending' | 'verified' | 'rejected' | undefined>(undefined)
 
-  const fetchProofs = async (page = 1, limit = 20, status?: 'pending' | 'verified' | 'rejected') => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      let url = `/api/payment-proofs?page=${page}&limit=${limit}`
-      if (status) {
-        url += `&status=${status}`
-      }
-      
-      const response = await apiFetch(url)
-      const result = await response.json()
+  // Build URL with optional status filter
+  const url = status 
+    ? `/api/payment-proofs?page=${page}&limit=${limit}&status=${status}`
+    : `/api/payment-proofs?page=${page}&limit=${limit}`
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch payment proofs')
-      }
-
-      if (result.data) {
-        setProofs(result.data)
-      }
-
-      if (result.pagination) {
-        setPagination(result.pagination)
-      }
-    } catch (err: any) {
-      console.error('Error fetching payment proofs:', err)
-      setError(err.message || 'Failed to fetch payment proofs')
-      toast.error(err.message || 'Failed to fetch payment proofs')
-    } finally {
-      setIsLoading(false)
+  const { data, error, isLoading, isValidating, mutate } = useSWR<PaymentProofsResponse>(
+    url,
+    fetcher,
+    {
+      ...swrConfig,
+      dedupingInterval: 60 * 1000, // 1 minute for payments (more frequent updates)
     }
-  }
+  )
+
+  const proofs = data?.data || []
+  const pagination = data?.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 }
+
+  const fetchProofs = useCallback((newPage = 1, newLimit = 20, newStatus?: 'pending' | 'verified' | 'rejected') => {
+    setPage(newPage)
+    setLimit(newLimit)
+    setStatus(newStatus)
+  }, [])
+
+  const setProofs = useCallback((newProofs: PaymentProof[] | ((prev: PaymentProof[]) => PaymentProof[])) => {
+    mutate(
+      (current) => {
+        if (!current) return current
+        const updatedProofs = typeof newProofs === 'function' ? newProofs(current.data) : newProofs
+        return { ...current, data: updatedProofs }
+      },
+      { revalidate: false }
+    )
+  }, [mutate])
 
   const updateProofStatus = async (
     proofId: string,
-    status: 'verified' | 'rejected',
+    newStatus: 'verified' | 'rejected',
     notes?: string,
     membership_starts_at?: string,
     membership_ends_at?: string
@@ -68,7 +70,7 @@ export function usePaymentProofs() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status,
+          status: newStatus,
           notes,
           membership_starts_at,
           membership_ends_at,
@@ -81,25 +83,36 @@ export function usePaymentProofs() {
         throw new Error(result.error || 'Failed to update payment proof')
       }
 
-      // Update the proof in the local state
-      setProofs(proofs.map(p => p.id === proofId ? result.data : p))
+      // Update the proof in the cache
+      mutate(
+        (current) => {
+          if (!current) return current
+          return {
+            ...current,
+            data: current.data.map(p => p.id === proofId ? result.data : p)
+          }
+        },
+        { revalidate: false }
+      )
       
-      toast.success(`Payment proof ${status === 'verified' ? 'approved' : 'rejected'} successfully!`)
+      toast.success(`Payment proof ${newStatus === 'verified' ? 'approved' : 'rejected'} successfully!`)
       return true
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Update error:', err)
-      toast.error(err.message || 'Failed to update payment proof')
+      const message = err instanceof Error ? err.message : 'Failed to update payment proof'
+      toast.error(message)
       return false
     }
   }
 
   return {
     proofs,
-    isLoading,
-    error,
+    isLoading: isLoading || isValidating,
+    error: error?.message || null,
     pagination,
     fetchProofs,
     updateProofStatus,
     setProofs,
+    refetch: () => mutate(),
   }
 }

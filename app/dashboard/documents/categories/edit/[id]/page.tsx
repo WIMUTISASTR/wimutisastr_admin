@@ -41,9 +41,10 @@ export default function EditCategoryPage() {
           description: categoryData.description || '',
         })
         setCategoryCoverPreview(categoryData.cover_url)
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Fetch error:', error)
-        toast.error(error.message || 'Failed to load category')
+        const message = error instanceof Error ? error.message : 'Failed to load category'
+        toast.error(message)
         router.push('/dashboard/documents/categories')
       } finally {
         setIsLoading(false)
@@ -117,9 +118,10 @@ export default function EditCategoryPage() {
 
       toast.success('Category updated successfully!')
       router.push('/dashboard/documents/categories')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit error:', error)
-      toast.error(error.message || 'Failed to update category')
+      const message = error instanceof Error ? error.message : 'Failed to update category'
+      toast.error(message)
     } finally {
       setIsSaving(false)
     }

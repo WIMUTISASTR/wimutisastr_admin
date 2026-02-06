@@ -61,7 +61,6 @@ export default function CreateCategoryPage() {
     setIsSaving(true)
 
     try {
-      let mainCategoryId: string
       let mainCategoryCoverUrl: string | null = null
 
       // Upload main category image if provided
@@ -89,7 +88,7 @@ export default function CreateCategoryPage() {
         throw new Error(result.error || 'Failed to create category')
       }
 
-      mainCategoryId = result.data.id
+      const mainCategoryId = result.data.id
       toast.success('Main category created successfully!')
 
       // Create subcategories if any
@@ -127,9 +126,10 @@ export default function CreateCategoryPage() {
       }
 
       router.push('/dashboard/documents/categories')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit error:', error)
-      toast.error(error.message || 'Failed to create category')
+      const message = error instanceof Error ? error.message : 'Failed to create category'
+      toast.error(message)
     } finally {
       setIsSaving(false)
     }
@@ -259,7 +259,7 @@ export default function CreateCategoryPage() {
 
               {subcategories.length === 0 ? (
                 <p className="text-sm text-slate-600 text-center py-8">
-                  No subcategories added yet. Click "Add Subcategory" to create one.
+                  No subcategories added yet. Click &quot;Add Subcategory&quot; to create one.
                 </p>
               ) : (
                 <div className="space-y-6">

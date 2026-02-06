@@ -87,8 +87,9 @@ export default function FileUpload({
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
-    } catch (err: any) {
-      setError(err.message || 'Upload failed. Please try again.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Upload failed. Please try again.'
+      setError(message)
     }
   }
 

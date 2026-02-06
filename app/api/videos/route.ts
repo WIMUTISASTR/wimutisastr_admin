@@ -152,7 +152,7 @@ export async function PUT(request: NextRequest) {
       throw new ValidationError(validation.errors.join(', '))
     }
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       ...validation.data,
       updated_at: new Date().toISOString(),
     }

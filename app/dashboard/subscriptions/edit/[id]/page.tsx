@@ -58,9 +58,10 @@ export default function EditSubscriptionPlanPage() {
           sort_order: planData.sort_order,
         })
         setQrCodePreview(planData.qr_code_url)
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Fetch error:', error)
-        toast.error(error.message || 'Failed to load subscription plan')
+        const message = error instanceof Error ? error.message : 'Failed to load subscription plan'
+        toast.error(message)
         router.push('/dashboard/subscriptions')
       } finally {
         setIsLoading(false)

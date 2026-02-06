@@ -1,19 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AuthListener from './components/auth/AuthListener';
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { NavigationProgress } from './components/feedback';
 
 export const metadata: Metadata = {
   title: "WIMUTISASSTR Law Office - Admin Panel",
@@ -28,8 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className="antialiased"
       >
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <AuthListener />
         {children}
         <ToastContainer

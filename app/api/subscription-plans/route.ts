@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, NotFoundError, ValidationError, successResponse } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'

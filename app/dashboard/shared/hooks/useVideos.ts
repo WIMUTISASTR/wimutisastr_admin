@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import useSWR from 'swr'
 import { toast } from 'react-toastify'
 import { apiFetch } from '../api'
+import { fetcher, swrConfig } from '../swr-config'
 import { Video, VideoCategory } from '../types'
 
 interface PaginationInfo {
@@ -10,45 +12,58 @@ interface PaginationInfo {
   totalPages: number
 }
 
+interface VideosResponse {
+  data: Video[]
+  pagination: PaginationInfo
+}
+
 export function useVideos() {
-  const [videos, setVideos] = useState<Video[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
-  })
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(20)
 
-  const fetchVideos = async (page = 1, limit = 20) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      const response = await apiFetch(`/api/videos?page=${page}&limit=${limit}`)
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch videos')
-      }
-
-      if (result.data) {
-        setVideos(result.data)
-      }
-
-      if (result.pagination) {
-        setPagination(result.pagination)
-      }
-    } catch (err: any) {
-      console.error('Error fetching videos:', err)
-      setError(err.message || 'Failed to fetch videos')
-      toast.error(err.message || 'Failed to fetch videos')
-    } finally {
-      setIsLoading(false)
+  const { data, error, isLoading, isValidating, mutate } = useSWR<VideosResponse>(
+    `/api/videos?page=${page}&limit=${limit}`,
+    fetcher,
+    {
+      ...swrConfig,
+      dedupingInterval: 2 * 60 * 1000, // 2 minutes
     }
-  }
+  )
+
+  const videos = data?.data || []
+  const pagination = data?.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 }
+
+  const fetchVideos = useCallback((newPage = 1, newLimit = 20) => {
+    setPage(newPage)
+    setLimit(newLimit)
+  }, [])
+
+  const setVideos = useCallback((newVideos: Video[] | ((prev: Video[]) => Video[])) => {
+    mutate(
+      (current) => {
+        if (!current) return current
+        const updatedVideos = typeof newVideos === 'function' ? newVideos(current.data) : newVideos
+        return { ...current, data: updatedVideos }
+      },
+      { revalidate: false }
+    )
+  }, [mutate])
 
   const deleteVideo = async (videoId: string) => {
+    const previousData = data
+
+    // Optimistic update
+    mutate(
+      (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          data: current.data.filter(v => v.id !== videoId)
+        }
+      },
+      { revalidate: false }
+    )
+
     try {
       const response = await apiFetch(`/api/videos?id=${videoId}`, {
         method: 'DELETE',
@@ -57,63 +72,64 @@ export function useVideos() {
       const result = await response.json()
 
       if (!response.ok) {
+        mutate(previousData, { revalidate: false })
         throw new Error(result.error || 'Failed to delete video')
       }
 
-      setVideos(videos.filter(v => v.id !== videoId))
       toast.success('Video deleted successfully!')
       return true
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Delete error:', err)
-      toast.error(err.message || 'Failed to delete video')
+      const message = err instanceof Error ? err.message : 'Failed to delete video'
+      toast.error(message)
       return false
     }
   }
 
   return {
     videos,
-    isLoading,
-    error,
+    isLoading: isLoading || isValidating,
+    error: error?.message || null,
     pagination,
     fetchVideos,
     deleteVideo,
     setVideos,
+    refetch: () => mutate(),
   }
 }
 
-export function useVideoCategories() {
-  const [categories, setCategories] = useState<VideoCategory[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    limit: 50,
-    total: 0,
-    totalPages: 0,
-  })
+interface VideoCategoriesResponse {
+  data: VideoCategory[]
+  pagination: PaginationInfo
+}
 
-  const fetchCategories = async (page = 1, limit = 50) => {
-    try {
-      setIsLoading(true)
-      const response = await apiFetch(`/api/video-categories?page=${page}&limit=${limit}`)
-      const result = await response.json()
-      if (response.ok && result.data) {
-        setCategories(result.data)
-      }
-      if (result.pagination) {
-        setPagination(result.pagination)
-      }
-    } catch (error) {
-      console.error('Error fetching video categories:', error)
-    } finally {
-      setIsLoading(false)
+export function useVideoCategories() {
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(50)
+
+  const { data, isLoading, mutate } = useSWR<VideoCategoriesResponse>(
+    `/api/video-categories?page=${page}&limit=${limit}`,
+    fetcher,
+    {
+      ...swrConfig,
+      dedupingInterval: 5 * 60 * 1000, // 5 minutes for categories (rarely change)
     }
-  }
+  )
+
+  const categories = data?.data || []
+  const pagination = data?.pagination || { page: 1, limit: 50, total: 0, totalPages: 0 }
+
+  const fetchCategories = useCallback((newPage = 1, newLimit = 50) => {
+    setPage(newPage)
+    setLimit(newLimit)
+  }, [])
 
   return {
     categories,
     isLoading,
     pagination,
     fetchCategories,
+    refetch: () => mutate(),
   }
 }
 

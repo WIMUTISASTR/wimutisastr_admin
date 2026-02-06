@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react'
+import useSWR from 'swr'
 import { toast } from 'react-toastify'
 import { apiFetch } from '../api'
+import { fetcher, swrConfig } from '../swr-config'
 import { User } from '../types'
 
 interface PaginationInfo {
@@ -10,46 +12,63 @@ interface PaginationInfo {
   totalPages: number
 }
 
+interface UsersResponse {
+  data: User[]
+  pagination: PaginationInfo
+}
+
 export function useUsers() {
-  const [users, setUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
-  })
-
-  const fetchUsers = useCallback(async (page = 1, limit = 20) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const response = await apiFetch(`/api/users?page=${page}&limit=${limit}`)
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch users')
-      }
-
-      // API returns { data: [...], pagination: {...} }
-      setUsers(result.data || [])
-      
-      if (result.pagination) {
-        setPagination(result.pagination)
-      }
-    } catch (err: any) {
-      console.error('Error fetching users:', err)
-      setError(err.message || 'Failed to fetch users')
-      setUsers([])
-    } finally {
-      setIsLoading(false)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(20)
+  
+  // Use SWR for caching and automatic revalidation
+  const { data, error, isLoading, isValidating, mutate } = useSWR<UsersResponse>(
+    `/api/users?page=${page}&limit=${limit}`,
+    fetcher,
+    {
+      ...swrConfig,
+      // Keep data fresh for 2 minutes before revalidating in background
+      dedupingInterval: 2 * 60 * 1000,
     }
+  )
+
+  const users = data?.data || []
+  const pagination = data?.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 }
+
+  // Wrapper for backwards compatibility
+  const fetchUsers = useCallback(async (newPage = 1, newLimit = 20) => {
+    setPage(newPage)
+    setLimit(newLimit)
+    // SWR will automatically fetch with new params
   }, [])
+
+  // Optimistic update for better UX
+  const setUsers = useCallback((newUsers: User[] | ((prev: User[]) => User[])) => {
+    mutate(
+      (current) => {
+        if (!current) return current
+        const updatedUsers = typeof newUsers === 'function' ? newUsers(current.data) : newUsers
+        return { ...current, data: updatedUsers }
+      },
+      { revalidate: false }
+    )
+  }, [mutate])
 
   const deleteUser = async (userId: string) => {
     try {
+      // Optimistic update - remove user immediately from UI
+      const previousData = data
+      mutate(
+        (current) => {
+          if (!current) return current
+          return {
+            ...current,
+            data: current.data.filter(user => user.id !== userId)
+          }
+        },
+        { revalidate: false }
+      )
+
       const response = await apiFetch(`/api/users?id=${userId}`, {
         method: 'DELETE',
         headers: {
@@ -57,17 +76,19 @@ export function useUsers() {
         },
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete user')
+        // Rollback on error
+        mutate(previousData, { revalidate: false })
+        throw new Error(result.error || 'Failed to delete user')
       }
 
-      setUsers(users.filter(user => user.id !== userId))
       toast.success('User deleted successfully!')
       return true
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to delete user')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to delete user'
+      toast.error(message)
       return false
     }
   }
@@ -75,11 +96,12 @@ export function useUsers() {
   return {
     users,
     setUsers,
-    isLoading,
-    error,
+    isLoading: isLoading || isValidating,
+    error: error?.message || null,
     pagination,
     fetchUsers,
     deleteUser,
+    refetch: () => mutate(),
   }
 }
 

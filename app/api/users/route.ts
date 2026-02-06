@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
-import { handleApiError, successResponse } from '@/app/lib/errors'
+import { handleApiError } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 
 function addDaysIso(startIso: string, days: number): string {
@@ -65,8 +65,6 @@ export async function GET(request: NextRequest) {
     // Pagination parameters
     const page = parseInt(searchParams.get('page') || '1')
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100) // Max 100 per page
-    const offset = (page - 1) * limit
-
     // Fetch users from auth.users
     const { data, error } = await supabaseAdmin.auth.admin.listUsers({
       page,
@@ -151,7 +149,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       membership_status,
       membership_notes: membership_notes || null,
     }

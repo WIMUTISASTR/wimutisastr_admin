@@ -60,7 +60,7 @@ export interface User {
   last_sign_in_at: string | null
   email_confirmed_at: string | null
   phone?: string | null
-  user_metadata?: any
+  user_metadata?: Record<string, unknown> | null
   membership_status?: 'pending' | 'approved' | 'denied'
   membership_approved_at?: string | null
   membership_denied_at?: string | null

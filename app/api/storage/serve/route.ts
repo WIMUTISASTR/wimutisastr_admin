@@ -8,8 +8,6 @@ const r2AccountId = process.env.R2_ACCOUNT_ID!
 const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID!
 const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY!
 const r2BucketName = process.env.R2_BUCKET_NAME! // Default bucket for books
-const r2VideoBucketName = process.env.R2_VIDEO_BUCKET_NAME || 'video' // Bucket for videos
-
 // Create R2 S3 client (R2 is S3-compatible)
 function getR2Client() {
   if (!r2AccountId || !r2AccessKeyId || !r2SecretAccessKey) {
@@ -73,7 +71,7 @@ export async function GET(request: NextRequest) {
             isAdmin = true
           }
         }
-      } catch (error) {
+      } catch {
         // Ignore admin check errors, will fall through to membership check
       }
     }
@@ -104,23 +102,28 @@ export async function GET(request: NextRequest) {
 
     // Convert stream to buffer
     const chunks: Buffer[] = []
-    const stream = response.Body as any
+    const stream = response.Body as unknown
     
     // Handle the stream (AWS SDK v3 returns a Readable stream)
-    if (typeof stream.transformToWebStream === 'function') {
+    if (typeof (stream as { transformToWebStream?: () => ReadableStream<Uint8Array> }).transformToWebStream === 'function') {
       // Web stream
-      const webStream = stream.transformToWebStream()
+      const webStream = (stream as { transformToWebStream: () => ReadableStream<Uint8Array> }).transformToWebStream()
       const reader = webStream.getReader()
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         chunks.push(Buffer.from(value))
       }
-    } else {
+    } else if (stream && Symbol.asyncIterator in (stream as AsyncIterable<Uint8Array>)) {
       // Node.js stream
-      for await (const chunk of stream) {
+      for await (const chunk of stream as AsyncIterable<Uint8Array>) {
         chunks.push(Buffer.from(chunk))
       }
+    } else {
+      return NextResponse.json(
+        { error: 'Unsupported stream type' },
+        { status: 500 }
+      )
     }
 
     const buffer = Buffer.concat(chunks)
@@ -139,7 +142,7 @@ export async function GET(request: NextRequest) {
         'Content-Security-Policy': "frame-ancestors 'self'",
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('R2 serve error:', error)
     return handleApiError(error)
   }

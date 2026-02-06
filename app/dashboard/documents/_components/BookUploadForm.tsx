@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { Button } from '../../../components/ui'
 import { Category } from '../../shared/types'
 import { formatFileSize } from '../../shared/utils'
@@ -83,9 +83,16 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     }
 
     // Check file type - allow both regular and edit document types
-    const fileExt = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
+    const ext = selectedFile.name.split('.').pop()?.toLowerCase()
+    if (!ext) {
+      setError('Invalid file name')
+      return
+    }
+    const fileExt = `.${ext}` as
+      | (typeof ALLOWED_FILE_TYPES.BOOK_DOCUMENTS)[number]
+      | (typeof ALLOWED_FILE_TYPES.BOOK_DOCUMENTS_EDIT)[number]
     const allowedTypes = [...new Set([...ALLOWED_FILE_TYPES.BOOK_DOCUMENTS, ...ALLOWED_FILE_TYPES.BOOK_DOCUMENTS_EDIT])]
-    if (!allowedTypes.includes(fileExt as any)) {
+    if (!allowedTypes.includes(fileExt)) {
       setError(`Invalid file type. Allowed: ${allowedTypes.join(', ').replace(/\./g, '').toUpperCase()}`)
       return
     }
@@ -103,8 +110,13 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     }
 
     // Check file type (images only)
-    const fileExt = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
-    if (!ALLOWED_FILE_TYPES.IMAGES.includes(fileExt as any)) {
+    const ext = selectedFile.name.split('.').pop()?.toLowerCase()
+    if (!ext) {
+      setError('Invalid image file name')
+      return
+    }
+    const fileExt = `.${ext}` as (typeof ALLOWED_FILE_TYPES.IMAGES)[number]
+    if (!ALLOWED_FILE_TYPES.IMAGES.includes(fileExt)) {
       setError(`Invalid image type. Allowed: ${ALLOWED_FILE_TYPES.IMAGES.join(', ').replace(/\./g, '').toUpperCase()}`)
       return
     }
@@ -222,8 +234,9 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
       if (coverInputRef.current) {
         coverInputRef.current.value = ''
       }
-    } catch (err: any) {
-      setError(err.message || 'Upload failed. Please try again.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Upload failed. Please try again.'
+      setError(message)
     }
   }
 

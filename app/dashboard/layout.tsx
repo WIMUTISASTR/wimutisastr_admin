@@ -1,74 +1,33 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Sidebar, Header } from '../components/layout'
-import { getSession, signOut, getUser, isAdminEmail } from '../lib/auth'
+import { AuthProvider, useAuth } from '../contexts'
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+// Loading skeleton for dashboard
+function DashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-slate-600">Loading...</p>
+      </div>
+    </div>
+  )
+}
+
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, logout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  useEffect(() => {
-    // Check both PIN verification and Supabase session
-    const checkAuth = async () => {
-      try {
-        // Check PIN verification (cookie-based)
-        const pinResponse = await fetch('/api/auth/verify-pin', {
-          method: 'GET',
-        })
-        
-        if (!pinResponse.ok) {
-          router.push('/')
-          return
-        }
-
-        // Check Supabase session
-        const session = await getSession()
-        if (session) {
-          // Verify the user is the admin email
-          const user = await getUser()
-          if (user && user.email && isAdminEmail(user.email)) {
-            setIsAuthenticated(true)
-          } else {
-            // Not admin email, sign out and redirect
-            await signOut()
-            await fetch('/api/auth/verify-pin', { method: 'DELETE' })
-            router.push('/')
-          }
-        } else {
-          await fetch('/api/auth/verify-pin', { method: 'DELETE' })
-          router.push('/')
-        }
-      } catch (error) {
-        await fetch('/api/auth/verify-pin', { method: 'DELETE' })
-        router.push('/')
-      }
-    }
-    checkAuth()
-  }, [router])
-
-  const handleLogout = async () => {
-    try {
-      await signOut()
-      // Clear PIN verification cookie
-      await fetch('/api/auth/verify-pin', { method: 'DELETE' })
-      router.push('/')
-    } catch (error) {
-      console.error('Error signing out:', error)
-      // Still redirect even if signOut fails
-      await fetch('/api/auth/verify-pin', { method: 'DELETE' })
-      router.push('/')
-    }
+  // Show loading state while checking auth
+  if (isLoading) {
+    return <DashboardSkeleton />
   }
 
+  // Don't render if not authenticated (redirect handled by AuthContext)
   if (!isAuthenticated) {
-    return null
+    return <DashboardSkeleton />
   }
 
   const menuItems = [
@@ -85,7 +44,7 @@ export default function DashboardLayout({
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onLogout={handleLogout}
+        onLogout={logout}
         menuItems={menuItems}
       />
 
@@ -99,5 +58,17 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+  )
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <AuthProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </AuthProvider>
   )
 }

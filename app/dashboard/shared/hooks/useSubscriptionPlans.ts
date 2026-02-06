@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react'
+import useSWR from 'swr'
 import { toast } from 'react-toastify'
 import { apiFetch } from '../api'
+import { fetcher, swrConfig } from '../swr-config'
 
 export interface SubscriptionPlan {
   id: string
@@ -17,46 +19,41 @@ export interface SubscriptionPlan {
   updated_at: string
 }
 
+interface SubscriptionPlansResponse {
+  data: SubscriptionPlan[]
+}
+
 interface UseSubscriptionPlansReturn {
   plans: SubscriptionPlan[]
   isLoading: boolean
   error: string | null
-  fetchPlans: (activeOnly?: boolean) => Promise<void>
+  fetchPlans: (activeOnly?: boolean) => void
   createPlan: (planData: Partial<SubscriptionPlan>) => Promise<boolean>
   updatePlan: (id: string, planData: Partial<SubscriptionPlan>) => Promise<boolean>
   deletePlan: (planId: string) => Promise<boolean>
+  refetch: () => void
 }
 
 export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [activeOnly, setActiveOnly] = useState(false)
 
-  const fetchPlans = useCallback(async (activeOnly = false) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const url = activeOnly 
-        ? '/api/subscription-plans?active_only=true'
-        : '/api/subscription-plans'
-      
-      const response = await apiFetch(url)
-      const result = await response.json()
+  const url = activeOnly 
+    ? '/api/subscription-plans?active_only=true'
+    : '/api/subscription-plans'
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch subscription plans')
-      }
-
-      setPlans(result.data || [])
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch subscription plans'
-      setError(message)
-      console.error('Error fetching subscription plans:', err)
-      toast.error(message)
-    } finally {
-      setIsLoading(false)
+  const { data, error, isLoading, isValidating, mutate } = useSWR<SubscriptionPlansResponse>(
+    url,
+    fetcher,
+    {
+      ...swrConfig,
+      dedupingInterval: 5 * 60 * 1000, // 5 minutes for subscription plans
     }
+  )
+
+  const plans = data?.data || []
+
+  const fetchPlans = useCallback((newActiveOnly = false) => {
+    setActiveOnly(newActiveOnly)
   }, [])
 
   const createPlan = useCallback(async (planData: Partial<SubscriptionPlan>): Promise<boolean> => {
@@ -74,7 +71,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       }
 
       toast.success('Subscription plan created successfully!')
-      await fetchPlans()
+      mutate() // Refresh the list
       return true
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create subscription plan'
@@ -82,7 +79,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       toast.error(message)
       return false
     }
-  }, [fetchPlans])
+  }, [mutate])
 
   const updatePlan = useCallback(async (id: string, planData: Partial<SubscriptionPlan>): Promise<boolean> => {
     try {
@@ -99,7 +96,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       }
 
       toast.success('Subscription plan updated successfully!')
-      await fetchPlans()
+      mutate() // Refresh the list
       return true
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update subscription plan'
@@ -107,9 +104,23 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       toast.error(message)
       return false
     }
-  }, [fetchPlans])
+  }, [mutate])
 
   const deletePlan = useCallback(async (planId: string): Promise<boolean> => {
+    const previousData = data
+
+    // Optimistic update
+    mutate(
+      (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          data: current.data.filter(p => p.id !== planId)
+        }
+      },
+      { revalidate: false }
+    )
+
     try {
       const response = await apiFetch(`/api/subscription-plans?id=${planId}`, {
         method: 'DELETE',
@@ -118,11 +129,11 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       const result = await response.json()
 
       if (!response.ok) {
+        mutate(previousData, { revalidate: false })
         throw new Error(result.error || 'Failed to delete subscription plan')
       }
 
       toast.success('Subscription plan deleted successfully!')
-      setPlans(prevPlans => prevPlans.filter(p => p.id !== planId))
       return true
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete subscription plan'
@@ -130,15 +141,16 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       toast.error(message)
       return false
     }
-  }, [])
+  }, [data, mutate])
 
   return {
     plans,
-    isLoading,
-    error,
+    isLoading: isLoading || isValidating,
+    error: error?.message || null,
     fetchPlans,
     createPlan,
     updatePlan,
     deletePlan,
+    refetch: () => mutate(),
   }
 }

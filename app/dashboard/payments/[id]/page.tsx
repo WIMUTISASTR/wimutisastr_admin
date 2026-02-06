@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { PageHeader } from '../../../components/layout'
+import Image from 'next/image'
 import { Card, Badge, Button } from '../../../components/ui'
 import { apiFetch } from '../../shared/api'
 import { PaymentProof } from '../../shared/types'
@@ -34,9 +35,10 @@ export default function PaymentProofDetailPage() {
       }
 
       setProof(result.data)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Fetch error:', error)
-      toast.error(error.message || 'Failed to load payment proof')
+      const message = error instanceof Error ? error.message : 'Failed to load payment proof'
+      toast.error(message)
       router.push('/dashboard/payments')
     } finally {
       setIsLoading(false)
@@ -67,9 +69,10 @@ export default function PaymentProofDetailPage() {
 
       toast.success('Payment proof approved successfully!')
       router.push('/dashboard/payments')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Approve error:', error)
-      toast.error(error.message || 'Failed to approve payment proof')
+      const message = error instanceof Error ? error.message : 'Failed to approve payment proof'
+      toast.error(message)
     } finally {
       setIsProcessing(false)
     }
@@ -99,9 +102,10 @@ export default function PaymentProofDetailPage() {
 
       toast.success('Payment proof rejected successfully!')
       router.push('/dashboard/payments')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Reject error:', error)
-      toast.error(error.message || 'Failed to reject payment proof')
+      const message = error instanceof Error ? error.message : 'Failed to reject payment proof'
+      toast.error(message)
     } finally {
       setIsProcessing(false)
     }
@@ -203,11 +207,14 @@ export default function PaymentProofDetailPage() {
         <Card padding="none" className="overflow-hidden">
           <div className="bg-slate-50 p-4">
             <h3 className="text-lg font-bold text-slate-900 mb-4">Payment Proof Image</h3>
-            <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-              <img
+            <div className="relative rounded-xl border border-slate-200 overflow-hidden bg-white h-[600px]">
+              <Image
                 src={proof.proof_url}
                 alt="Payment proof"
-                className="w-full h-auto max-h-[600px] object-contain"
+                fill
+                sizes="(min-width: 1024px) 800px, 100vw"
+                className="object-contain"
+                unoptimized
               />
             </div>
             <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
@@ -359,7 +366,7 @@ export default function PaymentProofDetailPage() {
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Review This Payment</h3>
                 <p className="text-sm text-slate-600 mt-1">
-                  Approve or reject this payment proof to update the user's membership status
+                  Approve or reject this payment proof to update the user&apos;s membership status
                 </p>
               </div>
               <div className="flex gap-3">

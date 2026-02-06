@@ -172,7 +172,7 @@ export function validateEnv(throwOnError: boolean = true): ValidationResult {
                 errors.push(`ENCRYPTION_KEY must be 32 bytes (256 bits) when decoded, got ${key.length} bytes`)
                 errors.push(`  Generate a new key with: node scripts/generate-encryption-key.js`)
               }
-            } catch (e) {
+            } catch {
               errors.push(`ENCRYPTION_KEY must be valid base64 encoded string`)
               errors.push(`  Generate a new key with: node scripts/generate-encryption-key.js`)
             }

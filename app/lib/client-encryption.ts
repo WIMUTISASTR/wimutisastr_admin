@@ -10,12 +10,6 @@ const ALGORITHM = 'AES-GCM'
 const KEY_LENGTH = 256
 const IV_LENGTH = 12 // 96 bits recommended for GCM
 
-interface EncryptedData {
-  encrypted: ArrayBuffer
-  iv: Uint8Array
-  key: string // Base64 encoded key
-}
-
 /**
  * Generate a new encryption key using Web Crypto API
  */

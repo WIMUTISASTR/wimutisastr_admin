@@ -33,47 +33,51 @@ export default function PaymentsPage() {
       header: 'User',
       accessor: 'user',
       width: '25%',
-      render: (value: PaymentProof['user']) => (
-        <div>
-          <div className="font-medium text-slate-900">
-            {value?.email || 'Unknown'}
-          </div>
-          {value?.membership_status && (
-            <div className="mt-1">
-              <Badge 
-                variant={
-                  value.membership_status === 'approved' ? 'success' :
-                  value.membership_status === 'denied' ? 'error' :
-                  'warning'
-                }
-                size="sm"
-              >
-                {value.membership_status}
-              </Badge>
+      render: (value: unknown) => {
+        const user = value as PaymentProof['user'] | null | undefined
+        return (
+          <div>
+            <div className="font-medium text-slate-900">
+              {user?.email || 'Unknown'}
             </div>
-          )}
-        </div>
-      ),
+            {user?.membership_status && (
+              <div className="mt-1">
+                <Badge 
+                  variant={
+                    user.membership_status === 'approved' ? 'success' :
+                    user.membership_status === 'denied' ? 'error' :
+                    'warning'
+                  }
+                  size="sm"
+                >
+                  {user.membership_status}
+                </Badge>
+              </div>
+            )}
+          </div>
+        )
+      },
     },
     {
       header: 'Reference',
       accessor: 'payment_reference',
       width: '18%',
-      render: (value: string) => (
-        <div className="font-mono text-sm text-slate-700">{value}</div>
+      render: (value: unknown) => (
+        <div className="font-mono text-sm text-slate-700">{typeof value === 'string' ? value : '-'}</div>
       ),
     },
     {
       header: 'Plan',
       accessor: 'subscription_plan',
       width: '15%',
-      render: (value: PaymentProof['subscription_plan'], row: PaymentProof) => {
-        if (value) {
+      render: (value: unknown, row: PaymentProof) => {
+        const plan = value as PaymentProof['subscription_plan'] | null | undefined
+        if (plan) {
           return (
             <div>
-              <div className="font-medium text-slate-900">{value.name}</div>
+              <div className="font-medium text-slate-900">{plan.name}</div>
               <div className="text-xs text-slate-500">
-                ${value.price} · {value.duration_days} days
+                ${plan.price} · {plan.duration_days} days
               </div>
             </div>
           )
@@ -90,23 +94,26 @@ export default function PaymentsPage() {
       header: 'Amount',
       accessor: 'amount',
       width: '10%',
-      render: (value: string) => (
-        <div className="font-semibold text-slate-900">${value}</div>
+      render: (value: unknown) => (
+        <div className="font-semibold text-slate-900">
+          {typeof value === 'string' || typeof value === 'number' ? `$${value}` : '-'}
+        </div>
       ),
     },
     {
       header: 'Status',
       accessor: 'status',
       width: '10%',
-      render: (value: 'pending' | 'verified' | 'rejected') => {
+      render: (value: unknown) => {
         const variants = {
           pending: 'warning' as const,
           verified: 'success' as const,
           rejected: 'error' as const,
         }
+        const status = value === 'verified' || value === 'rejected' ? value : 'pending'
         return (
-          <Badge variant={variants[value]} size="md">
-            {value}
+          <Badge variant={variants[status]} size="md">
+            {status}
           </Badge>
         )
       },
@@ -115,20 +122,25 @@ export default function PaymentsPage() {
       header: 'Uploaded',
       accessor: 'uploaded_at',
       width: '12%',
-      render: (value: string) => (
-        <div>
-          <div className="text-sm text-slate-900">{new Date(value).toLocaleDateString()}</div>
-          <div className="text-xs text-slate-500">
-            {new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      render: (value: unknown) => {
+        if (typeof value !== 'string') {
+          return <span className="text-sm text-slate-400">-</span>
+        }
+        return (
+          <div>
+            <div className="text-sm text-slate-900">{new Date(value).toLocaleDateString()}</div>
+            <div className="text-xs text-slate-500">
+              {new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
           </div>
-        </div>
-      ),
+        )
+      },
     },
     {
       header: 'Actions',
       accessor: 'id',
       width: '15%',
-      render: (_: string, row: PaymentProof) => (
+      render: (_value: unknown, row: PaymentProof) => (
         <Button
           variant="secondary"
           size="sm"
@@ -239,7 +251,7 @@ export default function PaymentsPage() {
 
       {/* Payment Proofs Table */}
       <Card padding="none">
-        <DataTable
+        <DataTable<PaymentProof>
           columns={columns}
           data={proofs}
           isLoading={isLoading}

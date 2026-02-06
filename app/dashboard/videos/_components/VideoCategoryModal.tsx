@@ -34,18 +34,18 @@ export default function VideoCategoryModal({
   isLoading,
 }: VideoCategoryModalProps) {
   const schema = useMemo(() => (editingCategory ? updateCategorySchema : createCategorySchema), [editingCategory])
-  const form = useZodForm(schema, { name: '', description: '' } as any)
+  const form = useZodForm(schema, { name: '', description: '' })
   const { reset } = form
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
   useEffect(() => {
     if (editingCategory) {
-      reset({ name: editingCategory.name, description: editingCategory.description || '' } as any)
+      reset({ name: editingCategory.name, description: editingCategory.description || '' })
       setCoverPreview(editingCategory.cover_url)
       setCoverFile(null)
     } else {
-      reset({ name: '', description: '' } as any)
+      reset({ name: '', description: '' })
       setCoverPreview(null)
       setCoverFile(null)
     }
@@ -96,8 +96,8 @@ export default function VideoCategoryModal({
       }
 
       const payload = {
-        name: (form.values as any).name,
-        description: ((form.values as any).description || '').trim() ? (form.values as any).description : null,
+        name: form.values.name,
+        description: (form.values.description || '').trim() ? form.values.description : null,
         cover_url: coverUrl,
       }
 
@@ -129,9 +129,10 @@ export default function VideoCategoryModal({
       toast.success(editingCategory ? 'Category updated successfully!' : 'Category created successfully!')
       onSave()
       onClose()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Category save error:', error)
-      toast.error(error.message || 'Failed to save category')
+      const message = error instanceof Error ? error.message : 'Failed to save category'
+      toast.error(message)
     }
   }
 
@@ -151,8 +152,8 @@ export default function VideoCategoryModal({
             </label>
             <input
               type="text"
-              value={(form.values as any).name}
-              onChange={(e) => form.setValue('name' as any, e.target.value)}
+              value={form.values.name}
+              onChange={(e) => form.setValue('name', e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               placeholder="e.g., Tutorial, Documentary, Entertainment"
               required
@@ -166,8 +167,8 @@ export default function VideoCategoryModal({
               Description
             </label>
             <textarea
-              value={(form.values as any).description}
-              onChange={(e) => form.setValue('description' as any, e.target.value)}
+              value={form.values.description ?? ''}
+              onChange={(e) => form.setValue('description', e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
               placeholder="Category description (optional)"
               rows={3}

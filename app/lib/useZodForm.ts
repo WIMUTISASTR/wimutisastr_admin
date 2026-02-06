@@ -29,6 +29,7 @@ export function useZodForm<TSchema extends z.ZodTypeAny>(
     setErrors((prev) => {
       if (!prev[String(key)]) return prev
       const { [String(key)]: _removed, ...rest } = prev
+      void _removed
       return rest
     })
   }, [])

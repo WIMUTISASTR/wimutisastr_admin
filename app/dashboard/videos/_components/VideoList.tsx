@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { DataTable, Pagination } from '../../../components/data-display'
 import { DeleteConfirmationModal } from '../../../components/feedback'
 import { Card, Badge, Button, UIIcons, EmptyState } from '../../../components/ui'
@@ -86,7 +87,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       await onDelete(videoToDelete.id)
       setDeleteModalOpen(false)
       setVideoToDelete(null)
-    } catch (error) {
+    } catch {
       // Error is handled by parent component
     } finally {
       setIsDeleting(false)
@@ -105,70 +106,6 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
   const handleBackToCategories = () => {
     setSelectedCategoryId(null)
   }
-
-  // Category table columns (kept for potential fallback)
-  const categoryColumns = [
-    {
-      header: 'Category',
-      accessor: 'name',
-      width: '50%',
-      render: (value: string, row: VideoCategory) => (
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 flex items-center justify-center bg-linear-to-br from-slate-100 to-slate-200 rounded-xl shadow-sm overflow-hidden shrink-0">
-            {row.cover_url ? (
-              <img
-                src={row.cover_url}
-                alt={`${value} cover`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-slate-900 text-lg">{value}</div>
-            {row.description && (
-              <div className="text-sm text-slate-600 mt-1 line-clamp-2">{row.description}</div>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      header: 'Videos',
-      accessor: 'id',
-      width: '25%',
-      render: (value: string) => {
-        const categoryVideos = videos.filter(v => v.category_id === value)
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-lg font-bold text-slate-900">{categoryVideos.length}</div>
-              <div className="text-xs text-slate-500">video{categoryVideos.length !== 1 ? 's' : ''}</div>
-            </div>
-          </div>
-        )
-      },
-    },
-    {
-      header: 'Created',
-      accessor: 'created_at',
-      width: '25%',
-      render: (value: string) => (
-        <div>
-          <div className="text-sm text-slate-900">{new Date(value).toLocaleDateString()}</div>
-          <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-      ),
-    },
-  ]
 
   // If no category is selected, show categories table
   if (!selectedCategoryId) {
@@ -230,12 +167,15 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
                 >
                   <div className="p-4">
                     <div className="flex items-start gap-4">
-                      <div className="h-16 w-16 rounded-xl overflow-hidden bg-linear-to-br from-slate-100 to-slate-200 border border-slate-200 shrink-0">
+                      <div className="relative h-16 w-16 rounded-xl overflow-hidden bg-linear-to-br from-slate-100 to-slate-200 border border-slate-200 shrink-0">
                         {cat.cover_url ? (
-                          <img
+                          <Image
                             src={cat.cover_url}
                             alt={`${cat.name} cover`}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="64px"
+                            className="object-cover"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
@@ -283,14 +223,17 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       header: 'Video',
       accessor: 'title',
       width: '40%',
-      render: (value: string, row: Video) => (
+      render: (value: unknown, row: Video) => (
         <div className="flex items-center gap-3">
-          <div className="w-20 h-12 flex items-center justify-center bg-linear-to-br from-slate-100 to-slate-200 rounded-lg shadow-sm overflow-hidden shrink-0">
+          <div className="relative w-20 h-12 flex items-center justify-center bg-linear-to-br from-slate-100 to-slate-200 rounded-lg shadow-sm overflow-hidden shrink-0">
             {row.thumbnail_url ? (
-              <img
+              <Image
                 src={row.thumbnail_url}
-                alt={`${value} thumbnail`}
-                className="w-full h-full object-cover"
+                alt={`${row.title} thumbnail`}
+                fill
+                sizes="80px"
+                className="object-cover"
+                unoptimized
               />
             ) : (
               <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -300,7 +243,9 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="font-semibold text-slate-900 truncate">{value}</div>
+            <div className="font-semibold text-slate-900 truncate">
+              {typeof value === 'string' ? value : row.title}
+            </div>
             {row.description && (
               <div className="text-sm text-slate-600 truncate mt-0.5">{row.description}</div>
             )}
@@ -312,10 +257,10 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       header: 'Category',
       accessor: 'category',
       width: '20%',
-      render: (value: { id: string; name: string } | null) => (
-        value ? (
+      render: (value: unknown) => (
+        value && typeof value === 'object' && 'name' in value ? (
           <Badge variant="default" size="md">
-            {value.name}
+            {(value as { name: string }).name}
           </Badge>
         ) : (
           <span className="text-slate-400 text-sm">Uncategorized</span>
@@ -326,36 +271,46 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       header: 'Access',
       accessor: 'access_level',
       width: '10%',
-      render: (value: 'free' | 'members' | undefined) => (
-        <Badge variant={value === 'free' ? 'info' : 'default'} size="sm">
-          {value === 'free' ? 'Free' : 'Members'}
-        </Badge>
-      ),
+      render: (value: unknown) => {
+        const access = value === 'free' ? 'free' : 'members'
+        return (
+          <Badge variant={access === 'free' ? 'info' : 'default'} size="sm">
+            {access === 'free' ? 'Free' : 'Members'}
+          </Badge>
+        )
+      },
     },
     {
       header: 'File Size',
       accessor: 'file_size',
       width: '15%',
-      render: (value: number) => (
-        <span className="text-sm text-slate-700">{formatFileSize(value)}</span>
+      render: (value: unknown) => (
+        <span className="text-sm text-slate-700">
+          {typeof value === 'number' ? formatFileSize(value) : '-'}
+        </span>
       ),
     },
     {
       header: 'Uploaded',
       accessor: 'uploaded_at',
       width: '15%',
-      render: (value: string) => (
-        <div>
-          <div className="text-sm text-slate-900">{new Date(value).toLocaleDateString()}</div>
-          <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-      ),
+      render: (value: unknown) => {
+        if (typeof value !== 'string') {
+          return <span className="text-sm text-slate-400">-</span>
+        }
+        return (
+          <div>
+            <div className="text-sm text-slate-900">{new Date(value).toLocaleDateString()}</div>
+            <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
+        )
+      },
     },
     {
       header: 'Actions',
       accessor: 'id',
       width: '10%',
-      render: (value: string, row: Video) => (
+      render: (_value: unknown, row: Video) => (
         <div className="flex gap-1">         
           <Button
             variant="danger"
@@ -455,7 +410,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
               Showing <span className="font-semibold text-slate-900">{filteredVideos.length}</span> video{filteredVideos.length !== 1 ? 's' : ''}
               {searchQuery ? (
                 <>
-                  {' '}for "<span className="font-semibold text-slate-900">{searchQuery}</span>"
+                  {' '}for &quot;<span className="font-semibold text-slate-900">{searchQuery}</span>&quot;
                 </>
               ) : null}
             </div>
@@ -471,7 +426,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
 
       {/* Videos Table */}
       <Card padding="none">
-        <DataTable
+        <DataTable<Video>
           columns={columns}
           data={filteredVideos}
           isLoading={isLoading}

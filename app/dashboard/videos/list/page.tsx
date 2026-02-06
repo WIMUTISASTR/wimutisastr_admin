@@ -42,9 +42,10 @@ export default function VideosListPage() {
 
       toast.success('Video deleted successfully!')
       setVideos(videos.filter(v => v.id !== videoId))
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete error:', error)
-      toast.error(error.message || 'Failed to delete video')
+      const message = error instanceof Error ? error.message : 'Failed to delete video'
+      toast.error(message)
       throw error
     }
   }

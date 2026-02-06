@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { toast } from 'react-toastify'
 import { DataTable } from '../../../components/data-display'
 import { DeleteConfirmationModal } from '../../../components/feedback'
@@ -25,7 +26,7 @@ function CategoryCoverImage({ name, cover_url, getCategoryColor }: { name: strin
   const showFallback = !cover_url || imageError
 
   return (
-    <div className={`w-16 h-16 rounded-lg shadow-md overflow-hidden shrink-0 ${showFallback ? getCategoryColor(name) : ''}`}>
+    <div className={`relative w-16 h-16 rounded-lg shadow-md overflow-hidden shrink-0 ${showFallback ? getCategoryColor(name) : ''}`}>
       {cover_url && !imageError ? (
         <>
           {!imageLoaded && (
@@ -35,12 +36,15 @@ function CategoryCoverImage({ name, cover_url, getCategoryColor }: { name: strin
               </span>
             </div>
           )}
-          <img
+          <Image
             src={cover_url}
             alt={`${name} cover`}
-            className={`w-full h-full object-cover transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            fill
+            sizes="64px"
+            className={`object-cover transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
+            unoptimized
           />
         </>
       ) : (
@@ -101,9 +105,10 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
       setDeleteModalOpen(false)
       setCategoryToDelete(null)
       onRefresh()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete error:', error)
-      toast.error(error.message || 'Failed to delete category')
+      const message = error instanceof Error ? error.message : 'Failed to delete category'
+      toast.error(message)
     } finally {
       setIsDeleting(false)
     }
@@ -136,15 +141,15 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
     {
       header: 'Category',
       accessor: 'name',
-      render: (value: string, row: VideoCategory) => (
+      render: (value: unknown, row: VideoCategory) => (
         <div className="flex items-center gap-3">
           <CategoryCoverImage 
-            name={value}
+            name={typeof value === 'string' ? value : row.name}
             cover_url={row.cover_url}
             getCategoryColor={getCategoryColor}
           />
           <div>
-            <span className="font-bold text-slate-900 text-base">{value}</span>
+            <span className="font-bold text-slate-900 text-base">{typeof value === 'string' ? value : row.name}</span>
             {row.description && (
               <div className="text-sm text-slate-600 mt-0.5 line-clamp-1">{row.description}</div>
             )}
@@ -155,18 +160,23 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
     {
       header: 'Created',
       accessor: 'created_at',
-      render: (value: string) => (
-        <div>
-          <div className="text-sm font-medium text-slate-900">{new Date(value).toLocaleDateString()}</div>
-          <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-      ),
+      render: (value: unknown) => {
+        if (typeof value !== 'string') {
+          return <span className="text-sm text-slate-400">-</span>
+        }
+        return (
+          <div>
+            <div className="text-sm font-medium text-slate-900">{new Date(value).toLocaleDateString()}</div>
+            <div className="text-xs text-slate-500">{new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
+        )
+      },
     },
     {
       header: '',
       accessor: 'id',
       width: '1%',
-      render: (value: string, row: VideoCategory) => (
+      render: (_value: unknown, row: VideoCategory) => (
         <div className="w-full flex items-center justify-end">
           <Button
             onClick={(e) => {
@@ -202,7 +212,7 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
       
       <Card padding="none">
         <div className="overflow-x-auto overflow-y-visible">
-          <DataTable
+          <DataTable<VideoCategory>
             columns={categoryColumns}
             data={categories}
             isLoading={isLoading}
@@ -213,7 +223,7 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
               </svg>
             }
-            onRowClick={(category) => handleCategoryEdit(category as VideoCategory)}
+            onRowClick={(category) => handleCategoryEdit(category)}
             hoverable
           />
         </div>

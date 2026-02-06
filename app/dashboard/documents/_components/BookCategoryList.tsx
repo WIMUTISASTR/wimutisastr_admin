@@ -16,12 +16,14 @@ interface CategoryListProps {
 }
 
 // Flatten hierarchical categories for table display
-function flattenCategories(categories: Category[], parentName: string = '', level: number = 0): any[] {
-  const flattened: any[] = []
+type FlatCategory = Category & { _displayName: string; _level: number }
+
+function flattenCategories(categories: Category[], parentName: string = '', level: number = 0): FlatCategory[] {
+  const flattened: FlatCategory[] = []
   
   categories.forEach(category => {
     const displayName = level > 0 ? `${parentName} > ${category.name}` : category.name
-    const categoryWithDisplay = { ...category, _displayName: displayName, _level: level }
+    const categoryWithDisplay: FlatCategory = { ...category, _displayName: displayName, _level: level }
     flattened.push(categoryWithDisplay)
     
     if (category.subcategories && category.subcategories.length > 0) {
@@ -42,7 +44,7 @@ export default function CategoryList({ categories, isLoading, onRefresh }: Categ
   // Flatten categories for table display
   const flattenedCategories = useMemo(() => flattenCategories(categories), [categories])
 
-  const handleDeleteClick = (category: any) => {
+  const handleDeleteClick = (category: FlatCategory) => {
     setCategoryToDelete({ id: category.id, name: category._displayName || category.name })
     setDeleteModalOpen(true)
   }
@@ -66,9 +68,10 @@ export default function CategoryList({ categories, isLoading, onRefresh }: Categ
       setDeleteModalOpen(false)
       setCategoryToDelete(null)
       onRefresh()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete error:', error)
-      toast.error(error.message || 'Failed to delete category')
+      const message = error instanceof Error ? error.message : 'Failed to delete category'
+      toast.error(message)
     } finally {
       setIsDeleting(false)
     }
@@ -79,9 +82,9 @@ export default function CategoryList({ categories, isLoading, onRefresh }: Categ
       header: 'Category',
       accessor: '_displayName',
       width: '40%',
-      render: (value: string, row: any) => (
+      render: (value: unknown, row: FlatCategory) => (
         <div style={{ paddingLeft: `${row._level * 24}px` }}>
-          <span className="font-semibold text-slate-900">{value || row.name}</span>
+          <span className="font-semibold text-slate-900">{(value as string) || row.name}</span>
           {row.description && (
             <div className="text-sm text-slate-600 mt-1 line-clamp-2">{row.description}</div>
           )}
@@ -92,7 +95,7 @@ export default function CategoryList({ categories, isLoading, onRefresh }: Categ
       header: 'Books',
       accessor: 'id',
       width: '15%',
-      render: (value: string) => (
+      render: () => (
         <div className="text-slate-900">
           {/* You can add book count here if needed */}
           -
@@ -103,23 +106,28 @@ export default function CategoryList({ categories, isLoading, onRefresh }: Categ
       header: 'Created',
       accessor: 'created_at',
       width: '20%',
-      render: (value: string) => (
-        <div>
-          <div className="text-sm text-slate-900">{new Date(value).toLocaleDateString()}</div>
-          <div className="text-xs text-slate-500">
-            {new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      render: (value: unknown) => {
+        if (typeof value !== 'string') {
+          return <span className="text-sm text-slate-400">-</span>
+        }
+        return (
+          <div>
+            <div className="text-sm text-slate-900">{new Date(value).toLocaleDateString()}</div>
+            <div className="text-xs text-slate-500">
+              {new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
           </div>
-        </div>
-      ),
+        )
+      },
     },
     {
       header: 'Actions',
       accessor: 'id',
       width: '25%',
-      render: (value: string, row: any) => (
+      render: (value: unknown, row: FlatCategory) => (
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => router.push(`/dashboard/documents/categories/edit/${value}`)}
+            onClick={() => router.push(`/dashboard/documents/categories/edit/${String(value)}`)}
             variant="secondary"
             size="sm"
             className="transform-none"
@@ -145,7 +153,7 @@ export default function CategoryList({ categories, isLoading, onRefresh }: Categ
   return (
     <>
       <Card padding="none">
-        <DataTable
+        <DataTable<FlatCategory>
           columns={categoryColumns}
           data={flattenedCategories}
           isLoading={isLoading}

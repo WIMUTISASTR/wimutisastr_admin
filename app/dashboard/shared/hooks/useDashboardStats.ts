@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import useSWR from 'swr'
 import { apiFetch } from '../api'
+import { swrConfig } from '../swr-config'
 
 interface DashboardStats {
   users: number
@@ -11,58 +12,48 @@ interface UseDashboardStatsReturn {
   stats: DashboardStats
   isLoading: boolean
   error: string | null
-  refetch: () => Promise<void>
+  refetch: () => void
+}
+
+// Custom fetcher that fetches all stats in parallel
+async function statsFetcher(): Promise<DashboardStats> {
+  const [usersResponse, booksResponse, videosResponse] = await Promise.all([
+    apiFetch('/api/users'),
+    apiFetch('/api/books'),
+    apiFetch('/api/videos'),
+  ])
+
+  const [usersData, booksData, videosData] = await Promise.all([
+    usersResponse.json(),
+    booksResponse.json(),
+    videosResponse.json(),
+  ])
+
+  return {
+    users: usersData.data?.length || usersData.pagination?.total || 0,
+    documents: booksData.data?.length || 0,
+    videos: videosData.data?.length || 0,
+  }
 }
 
 export function useDashboardStats(): UseDashboardStatsReturn {
-  const [stats, setStats] = useState<DashboardStats>({
-    users: 0,
-    documents: 0,
-    videos: 0,
-  })
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchStats = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const [usersResponse, booksResponse, videosResponse] = await Promise.all([
-        apiFetch('/api/users'),
-        apiFetch('/api/books'),
-        apiFetch('/api/videos'),
-      ])
-
-      const [usersData, booksData, videosData] = await Promise.all([
-        usersResponse.json(),
-        booksResponse.json(),
-        videosResponse.json(),
-      ])
-
-      setStats({
-        users: usersData.data?.length || 0,
-        documents: booksData.data?.length || 0,
-        videos: videosData.data?.length || 0,
-      })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch stats'
-      setError(message)
-      console.error('Error fetching dashboard stats:', err)
-    } finally {
-      setIsLoading(false)
+  const { data, error, isLoading, mutate } = useSWR<DashboardStats>(
+    'dashboard-stats', // Static key since we're fetching multiple endpoints
+    statsFetcher,
+    {
+      ...swrConfig,
+      // Keep stats fresh for 5 minutes
+      dedupingInterval: 5 * 60 * 1000,
+      // Revalidate every 5 minutes in background
+      refreshInterval: 5 * 60 * 1000,
     }
-  }, [])
-
-  useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
+  )
 
   return {
-    stats,
+    stats: data || { users: 0, documents: 0, videos: 0 },
     isLoading,
-    error,
-    refetch: fetchStats,
+    error: error?.message || null,
+    refetch: () => mutate(),
   }
 }
 

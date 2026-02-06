@@ -22,7 +22,7 @@ export default function PINPage() {
         if (response.ok) {
           router.push('/login')
         }
-      } catch (error) {
+      } catch {
         // PIN not verified, stay on this page
       }
     }
@@ -61,7 +61,7 @@ export default function PINPage() {
         pinInputRef.current?.reset()
         setIsLoading(false)
       }
-    } catch (error) {
+    } catch {
       setError('An error occurred. Please try again.')
       pinInputRef.current?.reset()
       setIsLoading(false)

@@ -2,26 +2,28 @@ import { ReactNode } from 'react'
 import LoadingSkeleton from '../feedback/LoadingSkeleton'
 import { EmptyState } from '../ui'
 
-interface Column {
+interface Column<T extends Record<string, unknown>> {
   header: string
-  accessor: string
-  render?: (value: any, row: any) => ReactNode
+  accessor: keyof T | string
+  render?: (value: T[keyof T] | unknown, row: T) => ReactNode
   width?: string
 }
 
-interface DataTableProps {
-  columns: Column[]
-  data: any[]
+type RowWithOptionalId = { id?: string | number }
+
+interface DataTableProps<T extends RowWithOptionalId> {
+  columns: Column<T>[]
+  data: T[]
   isLoading?: boolean
   emptyMessage?: string
   emptyDescription?: string
   emptyIcon?: ReactNode
-  onRowClick?: (row: any) => void
+  onRowClick?: (row: T) => void
   striped?: boolean
   hoverable?: boolean
 }
 
-export default function DataTable({ 
+export default function DataTable<T extends RowWithOptionalId>({ 
   columns, 
   data, 
   isLoading = false, 
@@ -31,7 +33,7 @@ export default function DataTable({
   onRowClick,
   striped = false,
   hoverable = true
-}: DataTableProps) {
+}: DataTableProps<T>) {
   if (isLoading) {
     return <LoadingSkeleton rows={5} columns={columns.length} type="table" />
   }
@@ -70,7 +72,7 @@ export default function DataTable({
           <tbody className="bg-white divide-y divide-slate-200">
             {data.map((row, rowIndex) => (
               <tr 
-                key={row.id || rowIndex} 
+                key={row.id ?? rowIndex} 
                 className={`
                   transition-colors
                   ${striped && rowIndex % 2 === 1 ? 'bg-slate-50' : 'bg-white'}
@@ -82,8 +84,8 @@ export default function DataTable({
                 {columns.map((column, colIndex) => (
                   <td key={colIndex} className="px-6 py-4 text-sm text-slate-900">
                     {column.render
-                      ? column.render(row[column.accessor], row)
-                      : row[column.accessor] || <span className="text-slate-400">-</span>}
+                      ? column.render(row[column.accessor as keyof T], row)
+                      : (row[column.accessor as keyof T] as ReactNode) || <span className="text-slate-400">-</span>}
                   </td>
                 ))}
               </tr>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 
 interface ThumbnailUploadProps {
   onUpload: (file: File) => void
@@ -104,7 +105,14 @@ export default function ThumbnailUpload({
         {preview ? (
           <div className="p-3">
             <div className="relative group w-full h-48 rounded-lg overflow-hidden bg-white border border-gray-200">
-              <img src={preview} alt="Thumbnail preview" className="w-full h-full object-cover" />
+              <Image
+                src={preview}
+                alt="Thumbnail preview"
+                fill
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="object-cover"
+                unoptimized
+              />
 
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors" />
 

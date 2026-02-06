@@ -17,8 +17,7 @@ export default function SubscriptionsPage() {
 
   useEffect(() => {
     fetchPlans()
-
-  }, [])
+  }, [fetchPlans])
 
   const handleNewPlan = () => {
     router.push('/dashboard/subscriptions/create')
@@ -51,9 +50,9 @@ export default function SubscriptionsPage() {
       header: 'Plan',
       accessor: 'name',
       width: '25%',
-      render: (value: string, row: SubscriptionPlan) => (
+      render: (value: unknown, row: SubscriptionPlan) => (
         <div>
-          <div className="font-bold text-slate-900">{value}</div>
+          <div className="font-bold text-slate-900">{typeof value === 'string' ? value : row.name}</div>
           <div className="text-sm text-slate-600 mt-1 line-clamp-2">{row.description || 'No description'}</div>
         </div>
       ),
@@ -62,19 +61,24 @@ export default function SubscriptionsPage() {
       header: 'Price',
       accessor: 'price',
       width: '15%',
-      render: (value: number, row: SubscriptionPlan) => (
-        <div className="font-bold text-slate-900">
-          {row.currency} ${value.toFixed(2)}
-        </div>
-      ),
+      render: (value: unknown, row: SubscriptionPlan) => {
+        if (typeof value !== 'number') {
+          return <div className="font-bold text-slate-900">-</div>
+        }
+        return (
+          <div className="font-bold text-slate-900">
+            {row.currency} ${value.toFixed(2)}
+          </div>
+        )
+      },
     },
     {
       header: 'Duration',
       accessor: 'duration_days',
       width: '12%',
-      render: (value: number) => (
+      render: (value: unknown) => (
         <div className="text-slate-900">
-          {value === 30 ? '1 Month' : value === 365 ? '1 Year' : `${value} Days`}
+          {typeof value === 'number' ? (value === 30 ? '1 Month' : value === 365 ? '1 Year' : `${value} Days`) : '-'}
         </div>
       ),
     },
@@ -82,28 +86,31 @@ export default function SubscriptionsPage() {
       header: 'Features',
       accessor: 'features',
       width: '25%',
-      render: (value: string[]) => (
-        <div className="text-sm text-slate-600">
-          {value.length > 0 ? (
-            <ul className="list-disc list-inside space-y-1">
-              {value.slice(0, 2).map((feature, i) => (
-                <li key={i} className="truncate">{feature}</li>
-              ))}
-              {value.length > 2 && (
-                <li className="text-slate-500">+{value.length - 2} more</li>
-              )}
-            </ul>
-          ) : (
-            <span className="text-slate-400">No features</span>
-          )}
-        </div>
-      ),
+      render: (value: unknown) => {
+        const features = Array.isArray(value) ? value : []
+        return (
+          <div className="text-sm text-slate-600">
+            {features.length > 0 ? (
+              <ul className="list-disc list-inside space-y-1">
+                {features.slice(0, 2).map((feature, i) => (
+                  <li key={i} className="truncate">{feature}</li>
+                ))}
+                {features.length > 2 && (
+                  <li className="text-slate-500">+{features.length - 2} more</li>
+                )}
+              </ul>
+            ) : (
+              <span className="text-slate-400">No features</span>
+            )}
+          </div>
+        )
+      },
     },
     {
       header: 'Status',
       accessor: 'is_active',
       width: '10%',
-      render: (value: boolean) => (
+      render: (value: unknown) => (
         <Badge variant={value ? 'success' : 'error'} size="sm">
           {value ? 'Active' : 'Inactive'}
         </Badge>
@@ -113,7 +120,7 @@ export default function SubscriptionsPage() {
       header: 'Actions',
       accessor: 'id',
       width: '13%',
-      render: (value: string, row: SubscriptionPlan) => (
+      render: (_value: unknown, row: SubscriptionPlan) => (
         <div className="flex items-center gap-2">
           <Button
             onClick={() => handleEditPlan(row)}
@@ -152,7 +159,7 @@ export default function SubscriptionsPage() {
 
       <div className="mt-6">
         <Card padding="none">
-          <DataTable
+          <DataTable<SubscriptionPlan>
             columns={columns}
             data={plans}
             isLoading={isLoading}

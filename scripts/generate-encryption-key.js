@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 
 /**
  * Generate Encryption Key Script
@@ -11,26 +12,26 @@ const crypto = require('crypto')
 
 const KEY_LENGTH = 32 // 256 bits for AES-256
 
-console.log('🔐 Generating AES-256 Encryption Key...\n')
+console.log('Generating AES-256 Encryption Key...\n')
 
 // Generate random key
 const key = crypto.randomBytes(KEY_LENGTH)
 const keyBase64 = key.toString('base64')
 
-console.log('✅ Encryption key generated successfully!\n')
+console.log('Encryption key generated successfully!\n')
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-console.log('📝 Add this to your .env file:\n')
+console.log('Add this to your .env file:\n')
 console.log(`ENCRYPTION_KEY=${keyBase64}`)
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
 
-console.log('⚠️  SECURITY WARNINGS:')
+console.log('SECURITY WARNINGS:')
 console.log('   1. NEVER commit this key to version control')
 console.log('   2. Store it securely (password manager, secrets vault)')
 console.log('   3. Use different keys for development and production')
 console.log('   4. Keep a backup in a secure location')
 console.log('   5. Rotate keys periodically (yearly recommended)\n')
 
-console.log('📊 Key Information:')
+console.log('Key Information:')
 console.log(`   Algorithm: AES-256-GCM`)
 console.log(`   Key Length: ${KEY_LENGTH} bytes (${KEY_LENGTH * 8} bits)`)
 console.log(`   Format: Base64`)
@@ -49,15 +50,15 @@ try {
   const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
   
   if (testData.equals(decrypted)) {
-    console.log('✅ Key validation: PASSED\n')
+    console.log('Key validation: PASSED\n')
   } else {
-    console.error('❌ Key validation: FAILED\n')
+    console.error('Key validation: FAILED\n')
     process.exit(1)
   }
 } catch (error) {
-  console.error('❌ Key validation error:', error.message, '\n')
+  console.error('Key validation error:', error.message, '\n')
   process.exit(1)
 }
 
-console.log('🎉 Setup complete! Your data will be encrypted with military-grade AES-256 encryption.')
+console.log('Setup complete. Your data will be encrypted with AES-256.')
 

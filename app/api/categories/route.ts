@@ -5,15 +5,26 @@ import { createCategorySchema, updateCategorySchema, validateData } from '@/app/
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 import type { Category } from '@/app/dashboard/shared/types'
 
+type CategoryRow = {
+  id: string
+  name: string
+  description: string | null
+  parent_id: string | null
+  cover_url?: string | null
+  created_at: string
+  updated_at: string
+  parent?: { id: string; name: string } | null
+}
+
 /**
  * Organize categories into a hierarchical structure
  */
-function organizeCategoriesHierarchically(categories: any[]): Category[] {
+function organizeCategoriesHierarchically(categories: CategoryRow[]): Category[] {
   const categoryMap = new Map<string, Category>()
   const rootCategories: Category[] = []
 
   // First pass: create all category objects
-  categories.forEach((cat: any) => {
+  categories.forEach((cat) => {
     const category: Category = {
       id: cat.id,
       name: cat.name,
@@ -29,7 +40,7 @@ function organizeCategoriesHierarchically(categories: any[]): Category[] {
   })
 
   // Second pass: build hierarchy
-  categories.forEach((cat: any) => {
+  categories.forEach((cat) => {
     const category = categoryMap.get(cat.id)!
     if (cat.parent_id) {
       const parent = categoryMap.get(cat.parent_id)

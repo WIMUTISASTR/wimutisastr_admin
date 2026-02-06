@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useTransition, useCallback } from 'react'
 import { Logo } from '../auth'
 import { Button } from '../ui'
 
@@ -26,6 +27,8 @@ export default function Sidebar({
   menuItems,
 }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -33,6 +36,14 @@ export default function Sidebar({
     }
     return pathname.startsWith(href)
   }
+
+  // Use transition for smoother navigation
+  const handleNavigation = useCallback((href: string) => {
+    onClose()
+    startTransition(() => {
+      router.push(href)
+    })
+  }, [onClose, router])
 
   return (
     <>
@@ -71,11 +82,21 @@ export default function Sidebar({
           <ul className="space-y-2">
             {menuItems.map((item) => {
               const active = isActive(item.href)
+              const isNavigating = isPending && !active
               return (
                 <li key={item.id}>
                   <Link
                     href={item.href}
-                    onClick={onClose}
+                    onClick={(e) => {
+                      // Prevent default only for non-active links
+                      if (!active) {
+                        e.preventDefault()
+                        handleNavigation(item.href)
+                      } else {
+                        onClose()
+                      }
+                    }}
+                    prefetch={true}
                     className={`
                       w-full flex items-center gap-3 px-4 py-3 rounded-lg
                       transition-all duration-200
@@ -83,9 +104,10 @@ export default function Sidebar({
                         ? 'bg-gold-500 text-white'
                         : 'text-slate-700 hover:bg-gold-50 hover:text-gold-700'
                       }
+                      ${isNavigating ? 'opacity-70' : ''}
                     `}
                   >
-                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-5 h-5 shrink-0 ${isNavigating ? 'animate-pulse' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                     </svg>
                     <span className="font-medium">{item.label}</span>

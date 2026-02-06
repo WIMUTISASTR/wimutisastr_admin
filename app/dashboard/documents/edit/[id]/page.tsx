@@ -5,14 +5,32 @@ import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { apiFetch } from '../../../shared/api'
-import { Book, Category } from '../../../shared/types'
+import { Book } from '../../../shared/types'
 import { formatFileSize } from '../../../shared/utils'
 import { useZodForm } from '@/app/lib/useZodForm'
 import { Button } from '../../../../components/ui'
 import { PageHeader } from '../../../../components/layout'
-import { LoadingSkeleton, Modal } from '../../../../components/feedback'
+import { Modal } from '../../../../components/feedback'
 import { useCategories } from '../../../shared/hooks/useCategories'
 import { renderAsync } from 'docx-preview'
+
+const formSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters').trim(),
+  author: z.string().min(1, 'Author is required').max(100, 'Author name must be less than 100 characters').trim(),
+  year: z.coerce.number()
+    .int('Year must be a whole number')
+    .min(1000, 'Year must be a valid 4-digit year')
+    .max(9999, 'Year must be a valid 4-digit year'),
+  description: z
+    .string()
+    .max(1000, 'Description must be less than 1000 characters')
+    .optional()
+    .nullable(),
+  category_id: z.string().uuid('Category is required').optional(),
+  access_level: z.enum(['free', 'members']),
+})
+
+type BookFormInput = z.input<typeof formSchema>
 
 export default function EditDocumentPage() {
   const router = useRouter()
@@ -99,9 +117,10 @@ export default function EditDocumentPage() {
             ignoreFonts: false,
             breakPages: false,
           })
-        } catch (e: any) {
+        } catch (e: unknown) {
           if (cancelled) return
-          setRenderError(e?.message || 'Failed to render document')
+          const message = e instanceof Error ? e.message : 'Failed to render document'
+          setRenderError(message)
         } finally {
           if (cancelled) return
           setIsRendering(false)
@@ -129,37 +148,16 @@ export default function EditDocumentPage() {
   // Fetch categories on mount
   useEffect(() => {
     fetchCategories()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const formSchema = useMemo(
-    () =>
-      z.object({
-        title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters').trim(),
-        author: z.string().min(1, 'Author is required').max(100, 'Author name must be less than 100 characters').trim(),
-        year: z.coerce.number()
-          .int('Year must be a whole number')
-          .min(1000, 'Year must be a valid 4-digit year')
-          .max(9999, 'Year must be a valid 4-digit year'),
-        description: z
-          .string()
-          .max(1000, 'Description must be less than 1000 characters')
-          .optional()
-          .nullable(),
-        category_id: z.string().uuid('Category is required').optional(),
-        access_level: z.enum(['free', 'members']),
-      }),
-    []
-  )
+  }, [fetchCategories])
 
   const form = useZodForm(formSchema, {
     title: '',
     author: '',
-    year: '' as any,
+    year: '',
     description: '',
     category_id: '',
     access_level: 'members',
-  } as any)
+  } as BookFormInput)
   const { reset } = form
 
   // Get main categories (categories without parent_id)
@@ -211,11 +209,11 @@ export default function EditDocumentPage() {
       reset({
         title: book.title,
         author: book.author,
-        year: (book.year as any) ?? '',
+        year: book.year ?? '',
         description: book.description || '',
         category_id: '',
         access_level: book.access_level || 'members',
-      } as any)
+      })
       setCoverFile(null)
       setBookFile(null)
       setIsFilePreviewOpen(false)
@@ -231,22 +229,22 @@ export default function EditDocumentPage() {
         if (currentCategory.parent_id) {
           setSelectedMainCategoryId(currentCategory.parent_id)
           const timer = setTimeout(() => {
-            form.setValue('category_id' as any, book.category_id)
+            form.setValue('category_id', book.category_id ?? '')
           }, 10)
           return () => clearTimeout(timer)
         } else {
           setSelectedMainCategoryId(book.category_id)
-          form.setValue('category_id' as any, '')
+          form.setValue('category_id', '')
         }
       } else {
         setSelectedMainCategoryId('')
-        form.setValue('category_id' as any, '')
+        form.setValue('category_id', '')
       }
     } else {
       setSelectedMainCategoryId('')
-      form.setValue('category_id' as any, '')
+      form.setValue('category_id', '')
     }
-  }, [book?.category_id, categories])
+  }, [book?.category_id, categories, form])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -257,14 +255,14 @@ export default function EditDocumentPage() {
       setIsLoading(true)
 
       const validated = form.validate({
-        title: (form.values as any).title,
-        author: (form.values as any).author,
-        year: (form.values as any).year,
-        description: ((form.values as any).description || '').trim()
-          ? (form.values as any).description
+        title: form.values.title,
+        author: form.values.author,
+        year: form.values.year,
+        description: (form.values.description || '').trim()
+          ? form.values.description
           : null,
-        category_id: (form.values as any).category_id,
-        access_level: (form.values as any).access_level,
+        category_id: form.values.category_id,
+        access_level: form.values.access_level,
       })
 
       if (!validated.success) {
@@ -367,9 +365,10 @@ export default function EditDocumentPage() {
 
       toast.success('Book updated successfully!')
       router.push('/dashboard/documents/list')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Update error:', error)
-      toast.error(error.message || 'Failed to update book')
+      const message = error instanceof Error ? error.message : 'Failed to update book'
+      toast.error(message)
     } finally {
       setIsLoading(false)
     }
@@ -623,8 +622,8 @@ export default function EditDocumentPage() {
                   </label>
                   <input
                     type="text"
-                    value={(form.values as any).title}
-                    onChange={(e) => form.setValue('title' as any, e.target.value)}
+                    value={form.values.title}
+                    onChange={(e) => form.setValue('title', e.target.value)}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                     required
                     disabled={isLoading}
@@ -639,8 +638,8 @@ export default function EditDocumentPage() {
                     </label>
                     <input
                       type="text"
-                      value={(form.values as any).author}
-                      onChange={(e) => form.setValue('author' as any, e.target.value)}
+                      value={form.values.author}
+                      onChange={(e) => form.setValue('author', e.target.value)}
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                       required
                       disabled={isLoading}
@@ -654,8 +653,12 @@ export default function EditDocumentPage() {
                     </label>
                     <input
                       type="number"
-                      value={(form.values as any).year}
-                      onChange={(e) => form.setValue('year' as any, e.target.value)}
+                      value={
+                        typeof form.values.year === 'number' || typeof form.values.year === 'string'
+                          ? form.values.year
+                          : ''
+                      }
+                      onChange={(e) => form.setValue('year', e.target.value)}
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                       min="1000"
                       max="9999"
@@ -674,7 +677,7 @@ export default function EditDocumentPage() {
                     value={selectedMainCategoryId}
                     onChange={(e) => {
                       setSelectedMainCategoryId(e.target.value)
-                      form.setValue('category_id' as any, '')
+                      form.setValue('category_id', '')
                     }}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                     required
@@ -695,8 +698,8 @@ export default function EditDocumentPage() {
                       Subcategory (Optional)
                     </label>
                     <select
-                      value={(form.values as any).category_id || ''}
-                      onChange={(e) => form.setValue('category_id' as any, e.target.value)}
+                      value={form.values.category_id || ''}
+                      onChange={(e) => form.setValue('category_id', e.target.value)}
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                       disabled={isLoading}
                     >
@@ -718,8 +721,8 @@ export default function EditDocumentPage() {
                     Access Level <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={(form.values as any).access_level}
-                    onChange={(e) => form.setValue('access_level' as any, e.target.value)}
+                    value={form.values.access_level}
+                    onChange={(e) => form.setValue('access_level', e.target.value as 'free' | 'members')}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                     required
                     disabled={isLoading}
@@ -737,8 +740,8 @@ export default function EditDocumentPage() {
                     Description
                   </label>
                   <textarea
-                    value={(form.values as any).description}
-                    onChange={(e) => form.setValue('description' as any, e.target.value)}
+                    value={form.values.description ?? ''}
+                    onChange={(e) => form.setValue('description', e.target.value)}
                     rows={5}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none"
                     disabled={isLoading}

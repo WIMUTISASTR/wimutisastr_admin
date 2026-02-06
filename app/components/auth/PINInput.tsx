@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
+import { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react'
 
 export interface PINInputRef {
   getValue: () => string
@@ -23,7 +23,6 @@ const PINInput = forwardRef<PINInputRef, PINInputProps>(({
   autoFocus = true,
 }, ref) => {
   const [pin, setPin] = useState<string[]>(Array(length).fill(''))
-  const [currentIndex, setCurrentIndex] = useState(0)
 
   useEffect(() => {
     if (autoFocus) {
@@ -46,7 +45,6 @@ const PINInput = forwardRef<PINInputRef, PINInputProps>(({
       })
       setPin(newPin)
       const nextIndex = Math.min(index + pastedPin.length, length - 1)
-      setCurrentIndex(nextIndex)
       const nextInput = document.getElementById(`pin-${nextIndex}`)
       if (nextInput) {
         nextInput.focus()
@@ -64,13 +62,11 @@ const PINInput = forwardRef<PINInputRef, PINInputProps>(({
     setPin(newPin)
 
     if (value && index < length - 1) {
-      setCurrentIndex(index + 1)
       const nextInput = document.getElementById(`pin-${index + 1}`)
       if (nextInput) {
         nextInput.focus()
       }
     } else if (!value && index > 0) {
-      setCurrentIndex(index - 1)
       const prevInput = document.getElementById(`pin-${index - 1}`)
       if (prevInput) {
         prevInput.focus()
@@ -88,14 +84,13 @@ const PINInput = forwardRef<PINInputRef, PINInputProps>(({
     }
   }
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setPin(Array(length).fill(''))
-    setCurrentIndex(0)
     const firstInput = document.getElementById('pin-0')
     if (firstInput) {
       firstInput.focus()
     }
-  }
+  }, [length])
 
   useImperativeHandle(ref, () => ({
     getValue: () => pin.join(''),
@@ -104,10 +99,12 @@ const PINInput = forwardRef<PINInputRef, PINInputProps>(({
 
   // Reset on error
   useEffect(() => {
-    if (error) {
+    if (!error) return
+    const timer = setTimeout(() => {
       reset()
-    }
-  }, [error])
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [error, reset])
 
   // Call onComplete when PIN is complete (optional)
   useEffect(() => {

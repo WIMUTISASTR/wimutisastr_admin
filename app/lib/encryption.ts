@@ -5,13 +5,12 @@
  * Uses Web Crypto API (browser) and Node.js crypto (server)
  */
 
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto'
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync, createHash } from 'crypto'
 
 // Encryption configuration
 const ALGORITHM = 'aes-256-gcm'
 const KEY_LENGTH = 32 // 256 bits
 const IV_LENGTH = 16  // 128 bits
-const SALT_LENGTH = 64
 const TAG_LENGTH = 16
 const SCRYPT_COST = 16384 // CPU/memory cost
 
@@ -158,9 +157,7 @@ export function decryptText(encryptedText: string): string {
  * Hash sensitive data (one-way, for comparison)
  */
 export function hashData(data: string): string {
-  const crypto = require('crypto')
-  return crypto
-    .createHash('sha256')
+  return createHash('sha256')
     .update(data)
     .digest('hex')
 }
@@ -175,7 +172,7 @@ export function generateSecureToken(length: number = 32): string {
 /**
  * Encrypt JSON data
  */
-export function encryptJSON(data: any): string {
+export function encryptJSON(data: unknown): string {
   const json = JSON.stringify(data)
   return encryptText(json)
 }
