@@ -7,6 +7,8 @@ interface UploadProgressModalProps {
   progress: number
   currentStep: string
   fileName?: string
+  /** Custom title for the upload modal. Defaults to "Uploading File" */
+  title?: string
 }
 
 export default function UploadProgressModal({
@@ -14,6 +16,7 @@ export default function UploadProgressModal({
   progress,
   currentStep,
   fileName,
+  title = 'Uploading File',
 }: UploadProgressModalProps) {
   return (
     <Modal
@@ -32,7 +35,7 @@ export default function UploadProgressModal({
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">Uploading Video</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         </div>
         
         {fileName && (

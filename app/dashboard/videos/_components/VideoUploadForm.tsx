@@ -4,8 +4,7 @@ import { useState, useRef } from 'react'
 import { toast } from 'react-toastify'
 import { FileUpload, ThumbnailUpload } from '../../../components/forms'
 import { VideoCategory } from '../../shared/types'
-import { FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from '../../shared/constants'
-import { formatFileSize } from '../../shared/utils'
+import { ALLOWED_FILE_TYPES } from '../../shared/constants'
 import { Button } from '../../../components/ui'
 
 interface VideoUploadFormProps {
@@ -80,10 +79,6 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
         if (!ALLOWED_FILE_TYPES.VIDEOS.includes(fileExt)) {
           newErrors.file = `Invalid file type. Allowed: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()}`
         }
-      }
-      // Validate file size
-      if (formData.file.size > FILE_SIZE_LIMITS.VIDEO_FILE) {
-        newErrors.file = `File size must be less than ${formatFileSize(FILE_SIZE_LIMITS.VIDEO_FILE)}`
       }
     }
 
@@ -305,7 +300,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
               <div>
                 <FileUpload
                   accept="video/*"
-                  maxSize={FILE_SIZE_LIMITS.VIDEO_FILE / (1024 * 1024)}
+                  disableSizeLimit
                   onUpload={async () => {}}
                   onFileSelect={(file) => {
                     setFormData({ ...formData, file })
@@ -317,7 +312,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                   }}
                   hideUploadButton={true}
                   label="Upload your Video"
-                  description={`Supported formats: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()} (Max ${formatFileSize(FILE_SIZE_LIMITS.VIDEO_FILE)})`}
+                  description={`Supported formats: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()}`}
                   isLoading={isLoading}
                 />
                 {errors.file && <span className="text-sm text-red-600 mt-1 block">{errors.file}</span>}

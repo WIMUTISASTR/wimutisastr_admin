@@ -222,6 +222,7 @@ export default function VideosUploadPage() {
         progress={uploadProgress}
         currentStep={uploadStep}
         fileName={uploadingFileName}
+        title="Uploading Video"
       />
     </>
   )

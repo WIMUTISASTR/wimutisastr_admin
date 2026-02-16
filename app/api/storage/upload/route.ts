@@ -3,6 +3,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, ValidationError, successResponse } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
+import { validateFileMagicBytes } from '@/app/lib/file-validation'
 
 // Cloudflare R2 configuration
 function getR2Config() {
@@ -180,6 +181,15 @@ export async function POST(request: NextRequest) {
     ]
     if (!validBuckets.includes(bucket as UploadBucket)) {
       throw new ValidationError(`Invalid bucket. Must be one of: ${validBuckets.join(', ')}`)
+    }
+
+    // Validate file content using magic bytes for security
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || ''
+    const isValidContent = await validateFileMagicBytes(file, fileExtension)
+    if (!isValidContent) {
+      throw new ValidationError(
+        'File content does not match its extension. The file may be corrupted or misnamed.'
+      )
     }
 
     // Convert File to ArrayBuffer

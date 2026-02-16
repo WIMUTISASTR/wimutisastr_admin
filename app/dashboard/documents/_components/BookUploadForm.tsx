@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useCallback } from 'react'
 import { Button } from '../../../components/ui'
 import { Category } from '../../shared/types'
 import { formatFileSize } from '../../shared/utils'
@@ -53,27 +53,27 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     return categories.filter(cat => cat.parent_id === selectedMainCategoryId)
   }, [categories, selectedMainCategoryId])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
     setError('')
-  }
+  }, [])
 
-  const handleMainCategoryChange = (mainCategoryId: string) => {
+  const handleMainCategoryChange = useCallback((mainCategoryId: string) => {
     setSelectedMainCategoryId(mainCategoryId)
     // Reset subcategory selection when main category changes
     setFormData(prev => ({ ...prev, category_id: null }))
     setError('')
-  }
+  }, [])
 
-  const handleSubcategoryChange = (subcategoryId: string) => {
+  const handleSubcategoryChange = useCallback((subcategoryId: string) => {
     setFormData(prev => ({ ...prev, category_id: subcategoryId || null }))
     setError('')
-  }
+  }, [])
 
   // (Category dropdown removed in favor of a simple <select> for consistency)
 
-  const handleFile = (selectedFile: File) => {
+  const handleFile = useCallback((selectedFile: File) => {
     setError('')
     
     // Check file size
@@ -98,9 +98,9 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     }
 
     setFormData(prev => ({ ...prev, file: selectedFile }))
-  }
+  }, [])
 
-  const handleCover = (selectedFile: File) => {
+  const handleCover = useCallback((selectedFile: File) => {
     setError('')
     
     // Check file size
@@ -122,9 +122,9 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     }
 
     setFormData(prev => ({ ...prev, cover: selectedFile }))
-  }
+  }, [])
 
-  const handleDrag = (e: React.DragEvent) => {
+  const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (e.type === 'dragenter' || e.type === 'dragover') {
@@ -132,9 +132,9 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     } else if (e.type === 'dragleave') {
       setDragActive(false)
     }
-  }
+  }, [])
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
@@ -142,9 +142,9 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0])
     }
-  }
+  }, [handleFile])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault()
     if (e.target.files && e.target.files[0]) {
       if (e.target.id === 'cover') {
@@ -154,9 +154,9 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
         handleFile(e.target.files[0])
       }
     }
-  }
+  }, [handleFile, handleCover])
 
-  const handleCoverDrag = (e: React.DragEvent) => {
+  const handleCoverDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (e.type === 'dragenter' || e.type === 'dragover') {
@@ -164,9 +164,9 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     } else if (e.type === 'dragleave') {
       setCoverDragActive(false)
     }
-  }
+  }, [])
 
-  const handleCoverDrop = (e: React.DragEvent) => {
+  const handleCoverDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setCoverDragActive(false)
@@ -174,7 +174,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleCover(e.dataTransfer.files[0])
     }
-  }
+  }, [handleCover])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

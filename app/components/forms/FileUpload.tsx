@@ -6,6 +6,7 @@ import { Button } from '../ui'
 interface FileUploadProps {
   accept?: string
   maxSize?: number // in MB
+  disableSizeLimit?: boolean
   onUpload: (file: File) => Promise<void>
   label?: string
   description?: string
@@ -18,6 +19,7 @@ interface FileUploadProps {
 export default function FileUpload({
   accept,
   maxSize = 10,
+  disableSizeLimit = false,
   onUpload,
   label = 'Upload File',
   description,
@@ -35,7 +37,7 @@ export default function FileUpload({
     setError('')
     
     // Check file size
-    if (selectedFile.size > maxSize * 1024 * 1024) {
+    if (!disableSizeLimit && selectedFile.size > maxSize * 1024 * 1024) {
       setError(`File size must be less than ${maxSize}MB`)
       return
     }
@@ -142,7 +144,7 @@ export default function FileUpload({
               </div>
               <div className="text-base font-semibold text-slate-900">Upload a File</div>
               <div className="text-sm text-slate-500">Drag and drop files here</div>
-              <div className="text-xs text-slate-400">Max {maxSize}MB</div>
+              {!disableSizeLimit && <div className="text-xs text-slate-400">Max {maxSize}MB</div>}
             </div>
           ) : (
             <div className="space-y-3">

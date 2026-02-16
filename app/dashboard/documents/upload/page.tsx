@@ -1,22 +1,85 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
 import BookUploadForm from '../_components/BookUploadForm'
+import { UploadProgressModal } from '../../../components/feedback'
 import { PageHeader } from '../../../components/layout'
-import { apiFetch } from '../../shared/api'
+import { apiFetch, getAuthToken } from '../../shared/api'
 import { useCategories } from '../../shared/hooks/useCategories'
 
 export default function DocumentsUploadPage() {
   const router = useRouter()
   const { categories, fetchCategories } = useCategories()
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStep, setUploadStep] = useState('')
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
+  const [uploadingFileName, setUploadingFileName] = useState('')
 
   // Fetch categories on mount
   useEffect(() => {
     fetchCategories()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Helper function to upload file with progress tracking (uses XHR for progress events)
+  type UploadResult = {
+    data?: {
+      publicUrl?: string
+      url?: string
+    }
+  }
+
+  const uploadFileWithProgress = useCallback(async (
+    formData: FormData,
+    url: string,
+    onProgress: (progress: number) => void
+  ): Promise<UploadResult> => {
+    const token = await getAuthToken()
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = (e.loaded / e.total) * 100
+          onProgress(progress)
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText)
+            resolve(result)
+          } catch {
+            reject(new Error('Failed to parse response'))
+          }
+        } else {
+          try {
+            const error = JSON.parse(xhr.responseText)
+            reject(new Error(error.error || 'Upload failed'))
+          } catch {
+            reject(new Error('Upload failed'))
+          }
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error during upload'))
+      })
+
+      xhr.addEventListener('abort', () => {
+        reject(new Error('Upload aborted'))
+      })
+
+      xhr.open('POST', url)
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      }
+      xhr.send(formData)
+    })
   }, [])
 
   const handleUpload = async (bookData: {
@@ -34,21 +97,74 @@ export default function DocumentsUploadPage() {
     }
 
     setIsUploading(true)
+    setIsProgressModalOpen(true)
+    setUploadProgress(0)
+    setUploadingFileName(bookData.file.name)
     
     try {
       const category = categories.find(cat => cat.id === bookData.category_id)
       const categoryName = category?.name || 'uncategorized'
 
-      // Upload book file
-      const fileUrl = await uploadFile(bookData.file, 'documents', bookData.category_id, categoryName)
+      // Upload book file with progress tracking
+      setUploadStep('Uploading document file...')
+      
+      // Prepare form data for document file
+      const fileFormData = new FormData()
+      fileFormData.append('file', bookData.file)
+      fileFormData.append('bucket', 'documents')
+      fileFormData.append('path', `documents/${bookData.file.name}`)
+      if (bookData.category_id) {
+        fileFormData.append('category_id', bookData.category_id)
+        fileFormData.append('category_name', categoryName)
+      }
+
+      // Calculate progress allocation: document (70% or 90%), cover (20%), metadata (10%)
+      const hasCover = bookData.cover !== null
+      const fileUploadResult = await uploadFileWithProgress(
+        fileFormData,
+        '/api/storage/upload',
+        (progress) => {
+          const totalProgress = hasCover ? (progress * 0.7) : (progress * 0.9)
+          setUploadProgress(totalProgress)
+        }
+      )
+
+      const fileUrl = fileUploadResult.data?.publicUrl || fileUploadResult.data?.url || ''
+      if (!fileUrl) {
+        throw new Error('Failed to get file URL from upload response')
+      }
 
       // Upload cover if provided
       let coverUrl: string | null = null
       if (bookData.cover) {
-        coverUrl = await uploadFile(bookData.cover, 'covers', bookData.category_id, categoryName)
+        setUploadStep('Uploading cover image...')
+        setUploadProgress(70)
+
+        const coverFormData = new FormData()
+        coverFormData.append('file', bookData.cover)
+        coverFormData.append('bucket', 'documents')
+        coverFormData.append('path', `covers/${bookData.cover.name}`)
+        if (bookData.category_id) {
+          coverFormData.append('category_id', bookData.category_id)
+          coverFormData.append('category_name', categoryName)
+        }
+
+        const coverUploadResult = await uploadFileWithProgress(
+          coverFormData,
+          '/api/storage/upload',
+          (progress) => {
+            const totalProgress = 70 + (progress * 0.2)
+            setUploadProgress(totalProgress)
+          }
+        )
+
+        coverUrl = coverUploadResult.data?.publicUrl || coverUploadResult.data?.url || null
       }
 
       // Save book metadata
+      setUploadStep('Saving document information...')
+      setUploadProgress(90)
+
       const response = await apiFetch('/api/books', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -72,15 +188,26 @@ export default function DocumentsUploadPage() {
         throw new Error(result.error || 'Failed to save book to database')
       }
 
+      setUploadProgress(100)
+      setUploadStep('Complete!')
+
+      // Brief delay to show completion
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      setIsProgressModalOpen(false)
       toast.success('Book uploaded successfully!')
       router.push('/dashboard/documents/list')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to upload book'
       console.error('Upload error:', error)
+      setIsProgressModalOpen(false)
       toast.error(message)
       throw error
     } finally {
       setIsUploading(false)
+      setUploadProgress(0)
+      setUploadStep('')
+      setUploadingFileName('')
     }
   }
 
@@ -99,42 +226,14 @@ export default function DocumentsUploadPage() {
           categories={categories}
         />
       </div>
+
+      <UploadProgressModal
+        isOpen={isProgressModalOpen}
+        progress={uploadProgress}
+        currentStep={uploadStep}
+        fileName={uploadingFileName}
+        title="Uploading Document"
+      />
     </>
   )
-}
-
-/**
- * Helper function to upload files to storage
- */
-async function uploadFile(
-  file: File,
-  folder: string,
-  categoryId: string | null,
-  categoryName: string
-): Promise<string> {
-  // `path` is treated as a server-side hint only; the server generates a safe unique key.
-  const filePath = `${folder}/${file.name}`
-
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('bucket', folder === 'covers' ? 'documents' : 'documents')
-  formData.append('path', filePath)
-  
-  if (categoryId) {
-    formData.append('category_id', categoryId)
-    formData.append('category_name', categoryName)
-  }
-
-  const response = await apiFetch('/api/storage/upload', {
-    method: 'POST',
-    body: formData,
-  })
-
-  const result = await response.json()
-
-  if (!response.ok) {
-    throw new Error(result.error || `Failed to upload ${folder}`)
-  }
-
-  return result.data?.publicUrl || result.data?.url || ''
 }

@@ -7,18 +7,35 @@ interface RateLimitStore {
   }
 }
 
-// In-memory store for rate limiting (use Redis in production)
+/**
+ * In-memory store for rate limiting.
+ * 
+ * ⚠️ IMPORTANT: This works for single-instance deployments only.
+ * For serverless/edge environments (Vercel, Cloudflare Workers, etc.),
+ * each instance has its own memory, so rate limits won't be shared.
+ * 
+ * For production with multiple instances, consider:
+ * - Redis (Upstash Redis is great for serverless)
+ * - Cloudflare KV or Durable Objects
+ * - Database-backed rate limiting
+ * 
+ * For this admin panel with single-user access, in-memory is acceptable
+ * as a basic protection layer.
+ */
 const rateLimitStore: RateLimitStore = {}
 
-// Clean up old entries every 5 minutes
-setInterval(() => {
-  const now = Date.now()
-  Object.keys(rateLimitStore).forEach(key => {
-    if (rateLimitStore[key].resetTime < now) {
-      delete rateLimitStore[key]
-    }
-  })
-}, 5 * 60 * 1000)
+// Clean up old entries every 5 minutes to prevent memory leaks
+const CLEANUP_INTERVAL = 5 * 60 * 1000
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now()
+    Object.keys(rateLimitStore).forEach(key => {
+      if (rateLimitStore[key].resetTime < now) {
+        delete rateLimitStore[key]
+      }
+    })
+  }, CLEANUP_INTERVAL)
+}
 
 interface RateLimitConfig {
   interval: number // milliseconds

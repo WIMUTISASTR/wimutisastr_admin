@@ -1,18 +1,19 @@
 'use client'
 
-import { useMemo, useRef, useState, useEffect } from 'react'
+import { useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
-import { apiFetch } from '../../../shared/api'
+import { apiFetch, getAuthToken } from '../../../shared/api'
 import { Book } from '../../../shared/types'
 import { formatFileSize } from '../../../shared/utils'
+import { FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from '../../../shared/constants'
 import { useZodForm } from '@/app/lib/useZodForm'
 import { Button } from '../../../../components/ui'
 import { PageHeader } from '../../../../components/layout'
-import { Modal } from '../../../../components/feedback'
+import { Modal, UploadProgressModal } from '../../../../components/feedback'
 import { useCategories } from '../../../shared/hooks/useCategories'
-import { renderAsync } from 'docx-preview'
+import { DocxPreview } from '../../_components/DocxPreview'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters').trim(),
@@ -32,6 +33,14 @@ const formSchema = z.object({
 
 type BookFormInput = z.input<typeof formSchema>
 
+// Helper type for upload result
+type UploadResult = {
+  data?: {
+    publicUrl?: string
+    url?: string
+  }
+}
+
 export default function EditDocumentPage() {
   const router = useRouter()
   const params = useParams()
@@ -46,6 +55,13 @@ export default function EditDocumentPage() {
   const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string>('')
   const [isFilePreviewOpen, setIsFilePreviewOpen] = useState(false)
   const [isFilePreviewFullscreenOpen, setIsFilePreviewFullscreenOpen] = useState(false)
+  const categoryInitializedRef = useRef(false)
+  
+  // Upload progress state
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStep, setUploadStep] = useState('')
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
+  const [uploadingFileName, setUploadingFileName] = useState('')
 
   const filePreviewUrl = useMemo(() => {
     if (!book?.file_url) return ''
@@ -88,62 +104,6 @@ export default function EditDocumentPage() {
     // For formats that require fetching (docx), prefer same-origin serve URL.
     return filePreviewUrl || book?.file_url || ''
   }, [book?.file_url, filePreviewUrl])
-
-  const DocxPreview = ({ src }: { src: string }) => {
-    const containerRef = useRef<HTMLDivElement | null>(null)
-    const [isRendering, setIsRendering] = useState(false)
-    const [renderError, setRenderError] = useState<string | null>(null)
-
-    useEffect(() => {
-      let cancelled = false
-      const el = containerRef.current
-      if (!el || !src) return
-
-      el.innerHTML = ''
-      setIsRendering(true)
-      setRenderError(null)
-
-      ;(async () => {
-        try {
-          const res = await fetch(src)
-          if (!res.ok) throw new Error('Failed to load document')
-          const buffer = await res.arrayBuffer()
-          if (cancelled) return
-          el.innerHTML = ''
-          await renderAsync(buffer, el, undefined, {
-            inWrapper: true,
-            ignoreWidth: false,
-            ignoreHeight: false,
-            ignoreFonts: false,
-            breakPages: false,
-          })
-        } catch (e: unknown) {
-          if (cancelled) return
-          const message = e instanceof Error ? e.message : 'Failed to render document'
-          setRenderError(message)
-        } finally {
-          if (cancelled) return
-          setIsRendering(false)
-        }
-      })()
-
-      return () => {
-        cancelled = true
-      }
-    }, [src])
-
-    return (
-      <div className="h-full w-full bg-white overflow-auto">
-        {isRendering && (
-          <div className="p-4 text-sm text-slate-600">Loading document preview…</div>
-        )}
-        {renderError && (
-          <div className="p-4 text-sm text-red-600">{renderError}</div>
-        )}
-        <div ref={containerRef} className="p-4" />
-      </div>
-    )
-  }
 
   // Fetch categories on mount
   useEffect(() => {
@@ -218,33 +178,85 @@ export default function EditDocumentPage() {
       setBookFile(null)
       setIsFilePreviewOpen(false)
       setIsFilePreviewFullscreenOpen(false)
+      // Reset category initialization flag so it can be set for the new book
+      categoryInitializedRef.current = false
     }
   }, [book, reset])
 
   // Initialize category selection
+  const formSetValue = form.setValue
   useEffect(() => {
+    // Only initialize once when we have both book and categories
+    if (categoryInitializedRef.current) return
+    
     if (book?.category_id && categories.length > 0) {
       const currentCategory = categories.find(cat => cat.id === book.category_id)
       if (currentCategory) {
+        categoryInitializedRef.current = true
         if (currentCategory.parent_id) {
           setSelectedMainCategoryId(currentCategory.parent_id)
           const timer = setTimeout(() => {
-            form.setValue('category_id', book.category_id ?? '')
+            formSetValue('category_id', book.category_id ?? '')
           }, 10)
           return () => clearTimeout(timer)
         } else {
           setSelectedMainCategoryId(book.category_id)
-          form.setValue('category_id', '')
+          formSetValue('category_id', '')
         }
-      } else {
-        setSelectedMainCategoryId('')
-        form.setValue('category_id', '')
       }
-    } else {
-      setSelectedMainCategoryId('')
-      form.setValue('category_id', '')
     }
-  }, [book?.category_id, categories, form])
+  }, [book?.category_id, categories, formSetValue])
+
+  // Helper function to upload file with progress tracking
+  const uploadFileWithProgress = useCallback(async (
+    formData: FormData,
+    url: string,
+    onProgress: (progress: number) => void
+  ): Promise<UploadResult> => {
+    const token = await getAuthToken()
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = (e.loaded / e.total) * 100
+          onProgress(progress)
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText)
+            resolve(result)
+          } catch {
+            reject(new Error('Failed to parse response'))
+          }
+        } else {
+          try {
+            const error = JSON.parse(xhr.responseText)
+            reject(new Error(error.error || 'Upload failed'))
+          } catch {
+            reject(new Error('Upload failed'))
+          }
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error during upload'))
+      })
+
+      xhr.addEventListener('abort', () => {
+        reject(new Error('Upload aborted'))
+      })
+
+      xhr.open('POST', url)
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      }
+      xhr.send(formData)
+    })
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -270,6 +282,14 @@ export default function EditDocumentPage() {
         return
       }
 
+      // Show progress modal if there are files to upload
+      const hasFilesToUpload = bookFile || coverFile
+      if (hasFilesToUpload) {
+        setIsProgressModalOpen(true)
+        setUploadProgress(0)
+        setUploadingFileName(bookFile?.name || coverFile?.name || '')
+      }
+
       const finalCategoryId = (validated.data.category_id as string) || selectedMainCategoryId
       const category = categories.find(cat => cat.id === finalCategoryId) || book?.category
       const categoryName = category?.name || 'uncategorized'
@@ -279,9 +299,13 @@ export default function EditDocumentPage() {
       let fileName = book.file_name
       let fileSize = book.file_size
 
+      // Calculate progress allocation based on what needs to be uploaded
+      const hasBookFile = bookFile !== null
+      const hasCoverFile = coverFile !== null
+
       // Upload new book file if provided
       if (bookFile) {
-        // `path` is treated as a server-side hint only; the server generates a safe unique key.
+        setUploadStep('Uploading document file...')
         const filePath = `documents/${bookFile.name}`
 
         const fileFormData = new FormData()
@@ -293,25 +317,31 @@ export default function EditDocumentPage() {
           fileFormData.append('category_name', categoryName)
         }
 
-        const fileUploadResponse = await apiFetch('/api/storage/upload', {
-          method: 'POST',
-          body: fileFormData,
-        })
+        const fileUploadResult = await uploadFileWithProgress(
+          fileFormData,
+          '/api/storage/upload',
+          (progress) => {
+            // If we also have a cover, book file takes 70%, otherwise 90%
+            const totalProgress = hasCoverFile ? (progress * 0.7) : (progress * 0.9)
+            setUploadProgress(totalProgress)
+          }
+        )
 
-        const fileUploadResult = await fileUploadResponse.json()
-
-        if (fileUploadResponse.ok) {
-          fileUrl = fileUploadResult.data?.publicUrl || fileUploadResult.data?.url || ''
-          fileName = bookFile.name
-          fileSize = bookFile.size
-        } else {
-          throw new Error(fileUploadResult.error || 'Failed to upload new book file')
+        fileUrl = fileUploadResult.data?.publicUrl || fileUploadResult.data?.url || ''
+        if (!fileUrl) {
+          throw new Error('Failed to get file URL from upload response')
         }
+        fileName = bookFile.name
+        fileSize = bookFile.size
       }
 
       // Upload new cover if provided
       if (coverFile) {
-        // `path` is treated as a server-side hint only; the server generates a safe unique key.
+        setUploadStep('Uploading cover image...')
+        if (hasBookFile) {
+          setUploadProgress(70)
+        }
+        
         const coverPath = `covers/${coverFile.name}`
 
         const coverFormData = new FormData()
@@ -323,21 +353,35 @@ export default function EditDocumentPage() {
           coverFormData.append('category_name', categoryName)
         }
 
-        const coverUploadResponse = await apiFetch('/api/storage/upload', {
-          method: 'POST',
-          body: coverFormData,
-        })
+        const coverUploadResult = await uploadFileWithProgress(
+          coverFormData,
+          '/api/storage/upload',
+          (progress) => {
+            // Cover takes 20% if book file was uploaded, 90% if it's the only file
+            if (hasBookFile) {
+              const totalProgress = 70 + (progress * 0.2)
+              setUploadProgress(totalProgress)
+            } else {
+              const totalProgress = progress * 0.9
+              setUploadProgress(totalProgress)
+            }
+          }
+        )
 
-        const coverUploadResult = await coverUploadResponse.json()
-
-        if (coverUploadResponse.ok) {
-          coverUrl = coverUploadResult.data?.publicUrl || coverUploadResult.data?.url || null
+        const uploadedCoverUrl = coverUploadResult.data?.publicUrl || coverUploadResult.data?.url || null
+        if (uploadedCoverUrl) {
+          coverUrl = uploadedCoverUrl
         } else {
           toast.warning('Failed to upload new cover image, keeping existing one')
         }
       }
 
       // Update book via API
+      if (hasFilesToUpload) {
+        setUploadStep('Saving changes...')
+        setUploadProgress(90)
+      }
+
       const response = await apiFetch(`/api/books?id=${book.id}`, {
         method: 'PUT',
         headers: {
@@ -363,44 +407,63 @@ export default function EditDocumentPage() {
         throw new Error(result.error || 'Failed to update book')
       }
 
+      if (hasFilesToUpload) {
+        setUploadProgress(100)
+        setUploadStep('Complete!')
+        await new Promise(resolve => setTimeout(resolve, 500))
+        setIsProgressModalOpen(false)
+      }
+
       toast.success('Book updated successfully!')
       router.push('/dashboard/documents/list')
     } catch (error: unknown) {
       console.error('Update error:', error)
+      setIsProgressModalOpen(false)
       const message = error instanceof Error ? error.message : 'Failed to update book'
       toast.error(message)
     } finally {
       setIsLoading(false)
+      setUploadProgress(0)
+      setUploadStep('')
+      setUploadingFileName('')
     }
   }
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       if (!file.type.startsWith('image/')) {
         toast.error('Please select an image file')
         return
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Cover image must be less than 5MB')
+      if (file.size > FILE_SIZE_LIMITS.COVER_IMAGE) {
+        toast.error(`Cover image must be less than ${formatFileSize(FILE_SIZE_LIMITS.COVER_IMAGE)}`)
         return
       }
       setCoverFile(file)
     }
-  }
+  }, [])
 
-  const handleBookFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBookFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.size > 500 * 1024 * 1024) {
-        toast.error('Book file must be less than 500MB')
+      // Validate file extension
+      const ext = file.name.split('.').pop()?.toLowerCase()
+      const allowedTypes = [...ALLOWED_FILE_TYPES.BOOK_DOCUMENTS_EDIT]
+      const fileExt = ext ? `.${ext}` : ''
+      if (!allowedTypes.includes(fileExt as typeof allowedTypes[number])) {
+        toast.error(`Invalid file type. Allowed: ${allowedTypes.join(', ').replace(/\./g, '').toUpperCase()}`)
+        return
+      }
+      if (file.size > FILE_SIZE_LIMITS.BOOK_FILE_EDIT) {
+        toast.error(`Book file must be less than ${formatFileSize(FILE_SIZE_LIMITS.BOOK_FILE_EDIT)}`)
         return
       }
       setBookFile(file)
     }
-  }
+  }, [])
 
-  const getFileNameFromUrl = (url: string | null | undefined) => {
+  const getFileNameFromUrl = useCallback((url: string | null | undefined) => {
     if (!url) return null
     try {
       const u = new URL(url)
@@ -410,7 +473,7 @@ export default function EditDocumentPage() {
       const last = String(url).split('/').filter(Boolean).pop()
       return last || null
     }
-  }
+  }, [])
 
   if (isFetching || !book) {
     return (
@@ -887,6 +950,14 @@ export default function EditDocumentPage() {
           </div>
         </form>
       </div>
+
+      <UploadProgressModal
+        isOpen={isProgressModalOpen}
+        progress={uploadProgress}
+        currentStep={uploadStep}
+        fileName={uploadingFileName}
+        title="Updating Document"
+      />
     </>
   )
 }
