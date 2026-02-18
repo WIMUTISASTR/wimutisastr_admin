@@ -91,6 +91,23 @@ export default function EditVideoPage() {
     }
   }, [videoId, router])
 
+  const resolveVideoUrl = (url: string | null | undefined) => {
+    if (!url) return ''
+    if (url.includes('/api/storage/serve')) return url
+    try {
+      const parsed = new URL(url)
+      const host = parsed.hostname
+      const looksLikeR2 = host.includes('r2.cloudflarestorage.com') || host.includes('.r2.dev')
+      if (looksLikeR2) {
+        const key = parsed.pathname.replace(/^\//, '')
+        return key ? `/api/storage/serve?key=${encodeURIComponent(key)}` : url
+      }
+      return url
+    } catch {
+      return url
+    }
+  }
+
   // Create and cleanup video preview URL
   useEffect(() => {
     if (videoFile) {
@@ -121,14 +138,42 @@ export default function EditVideoPage() {
   }
 
   const formatMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(2)} MB`
-  const VIDEO_MAX_BYTES = 500 * 1024 * 1024
 
   const validateAndSetVideoFile = (file: File) => {
-    if (file.size > VIDEO_MAX_BYTES) {
-      toast.error('File size must be less than 500MB')
-      return
-    }
     setVideoFile(file)
+  }
+
+  const requestPresignedUpload = async (payload: {
+    bucket: 'videos' | 'video-thumbnails'
+    fileName: string
+    contentType: string
+    path?: string
+  }) => {
+    const response = await apiFetch('/api/storage/presign', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    const result = await response.json()
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to prepare upload')
+    }
+    return result.data as { uploadUrl: string; publicUrl?: string; url?: string }
+  }
+
+  const uploadFileToPresignedUrl = async (file: File, uploadUrl: string) => {
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+      },
+      body: file,
+    })
+    if (!response.ok) {
+      throw new Error('Failed to upload file')
+    }
   }
 
   const handleVideoDrag = (e: React.DragEvent) => {
@@ -167,33 +212,23 @@ export default function EditVideoPage() {
       let fileName = video.file_name
       let fileSize = video.file_size
 
-      // Upload new video file if provided
+      // Upload new video file if provided (direct-to-R2)
       if (videoFile) {
         // `path` is treated as a server-side hint only; the server generates a safe unique key.
         const filePath = `videos/${videoFile.name}`
-
-        const fileFormData = new FormData()
-        fileFormData.append('file', videoFile)
-        fileFormData.append('bucket', 'videos')
-        fileFormData.append('path', filePath)
-
-        const fileUploadResponse = await apiFetch('/api/storage/upload', {
-          method: 'POST',
-          body: fileFormData,
+        const presign = await requestPresignedUpload({
+          bucket: 'videos',
+          fileName: videoFile.name,
+          contentType: videoFile.type || 'application/octet-stream',
+          path: filePath,
         })
-
-        const fileUploadResult = await fileUploadResponse.json()
-
-        if (fileUploadResponse.ok) {
-          fileUrl = fileUploadResult.data?.publicUrl || fileUploadResult.data?.url || ''
-          fileName = videoFile.name
-          fileSize = videoFile.size
-        } else {
-          throw new Error(fileUploadResult.error || 'Failed to upload new video file')
-        }
+        await uploadFileToPresignedUrl(videoFile, presign.uploadUrl)
+        fileUrl = presign.publicUrl || presign.url || ''
+        fileName = videoFile.name
+        fileSize = videoFile.size
       }
 
-      // Upload new thumbnail if provided
+      // Upload new thumbnail if provided (server-side optimization)
       if (thumbnailFile) {
         // `path` is treated as a server-side hint only; the server generates a safe unique key.
         const thumbnailPath = `video-thumbnails/${thumbnailFile.name}`
@@ -308,7 +343,7 @@ export default function EditVideoPage() {
         <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-3 md:p-4 shadow-sm">
           <div className="bg-black rounded-xl overflow-hidden">
             <video
-              src={videoPreviewUrl || video.file_url}
+              src={videoPreviewUrl || resolveVideoUrl(video.file_url)}
               controls
               className="w-full h-auto max-h-[520px]"
               preload="metadata"
@@ -491,7 +526,7 @@ export default function EditVideoPage() {
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-slate-500 mt-3">Drag & drop a file here, or click to choose. Max 500MB.</p>
+                  <p className="text-xs text-slate-500 mt-3">Drag & drop a file here, or click to choose.</p>
                 </div>
 
                 {/* Thumbnail */}

@@ -42,16 +42,70 @@ export async function optimizeImage(
   const arrayBuffer = await file.arrayBuffer()
   const originalSize = arrayBuffer.byteLength
 
-  // For now, return the original buffer
-  // TODO: Integrate sharp for server-side image optimization
   const buffer = Buffer.from(arrayBuffer)
 
+  if (typeof window !== 'undefined') {
+    return {
+      buffer,
+      mimeType: file.type || (format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp'),
+      originalSize,
+      optimizedSize: buffer.length,
+      compressionRatio: ((originalSize - buffer.length) / originalSize) * 100
+    }
+  }
+
+  if (file.type.toLowerCase() === 'image/gif') {
+    return {
+      buffer,
+      mimeType: file.type || 'image/gif',
+      originalSize,
+      optimizedSize: buffer.length,
+      compressionRatio: ((originalSize - buffer.length) / originalSize) * 100
+    }
+  }
+
+  const { default: sharp } = await import('sharp')
+  const inputType = (file.type || '').toLowerCase()
+  const selectedFormat = inputType.includes('png')
+    ? 'png'
+    : inputType.includes('webp')
+      ? 'webp'
+      : inputType.includes('jpeg') || inputType.includes('jpg')
+        ? 'jpeg'
+        : format
+
+  let image = sharp(buffer)
+  if (maxWidth || maxHeight) {
+    image = image.resize({
+      width: maxWidth,
+      height: maxHeight,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+  }
+
+  if (selectedFormat === 'png') {
+    image = image.png({ compressionLevel: 9, adaptiveFiltering: true })
+  } else if (selectedFormat === 'webp') {
+    image = image.webp({ quality })
+  } else {
+    image = image.jpeg({ quality, mozjpeg: true })
+  }
+
+  const optimizedBuffer = await image.toBuffer()
+  const mimeType =
+    selectedFormat === 'png'
+      ? 'image/png'
+      : selectedFormat === 'webp'
+        ? 'image/webp'
+        : 'image/jpeg'
+
   return {
-    buffer,
-    mimeType: format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp',
+    buffer: optimizedBuffer,
+    mimeType,
     originalSize,
-    optimizedSize: buffer.length,
-    compressionRatio: ((originalSize - buffer.length) / originalSize) * 100
+    optimizedSize: optimizedBuffer.length,
+    compressionRatio: ((originalSize - optimizedBuffer.length) / originalSize) * 100
   }
 }
 

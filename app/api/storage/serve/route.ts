@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import type { GetObjectCommandOutput } from '@aws-sdk/client-s3'
+import { Readable } from 'stream'
 import { verifyMembership, isAdminEmail, getSupabaseAdmin, verifyPinCookie } from '@/app/lib/auth-middleware'
 import { handleApiError } from '@/app/lib/errors'
 
@@ -8,6 +10,7 @@ const r2AccountId = process.env.R2_ACCOUNT_ID!
 const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID!
 const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY!
 const r2BucketName = process.env.R2_BUCKET_NAME! // Default bucket for books
+const r2VideoBucketName = process.env.R2_VIDEO_BUCKET_NAME || 'videos'
 // Create R2 S3 client (R2 is S3-compatible)
 function getR2Client() {
   if (!r2AccountId || !r2AccessKeyId || !r2SecretAccessKey) {
@@ -82,16 +85,47 @@ export async function GET(request: NextRequest) {
     }
 
     // Determine which bucket to use
-    const actualBucketName = bucket || r2BucketName
+    const inferredBucket = bucket || (() => {
+      if (key.startsWith('videos/') || key.startsWith('video-thumbnails/') || key.startsWith('video-category-covers/')) {
+        return r2VideoBucketName
+      }
+      return r2BucketName
+    })()
+    const actualBucketName = inferredBucket
 
-    // Get file from R2
+    const rangeHeader = request.headers.get('range')
+
+    // Get file from R2 (fallback between common video bucket names if needed)
     const s3Client = getR2Client()
-    const command = new GetObjectCommand({
-      Bucket: actualBucketName,
-      Key: key,
-    })
+    const isVideoKey = key.startsWith('videos/') || key.startsWith('video-thumbnails/') || key.startsWith('video-category-covers/')
+    const videoBucketCandidates = Array.from(new Set([
+      actualBucketName,
+      r2VideoBucketName,
+      'videos',
+      'video',
+    ].filter(Boolean)))
+    const bucketCandidates = isVideoKey ? videoBucketCandidates : [actualBucketName]
 
-    const response = await s3Client.send(command)
+    let response: GetObjectCommandOutput | null = null
+    let lastError: unknown = null
+
+    for (const candidate of bucketCandidates) {
+      try {
+        const command = new GetObjectCommand({
+          Bucket: candidate,
+          Key: key,
+          ...(rangeHeader ? { Range: rangeHeader } : {}),
+        })
+        response = await s3Client.send(command) as GetObjectCommandOutput
+        break
+      } catch (error) {
+        lastError = error
+      }
+    }
+
+    if (!response) {
+      throw lastError || new Error('File not found')
+    }
 
     if (!response.Body) {
       return NextResponse.json(
@@ -100,48 +134,56 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Convert stream to buffer
-    const chunks: Buffer[] = []
-    const stream = response.Body as unknown
-    
-    // Handle the stream (AWS SDK v3 returns a Readable stream)
-    if (typeof (stream as { transformToWebStream?: () => ReadableStream<Uint8Array> }).transformToWebStream === 'function') {
-      // Web stream
-      const webStream = (stream as { transformToWebStream: () => ReadableStream<Uint8Array> }).transformToWebStream()
-      const reader = webStream.getReader()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        chunks.push(Buffer.from(value))
+    // Determine content type
+    const contentType = response.ContentType || 'application/octet-stream'
+    const contentLength = response.ContentLength
+    const contentRange = response.ContentRange
+
+    // Convert stream to web stream
+    const bodyStream = (() => {
+      const stream = response.Body as unknown
+      if (typeof (stream as { transformToWebStream?: () => ReadableStream<Uint8Array> }).transformToWebStream === 'function') {
+        return (stream as { transformToWebStream: () => ReadableStream<Uint8Array> }).transformToWebStream()
       }
-    } else if (stream && Symbol.asyncIterator in (stream as AsyncIterable<Uint8Array>)) {
-      // Node.js stream
-      for await (const chunk of stream as AsyncIterable<Uint8Array>) {
-        chunks.push(Buffer.from(chunk))
+      if (stream && stream instanceof Readable) {
+        return Readable.toWeb(stream) as ReadableStream
       }
-    } else {
+      return null
+    })()
+
+    if (!bodyStream) {
       return NextResponse.json(
         { error: 'Unsupported stream type' },
         { status: 500 }
       )
     }
 
-    const buffer = Buffer.concat(chunks)
+    const headers: Record<string, string> = {
+      'Content-Type': contentType,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Accept-Ranges': 'bytes',
+      // Allow embedding in same-origin iframes (used by admin preview UI)
+      'X-Frame-Options': 'SAMEORIGIN',
+      'Content-Security-Policy': "frame-ancestors 'self'",
+    }
 
-    // Determine content type
-    const contentType = response.ContentType || 'application/octet-stream'
+    if (rangeHeader && contentRange) {
+      headers['Content-Range'] = contentRange
+      if (contentLength !== undefined) {
+        headers['Content-Length'] = String(contentLength)
+      }
+      return new NextResponse(bodyStream, {
+        status: 206,
+        headers,
+      })
+    }
+
+    if (contentLength) {
+      headers['Content-Length'] = String(contentLength)
+    }
 
     // Return file with appropriate headers
-    return new NextResponse(buffer, {
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': buffer.length.toString(),
-        'Cache-Control': 'public, max-age=31536000, immutable',
-        // Allow embedding in same-origin iframes (used by admin preview UI)
-        'X-Frame-Options': 'SAMEORIGIN',
-        'Content-Security-Policy': "frame-ancestors 'self'",
-      },
-    })
+    return new NextResponse(bodyStream, { headers })
   } catch (error: unknown) {
     console.error('R2 serve error:', error)
     return handleApiError(error)
