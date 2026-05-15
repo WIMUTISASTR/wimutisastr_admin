@@ -6,6 +6,7 @@ import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate
 import { validateFileMagicBytes } from '@/app/lib/file-validation'
 import { buildObjectKey, getR2Client, getR2Config, resolveBucketInfo, UploadBucket } from '@/app/api/storage/_shared'
 import { optimizeCoverImage, optimizeImage, optimizeThumbnail, shouldOptimizeImage } from '@/app/lib/storage-optimization'
+import { compressVideo, shouldCompressVideo } from '@/app/lib/video-compression'
 
 // POST - Upload file to Cloudflare R2 storage
 export async function POST(request: NextRequest) {
@@ -60,17 +61,28 @@ export async function POST(request: NextRequest) {
 
     // Server-generated object keys. Client-provided `path` is treated only as a hint
     // (e.g. "covers/..." vs "documents/..." vs "qr-codes/...") and never trusted as-is.
-    const { key, inferredKind } = buildObjectKey({
+    const generated = buildObjectKey({
       bucket: bucket as UploadBucket,
       pathHint: path,
       fileName: file.name,
       categoryId,
       categoryName,
     })
+    let key = generated.key
+    const { inferredKind } = generated
 
-    // Convert File to ArrayBuffer (with optional image optimization)
+    // Convert File to buffer (with optional image/video optimization)
     let buffer: Buffer
     let contentType = file.type || 'application/octet-stream'
+    let compressionMeta: {
+      type: 'image' | 'video'
+      compressed: boolean
+      originalSize: number
+      optimizedSize: number
+      compressionRatio: number
+      reason?: string
+    } | null = null
+
     if (shouldOptimizeImage(file.type)) {
       let optimized
       if (bucket === 'video-thumbnails' || inferredKind === 'video-thumbnail') {
@@ -88,6 +100,28 @@ export async function POST(request: NextRequest) {
       }
       buffer = optimized.buffer
       contentType = optimized.mimeType
+      compressionMeta = {
+        type: 'image',
+        compressed: optimized.optimizedSize < optimized.originalSize,
+        originalSize: optimized.originalSize,
+        optimizedSize: optimized.optimizedSize,
+        compressionRatio: optimized.compressionRatio,
+      }
+    } else if (shouldCompressVideo(file.type, bucket)) {
+      const compressedVideo = await compressVideo(file)
+      buffer = compressedVideo.buffer
+      contentType = compressedVideo.mimeType
+      if (compressedVideo.compressed && compressedVideo.mimeType === 'video/mp4' && !key.toLowerCase().endsWith('.mp4')) {
+        key = key.includes('.') ? key.replace(/\.[^./]+$/, '.mp4') : `${key}.mp4`
+      }
+      compressionMeta = {
+        type: 'video',
+        compressed: compressedVideo.compressed,
+        originalSize: compressedVideo.originalSize,
+        optimizedSize: compressedVideo.optimizedSize,
+        compressionRatio: compressedVideo.compressionRatio,
+        reason: compressedVideo.reason,
+      }
     } else {
       const arrayBuffer = await file.arrayBuffer()
       buffer = Buffer.from(arrayBuffer)
@@ -137,6 +171,7 @@ export async function POST(request: NextRequest) {
       publicUrl,
       url: publicUrl, // Alias for compatibility
       kind: inferredKind,
+      compression: compressionMeta,
     })
   } catch (error) {
     return handleApiError(error)

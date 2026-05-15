@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { PageHeader } from '../../../../../components/layout'
 import { Card, Button } from '../../../../../components/ui'
-import { ThumbnailUpload } from '../../../../../components/forms'
 import { apiFetch } from '../../../../shared/api'
 import { Category } from '../../../../shared/types'
 
@@ -19,8 +18,6 @@ export default function EditCategoryPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '' })
-  const [categoryCoverFile, setCategoryCoverFile] = useState<File | null>(null)
-  const [categoryCoverPreview, setCategoryCoverPreview] = useState<string | null>(null)
 
   // Fetch category data
   useEffect(() => {
@@ -40,7 +37,6 @@ export default function EditCategoryPage() {
           name: categoryData.name,
           description: categoryData.description || '',
         })
-        setCategoryCoverPreview(categoryData.cover_url)
       } catch (error: unknown) {
         console.error('Fetch error:', error)
         const message = error instanceof Error ? error.message : 'Failed to load category'
@@ -56,29 +52,6 @@ export default function EditCategoryPage() {
     }
   }, [categoryId, router])
 
-  const uploadCategoryImage = async (file: File): Promise<string> => {
-    // `path` is treated as a server-side hint only; the server generates a safe unique key.
-    const filePath = `category-covers/${file.name}`
-
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('bucket', 'covers')
-    formData.append('path', filePath)
-
-    const response = await apiFetch('/api/storage/upload', {
-      method: 'POST',
-      body: formData,
-    })
-
-    const result = await response.json()
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to upload category image')
-    }
-
-    return result.data?.publicUrl || result.data?.url
-  }
-
   const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -90,13 +63,6 @@ export default function EditCategoryPage() {
     setIsSaving(true)
 
     try {
-      let categoryCoverUrl = category?.cover_url || null
-
-      // Upload category image if a new file is provided
-      if (categoryCoverFile) {
-        categoryCoverUrl = await uploadCategoryImage(categoryCoverFile)
-      }
-
       // Update category
       const response = await apiFetch(`/api/categories?id=${categoryId}`, {
         method: 'PUT',
@@ -106,7 +72,6 @@ export default function EditCategoryPage() {
         body: JSON.stringify({
           name: categoryFormData.name,
           description: categoryFormData.description || null,
-          cover_url: categoryCoverUrl,
         }),
       })
 
@@ -125,20 +90,6 @@ export default function EditCategoryPage() {
     } finally {
       setIsSaving(false)
     }
-  }
-
-  const handleCoverUpload = (file: File) => {
-    setCategoryCoverFile(file)
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setCategoryCoverPreview(reader.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const handleCoverRemove = () => {
-    setCategoryCoverFile(null)
-    setCategoryCoverPreview(category?.cover_url || null)
   }
 
   if (isLoading || !category) {
@@ -205,47 +156,8 @@ export default function EditCategoryPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Category Cover Image
-                  </label>
-                  <ThumbnailUpload
-                    onUpload={handleCoverUpload}
-                    preview={categoryCoverPreview}
-                    maxSize={5}
-                    isLoading={isSaving}
-                    onRemove={handleCoverRemove}
-                  />
-                </div>
               </div>
             </Card>
-
-            {/* Show subcategories info */}
-            {category.subcategories && category.subcategories.length > 0 && (
-              <Card padding="md">
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Subcategories</h3>
-                <p className="text-sm text-slate-600 mb-3">
-                  This category has {category.subcategories.length} subcategory(ies). 
-                  To edit subcategories, find them in the categories list and edit them individually.
-                </p>
-                <div className="space-y-2">
-                  {category.subcategories.map((sub) => (
-                    <div key={sub.id} className="flex items-center justify-between bg-slate-50 px-4 py-2 rounded-lg">
-                      <span className="font-medium text-slate-900">{sub.name}</span>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => router.push(`/dashboard/documents/categories/edit/${sub.id}`)}
-                        className="transform-none"
-                      >
-                        Edit
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
 
             {/* Submit Buttons */}
             <Card padding="md">

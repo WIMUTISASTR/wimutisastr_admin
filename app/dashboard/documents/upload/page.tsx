@@ -88,7 +88,6 @@ export default function DocumentsUploadPage() {
     year: string
     description: string
     file: File | null
-    cover: File | null
     category_id: string | null
     access_level: 'free' | 'members'
   }) => {
@@ -118,13 +117,11 @@ export default function DocumentsUploadPage() {
         fileFormData.append('category_name', categoryName)
       }
 
-      // Calculate progress allocation: document (70% or 90%), cover (20%), metadata (10%)
-      const hasCover = bookData.cover !== null
       const fileUploadResult = await uploadFileWithProgress(
         fileFormData,
         '/api/storage/upload',
         (progress) => {
-          const totalProgress = hasCover ? (progress * 0.7) : (progress * 0.9)
+          const totalProgress = progress * 0.9
           setUploadProgress(totalProgress)
         }
       )
@@ -132,33 +129,6 @@ export default function DocumentsUploadPage() {
       const fileUrl = fileUploadResult.data?.publicUrl || fileUploadResult.data?.url || ''
       if (!fileUrl) {
         throw new Error('Failed to get file URL from upload response')
-      }
-
-      // Upload cover if provided
-      let coverUrl: string | null = null
-      if (bookData.cover) {
-        setUploadStep('Uploading cover image...')
-        setUploadProgress(70)
-
-        const coverFormData = new FormData()
-        coverFormData.append('file', bookData.cover)
-        coverFormData.append('bucket', 'documents')
-        coverFormData.append('path', `covers/${bookData.cover.name}`)
-        if (bookData.category_id) {
-          coverFormData.append('category_id', bookData.category_id)
-          coverFormData.append('category_name', categoryName)
-        }
-
-        const coverUploadResult = await uploadFileWithProgress(
-          coverFormData,
-          '/api/storage/upload',
-          (progress) => {
-            const totalProgress = 70 + (progress * 0.2)
-            setUploadProgress(totalProgress)
-          }
-        )
-
-        coverUrl = coverUploadResult.data?.publicUrl || coverUploadResult.data?.url || null
       }
 
       // Save book metadata
@@ -176,7 +146,7 @@ export default function DocumentsUploadPage() {
           file_name: bookData.file.name,
           file_url: fileUrl,
           file_size: bookData.file.size,
-          cover_url: coverUrl,
+          cover_url: null,
           category_id: bookData.category_id || null,
           access_level: bookData.access_level,
         }),

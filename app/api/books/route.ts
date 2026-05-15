@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
         file_name: bookData.file_name,
         file_url: bookData.file_url,
         file_size: bookData.file_size || null,
-        cover_url: bookData.cover_url || null,
+        cover_url: null,
         category_id: bookData.category_id,
         access_level: bookData.access_level,
       }])
@@ -155,6 +155,7 @@ export async function PUT(request: NextRequest) {
 
     const updateData: Record<string, unknown> = {
       ...validation.data,
+      cover_url: null,
       updated_at: new Date().toISOString(),
     }
 

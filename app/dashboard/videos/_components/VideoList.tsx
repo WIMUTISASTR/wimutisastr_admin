@@ -107,6 +107,26 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
     setSelectedCategoryId(null)
   }
 
+  const resolveMediaUrl = (url: string | null | undefined) => {
+    if (!url) return null
+    if (url.includes('/api/storage/serve')) return url
+    if (!/^https?:\/\//i.test(url)) {
+      return `/api/storage/serve?key=${encodeURIComponent(url)}`
+    }
+    try {
+      const parsed = new URL(url)
+      const host = parsed.hostname
+      const looksLikeR2 = host.includes('r2.cloudflarestorage.com') || host.includes('.r2.dev')
+      if (looksLikeR2) {
+        const key = parsed.pathname.replace(/^\//, '')
+        return key ? `/api/storage/serve?key=${encodeURIComponent(key)}` : url
+      }
+      return url
+    } catch {
+      return url
+    }
+  }
+
   // If no category is selected, show categories table
   if (!selectedCategoryId) {
     return (
@@ -228,7 +248,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
           <div className="relative w-20 h-12 flex items-center justify-center bg-linear-to-br from-slate-100 to-slate-200 rounded-lg shadow-sm overflow-hidden shrink-0">
             {row.thumbnail_url ? (
               <Image
-                src={row.thumbnail_url}
+                src={resolveMediaUrl(row.thumbnail_url) || row.thumbnail_url}
                 alt={`${row.title} thumbnail`}
                 fill
                 sizes="80px"

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import VideoUploadForm from '../_components/VideoUploadForm'
 import { UploadProgressModal } from '../../../components/feedback'
 import { PageHeader } from '../../../components/layout'
-import { apiFetch } from '../../shared/api'
+import { apiFetch, getAuthToken } from '../../shared/api'
 import { useVideoCategories } from '../../shared/hooks/useVideos'
 
 export default function VideosUploadPage() {
@@ -24,18 +24,23 @@ export default function VideosUploadPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  type PresignResponse = {
-    uploadUrl: string
-    publicUrl?: string
-    url?: string
+  type UploadResult = {
+    data?: {
+      path?: string
+      publicUrl?: string
+      url?: string
+      compression?: {
+        optimizedSize?: number
+      }
+    }
   }
 
   const uploadFileWithProgress = async (
-    body: Blob,
+    body: FormData,
     url: string,
-    options: { method?: string; headers?: Record<string, string> },
     onProgress: (progress: number) => void
-  ): Promise<void> => {
+  ): Promise<UploadResult> => {
+    const token = await getAuthToken()
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
 
@@ -48,9 +53,19 @@ export default function VideosUploadPage() {
 
       xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve()
+          try {
+            const result = JSON.parse(xhr.responseText)
+            resolve(result)
+          } catch {
+            reject(new Error('Failed to parse upload response'))
+          }
         } else {
-          reject(new Error('Upload failed'))
+          try {
+            const error = JSON.parse(xhr.responseText)
+            reject(new Error(error.error || 'Upload failed'))
+          } catch {
+            reject(new Error('Upload failed'))
+          }
         }
       })
 
@@ -62,34 +77,12 @@ export default function VideosUploadPage() {
         reject(new Error('Upload aborted'))
       })
 
-      xhr.open(options.method || 'PUT', url)
-      if (options.headers) {
-        Object.entries(options.headers).forEach(([key, value]) => {
-          xhr.setRequestHeader(key, value)
-        })
+      xhr.open('POST', url)
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
       }
       xhr.send(body)
     })
-  }
-
-  const requestPresignedUpload = async (payload: {
-    bucket: 'videos' | 'video-thumbnails'
-    fileName: string
-    contentType: string
-    path?: string
-  }): Promise<PresignResponse> => {
-    const response = await apiFetch('/api/storage/presign', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-    const result = await response.json()
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to prepare upload')
-    }
-    return result.data as PresignResponse
   }
 
   const handleVideoUpload = async (videoData: {
@@ -107,25 +100,15 @@ export default function VideosUploadPage() {
       setUploadProgress(0)
       setUploadingFileName(videoData.file.name)
 
-      // Upload video file with progress (direct-to-R2)
-      // `path` is treated as a server-side hint only; the server generates a safe unique key.
-      const filePath = `videos/${videoData.file.name}`
-      const videoPresign = await requestPresignedUpload({
-        bucket: 'videos',
-        fileName: videoData.file.name,
-        contentType: videoData.file.type || 'application/octet-stream',
-        path: filePath,
-      })
+      // Upload video file with progress (server-side upload and compression)
+      const videoFormData = new FormData()
+      videoFormData.append('file', videoData.file)
+      videoFormData.append('bucket', 'videos')
+      videoFormData.append('path', `videos/${videoData.file.name}`)
       setUploadStep('Uploading video file...')
-      await uploadFileWithProgress(
-        videoData.file,
-        videoPresign.uploadUrl,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': videoData.file.type || 'application/octet-stream',
-          },
-        },
+      const videoUploadResult = await uploadFileWithProgress(
+        videoFormData,
+        '/api/storage/upload',
         (progress) => {
           const totalProgress = videoData.thumbnail
             ? (progress * 0.7)
@@ -133,16 +116,20 @@ export default function VideosUploadPage() {
           setUploadProgress(totalProgress)
         }
       )
+      const filePath = videoUploadResult.data?.path || videoUploadResult.data?.url || ''
+      if (!filePath) {
+        throw new Error('Failed to get video path from upload response')
+      }
 
       // Upload thumbnail if provided (server-side optimization)
-      let thumbnailUrl: string | null = null
+      let thumbnailPath: string | null = null
       if (videoData.thumbnail) {
         // `path` is treated as a server-side hint only; the server generates a safe unique key.
-        const thumbnailPath = `video-thumbnails/${videoData.thumbnail.name}`
+        const thumbnailPathHint = `video-thumbnails/${videoData.thumbnail.name}`
         const thumbnailFormData = new FormData()
         thumbnailFormData.append('file', videoData.thumbnail)
         thumbnailFormData.append('bucket', 'video-thumbnails')
-        thumbnailFormData.append('path', thumbnailPath)
+        thumbnailFormData.append('path', thumbnailPathHint)
 
         setUploadStep('Uploading thumbnail...')
         setUploadProgress(70)
@@ -156,7 +143,7 @@ export default function VideosUploadPage() {
         if (!thumbnailUploadResponse.ok) {
           throw new Error(thumbnailUploadResult.error || 'Failed to upload thumbnail')
         }
-        thumbnailUrl = thumbnailUploadResult.data?.publicUrl || thumbnailUploadResult.data?.url || null
+        thumbnailPath = thumbnailUploadResult.data?.path || thumbnailUploadResult.data?.url || null
       }
 
       // Save video metadata
@@ -168,9 +155,9 @@ export default function VideosUploadPage() {
         presented_by: videoData.presented_by.trim() || null,
         description: videoData.description.trim() || null,
         file_name: videoData.file.name,
-        file_url: videoPresign.publicUrl || videoPresign.url || '',
-        file_size: videoData.file.size,
-        thumbnail_url: thumbnailUrl,
+        file_url: filePath,
+        file_size: videoUploadResult.data?.compression?.optimizedSize || videoData.file.size,
+        thumbnail_url: thumbnailPath,
         category_id: videoData.category_id,
         access_level: videoData.access_level,
       }

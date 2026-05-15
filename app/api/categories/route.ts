@@ -3,7 +3,6 @@ import { getSupabaseAdmin, verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, successResponse, NotFoundError, ValidationError } from '@/app/lib/errors'
 import { createCategorySchema, updateCategorySchema, validateData } from '@/app/lib/validations'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
-import type { Category } from '@/app/dashboard/shared/types'
 
 type CategoryRow = {
   id: string
@@ -13,52 +12,6 @@ type CategoryRow = {
   cover_url?: string | null
   created_at: string
   updated_at: string
-  parent?: { id: string; name: string } | null
-}
-
-/**
- * Organize categories into a hierarchical structure
- */
-function organizeCategoriesHierarchically(categories: CategoryRow[]): Category[] {
-  const categoryMap = new Map<string, Category>()
-  const rootCategories: Category[] = []
-
-  // First pass: create all category objects
-  categories.forEach((cat) => {
-    const category: Category = {
-      id: cat.id,
-      name: cat.name,
-      description: cat.description,
-      parent_id: cat.parent_id,
-      cover_url: cat.cover_url ?? null,
-      created_at: cat.created_at,
-      updated_at: cat.updated_at,
-      parent: cat.parent ? { id: cat.parent.id, name: cat.parent.name } : null,
-      subcategories: [],
-    }
-    categoryMap.set(cat.id, category)
-  })
-
-  // Second pass: build hierarchy
-  categories.forEach((cat) => {
-    const category = categoryMap.get(cat.id)!
-    if (cat.parent_id) {
-      const parent = categoryMap.get(cat.parent_id)
-      if (parent) {
-        if (!parent.subcategories) {
-          parent.subcategories = []
-        }
-        parent.subcategories.push(category)
-      } else {
-        // Parent not in current page, treat as root
-        rootCategories.push(category)
-      }
-    } else {
-      rootCategories.push(category)
-    }
-  })
-
-  return rootCategories
 }
 
 // GET - Fetch all categories
@@ -94,20 +47,17 @@ export async function GET(request: NextRequest) {
       return successResponse(data)
     }
 
-    // Fetch categories with pagination and parent information
+    // Fetch categories with pagination (flat list)
     const { data: categories, error: categoriesError, count } = await supabaseAdmin
       .from('categories')
-      .select('*, parent:categories!parent_id(id, name)', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .order('name', { ascending: true })
       .range(offset, offset + limit - 1)
 
     if (categoriesError) throw categoriesError
 
-    // Organize categories hierarchically
-    const organizedCategories = organizeCategoriesHierarchically(categories || [])
-
     return NextResponse.json({
-      data: organizedCategories,
+      data: (categories || []) as CategoryRow[],
       pagination: {
         page,
         limit,
@@ -152,27 +102,14 @@ export async function POST(request: NextRequest) {
       throw new ValidationError('A category with this name already exists')
     }
 
-    // Validate parent_id if provided
-    if (categoryData.parent_id) {
-      const { data: parentExists } = await supabaseAdmin
-        .from('categories')
-        .select('id')
-        .eq('id', categoryData.parent_id)
-        .single()
-
-      if (!parentExists) {
-        throw new ValidationError('Parent category not found')
-      }
-    }
-
     // Insert category
     const { data, error } = await supabaseAdmin
       .from('categories')
       .insert([{
         name: categoryData.name,
         description: categoryData.description || null,
-        cover_url: categoryData.cover_url || null,
-        parent_id: categoryData.parent_id || null,
+        cover_url: null,
+        parent_id: null,
       }])
       .select()
       .single()
@@ -227,38 +164,17 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Validate parent_id if provided (prevent circular references)
-    if (updateData.parent_id) {
-      if (updateData.parent_id === id) {
-        throw new ValidationError('A category cannot be its own parent')
-      }
-
-      // Check if parent exists
-      const { data: parentExists } = await supabaseAdmin
-        .from('categories')
-        .select('id')
-        .eq('id', updateData.parent_id)
-        .single()
-
-      if (!parentExists) {
-        throw new ValidationError('Parent category not found')
-      }
-
-      // Prevent creating circular references (parent cannot be a descendant)
-      const { data: descendants } = await supabaseAdmin
-        .from('categories')
-        .select('id')
-        .eq('parent_id', id)
-
-      if (descendants && descendants.some(d => d.id === updateData.parent_id)) {
-        throw new ValidationError('Cannot set parent: would create circular reference')
-      }
+    // Categories are flat in documents admin.
+    const sanitizedUpdateData = {
+      ...updateData,
+      cover_url: null,
+      parent_id: null,
     }
 
     // Update category
     const { data, error } = await supabaseAdmin
       .from('categories')
-      .update(updateData)
+      .update(sanitizedUpdateData)
       .eq('id', id)
       .select()
       .single()
@@ -304,18 +220,13 @@ export async function DELETE(request: NextRequest) {
       throw new ValidationError('Cannot delete category with associated books')
     }
 
-    // Check if category has subcategories
-    const { data: subcategories, error: subcategoriesError } = await supabaseAdmin
+    // Detach children first (legacy subcategories) before deleting parent category
+    const { error: detachChildrenError } = await supabaseAdmin
       .from('categories')
-      .select('id')
+      .update({ parent_id: null })
       .eq('parent_id', id)
-      .limit(1)
 
-    if (subcategoriesError) throw subcategoriesError
-
-    if (subcategories && subcategories.length > 0) {
-      throw new ValidationError('Cannot delete category with subcategories. Please delete or move subcategories first.')
-    }
+    if (detachChildrenError) throw detachChildrenError
 
     // Delete category
     const { error: deleteError } = await supabaseAdmin

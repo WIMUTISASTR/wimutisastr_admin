@@ -16,6 +16,14 @@ export const loginSchema = z.object({
 })
 
 // Video validations
+const storagePathOrUrlSchema = z.string().min(1, 'File path is required').refine((value) => {
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return z.string().url().safeParse(value).success
+  }
+  // Allow storage keys like "videos/abc.mp4" or "video-thumbnails/xyz.jpg"
+  return /^[a-z0-9/_\-.]+$/i.test(value)
+}, 'Invalid file URL or storage key')
+
 export const createVideoSchema = z.object({
   title: z.string()
     .min(1, 'Title is required')
@@ -32,9 +40,9 @@ export const createVideoSchema = z.object({
     .optional()
     .nullable(),
   file_name: z.string().min(1, 'File name is required'),
-  file_url: z.string().url('Invalid file URL'),
+  file_url: storagePathOrUrlSchema,
   file_size: z.number().positive('File size must be positive').optional(),
-  thumbnail_url: z.string().url('Invalid thumbnail URL').optional().nullable(),
+  thumbnail_url: storagePathOrUrlSchema.optional().nullable(),
   category_id: z.string().uuid('Invalid category ID'),
   access_level: z.enum(['free', 'members']).default('members'),
 })
@@ -56,9 +64,9 @@ export const updateVideoSchema = z.object({
     .optional()
     .nullable(),
   file_name: z.string().min(1).optional(),
-  file_url: z.string().url().optional(),
+  file_url: storagePathOrUrlSchema.optional(),
   file_size: z.number().positive().optional(),
-  thumbnail_url: z.string().url().optional().nullable(),
+  thumbnail_url: storagePathOrUrlSchema.optional().nullable(),
   category_id: z.string().uuid('Invalid category ID'),
   access_level: z.enum(['free', 'members']).optional(),
 })

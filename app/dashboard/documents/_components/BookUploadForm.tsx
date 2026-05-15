@@ -13,7 +13,6 @@ interface BookData {
   year: string
   description: string
   file: File | null
-  cover: File | null
   category_id: string | null
   access_level: 'free' | 'members'
 }
@@ -31,16 +30,13 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     year: '',
     description: '',
     file: null,
-    cover: null,
     category_id: null,
     access_level: 'members',
   })
   const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string>('')
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
-  const [coverDragActive, setCoverDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const coverInputRef = useRef<HTMLInputElement>(null)
 
   // Get main categories (categories without parent_id)
   const mainCategories = useMemo(() => {
@@ -100,30 +96,6 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     setFormData(prev => ({ ...prev, file: selectedFile }))
   }, [])
 
-  const handleCover = useCallback((selectedFile: File) => {
-    setError('')
-    
-    // Check file size
-    if (selectedFile.size > FILE_SIZE_LIMITS.COVER_IMAGE) {
-      setError(`Cover image size must be less than ${formatFileSize(FILE_SIZE_LIMITS.COVER_IMAGE)}`)
-      return
-    }
-
-    // Check file type (images only)
-    const ext = selectedFile.name.split('.').pop()?.toLowerCase()
-    if (!ext) {
-      setError('Invalid image file name')
-      return
-    }
-    const fileExt = `.${ext}` as (typeof ALLOWED_FILE_TYPES.IMAGES)[number]
-    if (!ALLOWED_FILE_TYPES.IMAGES.includes(fileExt)) {
-      setError(`Invalid image type. Allowed: ${ALLOWED_FILE_TYPES.IMAGES.join(', ').replace(/\./g, '').toUpperCase()}`)
-      return
-    }
-
-    setFormData(prev => ({ ...prev, cover: selectedFile }))
-  }, [])
-
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -147,34 +119,12 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault()
     if (e.target.files && e.target.files[0]) {
-      if (e.target.id === 'cover') {
-        handleCover(e.target.files[0])
-      } else if (e.target.id === 'book-file' || !e.target.id) {
-        // Handle book file upload (id is 'book-file' or no id for backward compatibility)
+      if (e.target.id === 'book-file' || !e.target.id) {
+        // Handle book file upload
         handleFile(e.target.files[0])
       }
     }
-  }, [handleFile, handleCover])
-
-  const handleCoverDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setCoverDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setCoverDragActive(false)
-    }
-  }, [])
-
-  const handleCoverDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setCoverDragActive(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleCover(e.dataTransfer.files[0])
-    }
-  }, [handleCover])
+  }, [handleFile])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -223,16 +173,12 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
         year: '',
         description: '',
         file: null,
-        cover: null,
         category_id: null,
         access_level: 'members',
       })
       setSelectedMainCategoryId('')
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
-      }
-      if (coverInputRef.current) {
-        coverInputRef.current.value = ''
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Upload failed. Please try again.'
@@ -400,78 +346,6 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
             <p className="text-sm text-slate-600 mt-1">Drag & drop or click to choose.</p>
 
             <div className="mt-5 space-y-5">
-              {/* Cover image (no preview, just filename) */}
-        <div
-          onDragEnter={handleCoverDrag}
-          onDragLeave={handleCoverDrag}
-          onDragOver={handleCoverDrag}
-          onDrop={handleCoverDrop}
-                onClick={() => !isLoading && coverInputRef.current?.click()}
-          className={`
-                  rounded-xl border-2 border-dashed p-6 text-center transition-colors
-                  ${coverDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white hover:bg-slate-50'}
-                  ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-          `}
-        >
-          <input
-            ref={coverInputRef}
-            id="cover"
-            type="file"
-            accept="image/*"
-            onChange={handleChange}
-            className="hidden"
-            disabled={isLoading}
-          />
-          
-                {!formData.cover ? (
-                  <div className="space-y-2">
-                    <div className="text-sm font-semibold text-slate-900">Upload your Cover Image</div>
-                    <div className="mx-auto h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
-                      <svg className="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-              </div>
-                    <div className="text-base font-semibold text-slate-900">Upload a File</div>
-                    <div className="text-sm text-slate-500">Drag and drop files here</div>
-                    <div className="text-xs text-slate-400">Images only. Max 5MB.</div>
-            </div>
-          ) : (
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold text-slate-900 truncate">{formData.cover.name}</div>
-                    <div className="text-xs text-slate-500">{formatFileSize(formData.cover.size)}</div>
-                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="transform-none"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          coverInputRef.current?.click()
-                        }}
-                        disabled={isLoading}
-                      >
-                        Change
-                      </Button>
-                      <Button
-                  type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="transform-none text-red-600 hover:text-red-700"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setFormData(prev => ({ ...prev, cover: null }))
-                          if (coverInputRef.current) coverInputRef.current.value = ''
-                        }}
-                  disabled={isLoading}
-                >
-                        Remove
-                      </Button>
-              </div>
-            </div>
-          )}
-      </div>
-
               {/* Book file */}
         <div
           onDragEnter={handleDrag}

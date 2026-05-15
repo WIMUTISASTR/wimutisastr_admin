@@ -27,7 +27,14 @@ const formSchema = z.object({
     .max(1000, 'Description must be less than 1000 characters')
     .optional()
     .nullable(),
-  category_id: z.string().uuid('Category is required').optional(),
+  category_id: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') return value
+      const trimmed = value.trim()
+      return trimmed === '' ? undefined : trimmed
+    },
+    z.string().uuid('Invalid category').optional()
+  ),
   access_level: z.enum(['free', 'members']),
 })
 
@@ -50,7 +57,6 @@ export default function EditDocumentPage() {
   const [book, setBook] = useState<Book | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
-  const [coverFile, setCoverFile] = useState<File | null>(null)
   const [bookFile, setBookFile] = useState<File | null>(null)
   const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string>('')
   const [isFilePreviewOpen, setIsFilePreviewOpen] = useState(false)
@@ -132,7 +138,6 @@ export default function EditDocumentPage() {
   }, [categories, selectedMainCategoryId])
 
   const bookInputRef = useRef<HTMLInputElement>(null)
-  const coverInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch book data
   useEffect(() => {
@@ -174,7 +179,6 @@ export default function EditDocumentPage() {
         category_id: '',
         access_level: book.access_level || 'members',
       })
-      setCoverFile(null)
       setBookFile(null)
       setIsFilePreviewOpen(false)
       setIsFilePreviewFullscreenOpen(false)
@@ -283,25 +287,24 @@ export default function EditDocumentPage() {
       }
 
       // Show progress modal if there are files to upload
-      const hasFilesToUpload = bookFile || coverFile
+      const hasFilesToUpload = bookFile
       if (hasFilesToUpload) {
         setIsProgressModalOpen(true)
         setUploadProgress(0)
-        setUploadingFileName(bookFile?.name || coverFile?.name || '')
+        setUploadingFileName(bookFile?.name || '')
       }
 
-      const finalCategoryId = (validated.data.category_id as string) || selectedMainCategoryId
+      const finalCategoryId = (validated.data.category_id as string | undefined) || selectedMainCategoryId
+      if (!finalCategoryId) {
+        toast.error('Please select a main category.')
+        return
+      }
       const category = categories.find(cat => cat.id === finalCategoryId) || book?.category
       const categoryName = category?.name || 'uncategorized'
 
-      let coverUrl = book.cover_url
       let fileUrl = book.file_url
       let fileName = book.file_name
       let fileSize = book.file_size
-
-      // Calculate progress allocation based on what needs to be uploaded
-      const hasBookFile = bookFile !== null
-      const hasCoverFile = coverFile !== null
 
       // Upload new book file if provided
       if (bookFile) {
@@ -321,8 +324,7 @@ export default function EditDocumentPage() {
           fileFormData,
           '/api/storage/upload',
           (progress) => {
-            // If we also have a cover, book file takes 70%, otherwise 90%
-            const totalProgress = hasCoverFile ? (progress * 0.7) : (progress * 0.9)
+            const totalProgress = progress * 0.9
             setUploadProgress(totalProgress)
           }
         )
@@ -333,47 +335,6 @@ export default function EditDocumentPage() {
         }
         fileName = bookFile.name
         fileSize = bookFile.size
-      }
-
-      // Upload new cover if provided
-      if (coverFile) {
-        setUploadStep('Uploading cover image...')
-        if (hasBookFile) {
-          setUploadProgress(70)
-        }
-        
-        const coverPath = `covers/${coverFile.name}`
-
-        const coverFormData = new FormData()
-        coverFormData.append('file', coverFile)
-        coverFormData.append('bucket', 'documents')
-        coverFormData.append('path', coverPath)
-        if (finalCategoryId) {
-          coverFormData.append('category_id', finalCategoryId)
-          coverFormData.append('category_name', categoryName)
-        }
-
-        const coverUploadResult = await uploadFileWithProgress(
-          coverFormData,
-          '/api/storage/upload',
-          (progress) => {
-            // Cover takes 20% if book file was uploaded, 90% if it's the only file
-            if (hasBookFile) {
-              const totalProgress = 70 + (progress * 0.2)
-              setUploadProgress(totalProgress)
-            } else {
-              const totalProgress = progress * 0.9
-              setUploadProgress(totalProgress)
-            }
-          }
-        )
-
-        const uploadedCoverUrl = coverUploadResult.data?.publicUrl || coverUploadResult.data?.url || null
-        if (uploadedCoverUrl) {
-          coverUrl = uploadedCoverUrl
-        } else {
-          toast.warning('Failed to upload new cover image, keeping existing one')
-        }
       }
 
       // Update book via API
@@ -392,7 +353,7 @@ export default function EditDocumentPage() {
           author: validated.data.author,
           year: validated.data.year,
           description: validated.data.description || null,
-          cover_url: coverUrl,
+          cover_url: null,
           file_url: fileUrl,
           file_name: fileName,
           file_size: fileSize,
@@ -429,21 +390,6 @@ export default function EditDocumentPage() {
     }
   }
 
-  const handleCoverChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file')
-        return
-      }
-      if (file.size > FILE_SIZE_LIMITS.COVER_IMAGE) {
-        toast.error(`Cover image must be less than ${formatFileSize(FILE_SIZE_LIMITS.COVER_IMAGE)}`)
-        return
-      }
-      setCoverFile(file)
-    }
-  }, [])
-
   const handleBookFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -460,18 +406,6 @@ export default function EditDocumentPage() {
         return
       }
       setBookFile(file)
-    }
-  }, [])
-
-  const getFileNameFromUrl = useCallback((url: string | null | undefined) => {
-    if (!url) return null
-    try {
-      const u = new URL(url)
-      const last = u.pathname.split('/').filter(Boolean).pop()
-      return last || null
-    } catch {
-      const last = String(url).split('/').filter(Boolean).pop()
-      return last || null
     }
   }, [])
 
@@ -820,7 +754,7 @@ export default function EditDocumentPage() {
             {/* Files */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
               <h4 className="text-lg font-bold text-slate-900">Files</h4>
-              <p className="text-sm text-slate-600 mt-1">Replace the document or cover (optional).</p>
+              <p className="text-sm text-slate-600 mt-1">Replace the document file (optional).</p>
 
               <div className="mt-5 space-y-5">
                 {/* Book file */}
@@ -877,58 +811,6 @@ export default function EditDocumentPage() {
                   </p>
                 </div>
 
-                {/* Cover file */}
-                <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">Cover image</p>
-                      <p className="mt-1 text-sm text-slate-700 truncate">
-                        {book.cover_url ? (getFileNameFromUrl(book.cover_url) || 'Existing cover image') : 'No cover image'}
-                      </p>
-                      {coverFile && (
-                        <p className="text-xs text-blue-700 mt-2">
-                          New image: <span className="font-semibold">{coverFile.name}</span>
-                        </p>
-                      )}
-                    </div>
-                    <div className="shrink-0 flex flex-col gap-2">
-                      <input
-                        ref={coverInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCoverChange}
-                        className="hidden"
-                        disabled={isLoading}
-                      />
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="transform-none"
-                        onClick={() => coverInputRef.current?.click()}
-                        disabled={isLoading}
-                      >
-                        Change image
-                      </Button>
-                      {coverFile && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="transform-none"
-                          onClick={() => {
-                            setCoverFile(null)
-                            if (coverInputRef.current) coverInputRef.current.value = ''
-                          }}
-                          disabled={isLoading}
-                        >
-                          Clear
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-3">Images only. Max 5MB.</p>
-                </div>
               </div>
             </div>
           </div>

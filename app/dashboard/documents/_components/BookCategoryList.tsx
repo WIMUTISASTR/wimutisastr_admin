@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DataTable } from '../../../components/data-display'
 import { DeleteConfirmationModal } from '../../../components/feedback'
@@ -15,25 +15,7 @@ interface CategoryListProps {
   onRefresh: () => void
 }
 
-// Flatten hierarchical categories for table display
-type FlatCategory = Category & { _displayName: string; _level: number }
-
-function flattenCategories(categories: Category[], parentName: string = '', level: number = 0): FlatCategory[] {
-  const flattened: FlatCategory[] = []
-  
-  categories.forEach(category => {
-    const displayName = level > 0 ? `${parentName} > ${category.name}` : category.name
-    const categoryWithDisplay: FlatCategory = { ...category, _displayName: displayName, _level: level }
-    flattened.push(categoryWithDisplay)
-    
-    if (category.subcategories && category.subcategories.length > 0) {
-      const subFlattened = flattenCategories(category.subcategories, displayName, level + 1)
-      flattened.push(...subFlattened)
-    }
-  })
-  
-  return flattened
-}
+type FlatCategory = Category
 
 export default function CategoryList({ categories, isLoading, onRefresh }: CategoryListProps) {
   const router = useRouter()
@@ -41,11 +23,10 @@ export default function CategoryList({ categories, isLoading, onRefresh }: Categ
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Flatten categories for table display
-  const flattenedCategories = useMemo(() => flattenCategories(categories), [categories])
+  const flattenedCategories = categories
 
   const handleDeleteClick = (category: FlatCategory) => {
-    setCategoryToDelete({ id: category.id, name: category._displayName || category.name })
+    setCategoryToDelete({ id: category.id, name: category.name })
     setDeleteModalOpen(true)
   }
 
@@ -80,10 +61,10 @@ export default function CategoryList({ categories, isLoading, onRefresh }: Categ
   const categoryColumns = [
     {
       header: 'Category',
-      accessor: '_displayName',
+      accessor: 'name',
       width: '40%',
       render: (value: unknown, row: FlatCategory) => (
-        <div style={{ paddingLeft: `${row._level * 24}px` }}>
+        <div>
           <span className="font-semibold text-slate-900">{(value as string) || row.name}</span>
           {row.description && (
             <div className="text-sm text-slate-600 mt-1 line-clamp-2">{row.description}</div>

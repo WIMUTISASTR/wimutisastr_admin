@@ -219,7 +219,8 @@ export async function DELETE(request: NextRequest) {
         key = url.replace(r2PublicUrl, '').replace(/^\//, '')
       } else if (url.startsWith('http')) {
         const urlObj = new URL(url)
-        key = urlObj.pathname.replace(/^\//, '')
+        const queryKey = urlObj.searchParams.get('key')
+        key = queryKey ? queryKey : urlObj.pathname.replace(/^\//, '')
       }
       return key
     }

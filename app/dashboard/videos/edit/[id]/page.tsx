@@ -75,7 +75,7 @@ export default function EditVideoPage() {
             category_id: result.data.category_id || null,
             access_level: result.data.access_level || 'members',
           })
-          setThumbnailPreview(result.data.thumbnail_url)
+          setThumbnailPreview(resolveImageUrl(result.data.thumbnail_url))
         }
       } catch (error) {
         console.error('Fetch error:', error)
@@ -93,6 +93,9 @@ export default function EditVideoPage() {
 
   const resolveVideoUrl = (url: string | null | undefined) => {
     if (!url) return ''
+    if (!/^https?:\/\//i.test(url) && !url.includes('/api/storage/serve')) {
+      return `/api/storage/serve?key=${encodeURIComponent(url)}`
+    }
     if (url.includes('/api/storage/serve')) return url
     try {
       const parsed = new URL(url)
@@ -106,6 +109,14 @@ export default function EditVideoPage() {
     } catch {
       return url
     }
+  }
+
+  const resolveImageUrl = (url: string | null | undefined) => {
+    if (!url) return null
+    if (!/^https?:\/\//i.test(url) && !url.includes('/api/storage/serve')) {
+      return `/api/storage/serve?key=${encodeURIComponent(url)}`
+    }
+    return url
   }
 
   // Create and cleanup video preview URL
@@ -141,39 +152,6 @@ export default function EditVideoPage() {
 
   const validateAndSetVideoFile = (file: File) => {
     setVideoFile(file)
-  }
-
-  const requestPresignedUpload = async (payload: {
-    bucket: 'videos' | 'video-thumbnails'
-    fileName: string
-    contentType: string
-    path?: string
-  }) => {
-    const response = await apiFetch('/api/storage/presign', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-    const result = await response.json()
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to prepare upload')
-    }
-    return result.data as { uploadUrl: string; publicUrl?: string; url?: string }
-  }
-
-  const uploadFileToPresignedUrl = async (file: File, uploadUrl: string) => {
-    const response = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': file.type || 'application/octet-stream',
-      },
-      body: file,
-    })
-    if (!response.ok) {
-      throw new Error('Failed to upload file')
-    }
   }
 
   const handleVideoDrag = (e: React.DragEvent) => {
@@ -212,20 +190,26 @@ export default function EditVideoPage() {
       let fileName = video.file_name
       let fileSize = video.file_size
 
-      // Upload new video file if provided (direct-to-R2)
+      // Upload new video file if provided (server-side upload and compression)
       if (videoFile) {
-        // `path` is treated as a server-side hint only; the server generates a safe unique key.
-        const filePath = `videos/${videoFile.name}`
-        const presign = await requestPresignedUpload({
-          bucket: 'videos',
-          fileName: videoFile.name,
-          contentType: videoFile.type || 'application/octet-stream',
-          path: filePath,
+        const videoFormData = new FormData()
+        videoFormData.append('file', videoFile)
+        videoFormData.append('bucket', 'videos')
+        videoFormData.append('path', `videos/${videoFile.name}`)
+        const videoUploadResponse = await apiFetch('/api/storage/upload', {
+          method: 'POST',
+          body: videoFormData,
         })
-        await uploadFileToPresignedUrl(videoFile, presign.uploadUrl)
-        fileUrl = presign.publicUrl || presign.url || ''
+        const videoUploadResult = await videoUploadResponse.json()
+        if (!videoUploadResponse.ok) {
+          throw new Error(videoUploadResult.error || 'Failed to upload video')
+        }
+        fileUrl = videoUploadResult.data?.path || videoUploadResult.data?.url || ''
+        if (!fileUrl) {
+          throw new Error('Failed to get video path from upload response')
+        }
         fileName = videoFile.name
-        fileSize = videoFile.size
+        fileSize = videoUploadResult.data?.compression?.optimizedSize || videoFile.size
       }
 
       // Upload new thumbnail if provided (server-side optimization)
@@ -245,7 +229,7 @@ export default function EditVideoPage() {
 
         const thumbnailUploadResult = await thumbnailUploadResponse.json()
         if (thumbnailUploadResponse.ok) {
-          thumbnailUrl = thumbnailUploadResult.data?.publicUrl || thumbnailUploadResult.data?.url || null
+          thumbnailUrl = thumbnailUploadResult.data?.path || thumbnailUploadResult.data?.url || null
         } else {
           toast.warning('Failed to upload thumbnail, continuing without it')
         }
