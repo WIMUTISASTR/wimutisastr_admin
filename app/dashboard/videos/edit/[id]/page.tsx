@@ -7,7 +7,9 @@ import ThumbnailUpload from '../../../../components/forms/ThumbnailUpload'
 import { Button } from '../../../../components/ui'
 import { PageHeader } from '../../../../components/layout'
 import { apiFetch } from '../../../shared/api'
+import { presignAndUploadFile } from '../../../shared/presignedUpload'
 import { useVideoCategories } from '../../../shared/hooks/useVideos'
+import { UploadProgressModal } from '../../../../components/feedback'
 
 interface Video {
   id: string
@@ -33,6 +35,10 @@ export default function EditVideoPage() {
   const [video, setVideo] = useState<Video | null>(null)
   const [isFetching, setIsFetching] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStep, setUploadStep] = useState('')
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
+  const [uploadingFileName, setUploadingFileName] = useState('')
   const [formData, setFormData] = useState({
     title: '',
     presented_by: '',
@@ -184,36 +190,39 @@ export default function EditVideoPage() {
 
     try {
       setIsLoading(true)
+      if (videoFile) {
+        setIsProgressModalOpen(true)
+        setUploadProgress(0)
+        setUploadingFileName(videoFile.name)
+      }
 
       let thumbnailUrl = isThumbnailRemoved ? null : video.thumbnail_url
       let fileUrl = video.file_url
       let fileName = video.file_name
       let fileSize = video.file_size
 
-      // Upload new video file if provided (server-side upload and compression)
       if (videoFile) {
-        const videoFormData = new FormData()
-        videoFormData.append('file', videoFile)
-        videoFormData.append('bucket', 'videos')
-        videoFormData.append('path', `videos/${videoFile.name}`)
-        const videoUploadResponse = await apiFetch('/api/storage/upload', {
-          method: 'POST',
-          body: videoFormData,
+        const categoryName =
+          categories.find((c) => c.id === formData.category_id)?.name ?? null
+
+        setUploadStep('Uploading video to storage...')
+        const videoUploadResult = await presignAndUploadFile(videoFile, {
+          bucket: 'videos',
+          pathHint: `videos/${videoFile.name}`,
+          category_id: formData.category_id,
+          category_name: categoryName,
+          onProgress: (progress) => {
+            setUploadProgress(thumbnailFile ? progress * 0.7 : progress * 0.9)
+          },
         })
-        const videoUploadResult = await videoUploadResponse.json()
-        if (!videoUploadResponse.ok) {
-          throw new Error(videoUploadResult.error || 'Failed to upload video')
-        }
-        fileUrl = videoUploadResult.data?.path || videoUploadResult.data?.url || ''
-        if (!fileUrl) {
-          throw new Error('Failed to get video path from upload response')
-        }
+        fileUrl = videoUploadResult.path
         fileName = videoFile.name
-        fileSize = videoUploadResult.data?.compression?.optimizedSize || videoFile.size
+        fileSize = videoFile.size
       }
 
-      // Upload new thumbnail if provided (server-side optimization)
       if (thumbnailFile) {
+        setUploadStep('Uploading thumbnail...')
+        setUploadProgress(70)
         // `path` is treated as a server-side hint only; the server generates a safe unique key.
         const thumbnailPath = `video-thumbnails/${thumbnailFile.name}`
 
@@ -235,7 +244,9 @@ export default function EditVideoPage() {
         }
       }
 
-      // Update video metadata
+      setUploadStep('Saving changes...')
+      setUploadProgress(90)
+
       const response = await apiFetch(`/api/videos?id=${video.id}`, {
         method: 'PUT',
         headers: {
@@ -262,14 +273,25 @@ export default function EditVideoPage() {
         throw new Error(result.error || 'Failed to update video')
       }
 
+      if (videoFile) {
+        setUploadProgress(100)
+        setUploadStep('Complete!')
+        await new Promise((resolve) => setTimeout(resolve, 400))
+        setIsProgressModalOpen(false)
+      }
+
       toast.success('Video updated successfully!')
       router.push('/dashboard/videos/list')
     } catch (error: unknown) {
       console.error('Update error:', error)
+      setIsProgressModalOpen(false)
       const message = error instanceof Error ? error.message : 'Failed to update video'
       toast.error(message)
     } finally {
       setIsLoading(false)
+      setUploadProgress(0)
+      setUploadStep('')
+      setUploadingFileName('')
     }
   }
 
@@ -545,6 +567,14 @@ export default function EditVideoPage() {
           </div>
         </form>
       </div>
+
+      <UploadProgressModal
+        isOpen={isProgressModalOpen}
+        progress={uploadProgress}
+        currentStep={uploadStep}
+        fileName={uploadingFileName}
+        title="Uploading Video"
+      />
     </>
   )
 }

@@ -5,6 +5,10 @@ import { verifyAdminAuth } from '@/app/lib/auth-middleware'
 import { handleApiError, ValidationError, successResponse } from '@/app/lib/errors'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/app/lib/rate-limit'
 import { buildObjectKey, getR2Client, getR2Config, resolveBucketInfo, UploadBucket } from '@/app/api/storage/_shared'
+import { ALLOWED_FILE_TYPES } from '@/app/dashboard/shared/constants'
+
+const MAX_VIDEO_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
+const PRESIGN_EXPIRY_SECONDS = 60 * 60 // 1 hour for large direct uploads
 
 type PresignPayload = {
   bucket: UploadBucket
@@ -13,6 +17,20 @@ type PresignPayload = {
   path?: string | null
   category_id?: string | null
   category_name?: string | null
+  fileSize?: number | null
+}
+
+function validateVideoExtension(fileName: string): void {
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  if (!ext) {
+    throw new ValidationError('Invalid file name')
+  }
+  const fileExt = `.${ext}` as (typeof ALLOWED_FILE_TYPES.VIDEOS)[number]
+  if (!ALLOWED_FILE_TYPES.VIDEOS.includes(fileExt)) {
+    throw new ValidationError(
+      `Invalid video type. Allowed: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()}`
+    )
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -40,6 +58,18 @@ export async function POST(request: NextRequest) {
       throw new ValidationError(`Invalid bucket. Must be one of: ${validBuckets.join(', ')}`)
     }
 
+    if (body.bucket === 'videos') {
+      validateVideoExtension(body.fileName)
+      if (typeof body.fileSize === 'number') {
+        if (body.fileSize <= 0) {
+          throw new ValidationError('Invalid file size')
+        }
+        if (body.fileSize > MAX_VIDEO_FILE_SIZE) {
+          throw new ValidationError('File size exceeds maximum limit of 2GB')
+        }
+      }
+    }
+
     const cfg = getR2Config()
     const { key, inferredKind } = buildObjectKey({
       bucket: body.bucket,
@@ -59,7 +89,9 @@ export async function POST(request: NextRequest) {
       ContentType: contentType,
     })
 
-    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 15 * 60 })
+    const expiresIn =
+      body.bucket === 'videos' ? PRESIGN_EXPIRY_SECONDS : 15 * 60
+    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn })
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
       (request.headers.get('origin') || request.url.split('/api')[0])

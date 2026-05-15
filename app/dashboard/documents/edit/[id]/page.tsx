@@ -695,7 +695,7 @@ export default function EditDocumentPage() {
                       Subcategory (Optional)
                     </label>
                     <select
-                      value={form.values.category_id || ''}
+                      value={(form.values.category_id as string) || ''}
                       onChange={(e) => form.setValue('category_id', e.target.value)}
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                       disabled={isLoading}
