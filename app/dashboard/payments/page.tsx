@@ -30,7 +30,7 @@ export default function PaymentsPage() {
 
   const columns = [
     {
-      header: 'User',
+      header: 'អ្នកប្រើ',
       accessor: 'user',
       width: '25%',
       render: (value: unknown) => {
@@ -59,7 +59,7 @@ export default function PaymentsPage() {
       },
     },
     {
-      header: 'Reference',
+      header: 'លេខយោង',
       accessor: 'payment_reference',
       width: '18%',
       render: (value: unknown) => (
@@ -67,7 +67,7 @@ export default function PaymentsPage() {
       ),
     },
     {
-      header: 'Plan',
+      header: 'គម្រោង',
       accessor: 'subscription_plan',
       width: '15%',
       render: (value: unknown, row: PaymentProof) => {
@@ -91,7 +91,7 @@ export default function PaymentsPage() {
       },
     },
     {
-      header: 'Amount',
+      header: 'ចំនួនទឹកប្រាក់',
       accessor: 'amount',
       width: '10%',
       render: (value: unknown) => (
@@ -101,7 +101,7 @@ export default function PaymentsPage() {
       ),
     },
     {
-      header: 'Status',
+      header: 'ស្ថានភាព',
       accessor: 'status',
       width: '10%',
       render: (value: unknown) => {
@@ -113,13 +113,13 @@ export default function PaymentsPage() {
         const status = value === 'verified' || value === 'rejected' ? value : 'pending'
         return (
           <Badge variant={variants[status]} size="md">
-            {status}
+            {status === 'verified' ? 'បានផ្ទៀងផ្ទាត់' : status === 'rejected' ? 'បានបដិសេធ' : 'កំពុងរង់ចាំ'}
           </Badge>
         )
       },
     },
     {
-      header: 'Uploaded',
+      header: 'ថ្ងៃបញ្ចូល',
       accessor: 'uploaded_at',
       width: '12%',
       render: (value: unknown) => {
@@ -137,7 +137,7 @@ export default function PaymentsPage() {
       },
     },
     {
-      header: 'Actions',
+      header: 'សកម្មភាព',
       accessor: 'id',
       width: '15%',
       render: (_value: unknown, row: PaymentProof) => (
@@ -150,7 +150,7 @@ export default function PaymentsPage() {
             handleViewProof(row)
           }}
         >
-          View Proof
+          មើលភស្តុតាង
         </Button>
       ),
     },
@@ -166,65 +166,23 @@ export default function PaymentsPage() {
 
   return (
     <>
-      <PageHeader title="Payment Proofs" />
+      <PageHeader
+        title="ភស្តុតាងការបង់ប្រាក់"
+        description="ត្រួតពិនិត្យ និងផ្ទៀងផ្ទាត់ការដាក់ស្នើការបង់ប្រាក់របស់អ្នកប្រើ"
+      />
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card padding="md" className="bg-linear-to-br from-blue-50 to-white border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Total</p>
-              <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="md" className="bg-linear-to-br from-yellow-50 to-white border-yellow-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Pending</p>
-              <p className="text-3xl font-bold text-yellow-700">{stats.pending}</p>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="md" className="bg-linear-to-br from-green-50 to-white border-green-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Verified</p>
-              <p className="text-3xl font-bold text-green-700">{stats.verified}</p>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="md" className="bg-linear-to-br from-red-50 to-white border-red-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Rejected</p>
-              <p className="text-3xl font-bold text-red-700">{stats.rejected}</p>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
+        {[
+          { label: 'សរុប', value: stats.total, accent: 'border-l-navy-600', valueClass: 'text-slate-900' },
+          { label: 'កំពុងរង់ចាំ', value: stats.pending, accent: 'border-l-amber-500', valueClass: 'text-amber-700' },
+          { label: 'បានផ្ទៀងផ្ទាត់', value: stats.verified, accent: 'border-l-emerald-500', valueClass: 'text-emerald-700' },
+          { label: 'បានបដិសេធ', value: stats.rejected, accent: 'border-l-red-500', valueClass: 'text-red-700' },
+        ].map((stat) => (
+          <Card key={stat.label} padding="md" className={`border-l-4 ${stat.accent}`}>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{stat.label}</p>
+            <p className={`text-3xl font-bold font-heading tabular-nums mt-1 ${stat.valueClass}`}>{stat.value}</p>
+          </Card>
+        ))}
       </div>
 
       {/* Filter Tabs */}
@@ -235,15 +193,15 @@ export default function PaymentsPage() {
               key={filter}
               onClick={() => setStatusFilter(filter)}
               className={`
-                px-4 py-2 rounded-lg font-medium text-sm transition-colors
+                px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 cursor-pointer
                 ${
                   statusFilter === filter
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    ? 'bg-navy-700 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer'
                 }
               `}
             >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              {filter === 'all' ? 'ទាំងអស់' : filter === 'pending' ? 'កំពុងរង់ចាំ' : filter === 'verified' ? 'បានផ្ទៀងផ្ទាត់' : 'បានបដិសេធ'}
             </button>
           ))}
         </div>
@@ -255,8 +213,8 @@ export default function PaymentsPage() {
           columns={columns}
           data={proofs}
           isLoading={isLoading}
-          emptyMessage="No payment proofs found"
-          emptyDescription="Payment proofs will appear here once users submit them"
+          emptyMessage="រកមិនឃើញភស្តុតាងការបង់ប្រាក់"
+          emptyDescription="ភស្តុតាងការបង់ប្រាក់នឹងបង្ហាញនៅទីនេះ នៅពេលអ្នកប្រើដាក់ស្នើ"
           emptyIcon={
             <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

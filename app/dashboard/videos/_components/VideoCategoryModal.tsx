@@ -54,9 +54,7 @@ export default function VideoCategoryModal({
   const handleCoverUpload = (file: File) => {
     setCoverFile(file)
     const reader = new FileReader()
-    reader.onloadend = () => {
-      setCoverPreview(reader.result as string)
-    }
+    reader.onloadend = () => setCoverPreview(reader.result as string)
     reader.readAsDataURL(file)
   }
 
@@ -71,23 +69,17 @@ export default function VideoCategoryModal({
     try {
       let coverUrl = editingCategory?.cover_url || null
 
-      // Upload cover if a new file is provided
       if (coverFile) {
-        // `path` is treated as a server-side hint only; the server generates a safe unique key.
-        const coverPath = `video-category-covers/${coverFile.name}`
-
         const coverFormData = new FormData()
         coverFormData.append('file', coverFile)
         coverFormData.append('bucket', 'video-category-covers')
-        coverFormData.append('path', coverPath)
+        coverFormData.append('path', `video-category-covers/${coverFile.name}`)
 
         const coverUploadResponse = await apiFetch('/api/storage/upload', {
           method: 'POST',
           body: coverFormData,
         })
-
         const coverUploadResult = await coverUploadResponse.json()
-
         if (coverUploadResponse.ok) {
           coverUrl = coverUploadResult.data?.publicUrl || coverUploadResult.data?.url
         } else {

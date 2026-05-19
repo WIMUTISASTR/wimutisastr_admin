@@ -13,17 +13,14 @@ export default function PINPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if PIN already verified by trying to access a protected endpoint
     const checkPinStatus = async () => {
       try {
-        const response = await fetch('/api/auth/verify-pin', {
-          method: 'GET',
-        })
+        const response = await fetch('/api/auth/verify-pin', { method: 'GET' })
         if (response.ok) {
           router.push('/login')
         }
       } catch {
-        // PIN not verified, stay on this page
+        // stay on PIN page
       }
     }
     checkPinStatus()
@@ -32,9 +29,9 @@ export default function PINPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const pin = pinInputRef.current?.getValue() || ''
-    
+
     if (pin.length !== 6) {
-      setError('Please enter a 6-digit PIN')
+      setError('សូមបញ្ចូល PIN ចំនួន ៦ ខ្ទង់')
       return
     }
 
@@ -42,59 +39,40 @@ export default function PINPage() {
     setError('')
 
     try {
-      // Verify PIN via API route (server-side validation)
       const response = await fetch('/api/auth/verify-pin', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin }),
       })
 
       const data = await response.json()
 
       if (response.ok && data.success) {
-        // Cookie is set by the API route, no localStorage needed
         router.push('/login')
       } else {
-        setError('Invalid PIN. Please try again.')
+        setError('PIN មិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។')
         pinInputRef.current?.reset()
         setIsLoading(false)
       }
     } catch {
-      setError('An error occurred. Please try again.')
+      setError('មានបញ្ហាកើតឡើង។ សូមព្យាយាមម្តងទៀត។')
       pinInputRef.current?.reset()
       setIsLoading(false)
     }
   }
 
   return (
-    <AuthCard
-      footer={
-        <p className="text-xs text-slate-600">
-          Admin Panel Access
-        </p>
-      }
-    >
+    <AuthCard footer={<p className="text-xs text-slate-500">សម្រាប់បុគ្គលិកដែលមានសិទ្ធិប៉ុណ្ណោះ</p>}>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-semibold text-slate-800 mb-4 text-center">
-            Enter Your PIN
-          </label>
-          <PINInput
-            ref={pinInputRef}
-            error={error}
-            disabled={isLoading}
-          />
+          <p className="block text-sm font-medium text-slate-700 mb-4 text-center">
+            បញ្ចូល PIN ចំនួន ៦ ខ្ទង់
+          </p>
+          <PINInput ref={pinInputRef} error={error} disabled={isLoading} />
         </div>
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          isLoading={isLoading}
-          className="w-full py-3 px-4 bg-blue-700"
-        >
-          Verify PIN
+        <Button type="submit" variant="accent" disabled={isLoading} isLoading={isLoading} fullWidth>
+          បន្ត
         </Button>
       </form>
     </AuthCard>

@@ -41,7 +41,7 @@ export default function LoadingSkeleton({ rows = 5, columns = 4, type = 'table' 
     <div className="overflow-x-auto">
       <div className="animate-pulse">
         {/* Header */}
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-3">
+        <div className="bg-navy-50/80 border-b border-slate-200 px-6 py-3">
           <div className="flex gap-4">
             {[...Array(columns)].map((_, i) => (
               <div key={i} className="h-4 bg-slate-200 rounded flex-1"></div>

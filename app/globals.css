@@ -1,24 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --font-geist-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  
-  /* WIMUTISASTR Gold Theme - Inspired by Logo */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --muted: #475569;
+  --muted-foreground: #64748b;
+
+  /* Navy — authority / primary (aligned with public site) */
+  --navy-50: #f0f4f7;
+  --navy-100: #dce4ea;
+  --navy-200: #b4ccd9;
+  --navy-300: #9bb5c6;
+  --navy-400: #5c7a8c;
+  --navy-500: #4a6c7f;
+  --navy-600: #2d4c5e;
+  --navy-700: #243d4d;
+  --navy-800: #1a2630;
+  --navy-900: #121c24;
+
+  /* Gold — brand accent (logo) */
   --gold-50: #fefdf8;
   --gold-100: #fef9e7;
   --gold-200: #fef3ce;
   --gold-300: #fde68a;
   --gold-400: #fcd34d;
-  --gold-500: #D4AF37; /* Primary Gold - Logo color */
-  --gold-600: #B8860B; /* Dark Gold */
-  --gold-700: #9A7510;
-  --gold-800: #7C5E0E;
-  --gold-900: #5E470B;
-  
-  /* Complementary colors for good UX */
+  --gold-500: #d4af37;
+  --gold-600: #b8860b;
+  --gold-700: #9a7510;
+  --gold-800: #7c5e0e;
+  --gold-900: #5e470b;
+
+  /* Slate neutrals */
   --slate-50: #f8fafc;
   --slate-100: #f1f5f9;
   --slate-200: #e2e8f0;
@@ -29,15 +45,50 @@
   --slate-700: #334155;
   --slate-800: #1e293b;
   --slate-900: #0f172a;
+
+  /* Semantic */
+  --success: #15803d;
+  --success-bg: #f0fdf4;
+  --warning: #b45309;
+  --warning-bg: #fffbeb;
+  --error: #b91c1c;
+  --error-bg: #fef2f2;
+  --info: #1d4ed8;
+  --info-bg: #eff6ff;
+
+  --sidebar-width: 16rem;
+  --header-height: 4rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.06);
+
+  --font-body: var(--font-kantumruy), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-kantumruy), ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  
-  /* Custom gold colors */
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-body);
+
+  --color-navy-50: var(--navy-50);
+  --color-navy-100: var(--navy-100);
+  --color-navy-200: var(--navy-200);
+  --color-navy-300: var(--navy-300);
+  --color-navy-400: var(--navy-400);
+  --color-navy-500: var(--navy-500);
+  --color-navy-600: var(--navy-600);
+  --color-navy-700: var(--navy-700);
+  --color-navy-800: var(--navy-800);
+  --color-navy-900: var(--navy-900);
+
   --color-gold-50: var(--gold-50);
   --color-gold-100: var(--gold-100);
   --color-gold-200: var(--gold-200);
@@ -50,22 +101,90 @@
   --color-gold-900: var(--gold-900);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* Smooth scrolling for better UX */
-html {
-  scroll-behavior: smooth;
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar styling with gold theme */
+h1,
+h2,
+h3,
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+/* Dashboard shell */
+.admin-shell {
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.admin-main {
+  background:
+    radial-gradient(ellipse 80% 50% at 100% -20%, rgb(212 175 55 / 0.06), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(45 76 94 / 0.04), transparent),
+    var(--background);
+}
+
+/* Form controls */
+.input-base {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--slate-900);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-base::placeholder {
+  color: var(--slate-400);
+}
+
+.input-base:hover:not(:disabled) {
+  border-color: var(--navy-300);
+}
+
+.input-base:focus {
+  outline: none;
+  border-color: var(--navy-600);
+  box-shadow: 0 0 0 3px rgb(45 76 94 / 0.15);
+}
+
+.input-base:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--slate-50);
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -76,10 +195,17 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gold-400);
+  background: var(--navy-300);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--gold-500);
+  background: var(--navy-500);
+}
+
+/* Toast overrides */
+.Toastify__toast {
+  border-radius: var(--radius-lg) !important;
+  font-family: var(--font-body) !important;
+  box-shadow: var(--shadow-lg) !important;
 }

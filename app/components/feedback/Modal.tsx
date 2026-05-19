@@ -159,14 +159,14 @@ export default function Modal({
             <div
               className={
                 variant === 'fullscreen'
-                  ? 'sticky top-0 bg-white z-10 p-6 border-b border-gray-200'
+                  ? 'sticky top-0 bg-white z-10 p-6 border-b border-slate-200'
                   : 'p-6 pb-4'
               }
             >
               {(title || showCloseButton) && (
                 <div className="flex items-start justify-between gap-4">
                   {title ? (
-                    <h2 id={titleId} className="text-2xl font-bold text-slate-800">
+                    <h2 id={titleId} className="text-2xl font-bold text-slate-900 font-heading">
                       {title}
                     </h2>
                   ) : (
@@ -179,7 +179,7 @@ export default function Modal({
                       onClick={onClose}
                       aria-label={closeButtonAriaLabel}
                       disabled={!isDismissable}
-                      className="text-gray-400 hover:text-gray-600 text-3xl leading-none p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-slate-400 hover:text-slate-700 text-3xl leading-none p-2 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       ×
                     </button>

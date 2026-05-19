@@ -47,18 +47,18 @@ export default function SubscriptionsPage() {
 
   const columns = [
     {
-      header: 'Plan',
+      header: 'គម្រោង',
       accessor: 'name',
       width: '25%',
       render: (value: unknown, row: SubscriptionPlan) => (
         <div>
           <div className="font-bold text-slate-900">{typeof value === 'string' ? value : row.name}</div>
-          <div className="text-sm text-slate-600 mt-1 line-clamp-2">{row.description || 'No description'}</div>
+          <div className="text-sm text-slate-600 mt-1 line-clamp-2">{row.description || 'គ្មានការពិពណ៌នា'}</div>
         </div>
       ),
     },
     {
-      header: 'Price',
+      header: 'តម្លៃ',
       accessor: 'price',
       width: '15%',
       render: (value: unknown, row: SubscriptionPlan) => {
@@ -73,17 +73,17 @@ export default function SubscriptionsPage() {
       },
     },
     {
-      header: 'Duration',
+      header: 'រយៈពេល',
       accessor: 'duration_days',
       width: '12%',
       render: (value: unknown) => (
         <div className="text-slate-900">
-          {typeof value === 'number' ? (value === 30 ? '1 Month' : value === 365 ? '1 Year' : `${value} Days`) : '-'}
+          {typeof value === 'number' ? (value === 30 ? '១ ខែ' : value === 365 ? '១ ឆ្នាំ' : `${value} ថ្ងៃ`) : '-'}
         </div>
       ),
     },
     {
-      header: 'Features',
+      header: 'លក្ខណៈ',
       accessor: 'features',
       width: '25%',
       render: (value: unknown) => {
@@ -96,28 +96,28 @@ export default function SubscriptionsPage() {
                   <li key={i} className="truncate">{feature}</li>
                 ))}
                 {features.length > 2 && (
-                  <li className="text-slate-500">+{features.length - 2} more</li>
+                  <li className="text-slate-500">+{features.length - 2} បន្ថែម</li>
                 )}
               </ul>
             ) : (
-              <span className="text-slate-400">No features</span>
+              <span className="text-slate-400">គ្មានលក្ខណៈ</span>
             )}
           </div>
         )
       },
     },
     {
-      header: 'Status',
+      header: 'ស្ថានភាព',
       accessor: 'is_active',
       width: '10%',
       render: (value: unknown) => (
         <Badge variant={value ? 'success' : 'error'} size="sm">
-          {value ? 'Active' : 'Inactive'}
+          {value ? 'សកម្ម' : 'អសកម្ម'}
         </Badge>
       ),
     },
     {
-      header: 'Actions',
+      header: 'សកម្មភាព',
       accessor: 'id',
       width: '13%',
       render: (_value: unknown, row: SubscriptionPlan) => (
@@ -127,7 +127,7 @@ export default function SubscriptionsPage() {
             variant="secondary"
             size="sm"
             className="transform-none"
-            aria-label="Edit plan"
+            aria-label="កែប្រែគម្រោង"
           >
             <UIIcons.Edit className="w-4 h-4" />
           </Button>
@@ -136,7 +136,7 @@ export default function SubscriptionsPage() {
             variant="danger"
             size="sm"
             className="transform-none"
-            aria-label="Delete plan"
+            aria-label="លុបគម្រោង"
           >
             <UIIcons.Delete className="w-4 h-4" />
           </Button>
@@ -148,11 +148,11 @@ export default function SubscriptionsPage() {
   return (
     <>
       <PageHeader
-        title="Subscription Plans"
+        title="គម្រោងជាវ"
         action={
           <Button onClick={handleNewPlan} size="md">
             <UIIcons.Plus className="w-5 h-5" />
-            New Plan
+            គម្រោងថ្មី
           </Button>
         }
       />
@@ -163,8 +163,8 @@ export default function SubscriptionsPage() {
             columns={columns}
             data={plans}
             isLoading={isLoading}
-            emptyMessage="No subscription plans created yet"
-            emptyDescription="Create your first subscription plan to get started"
+            emptyMessage="មិនទាន់មានគម្រោងជាវ"
+            emptyDescription="បង្កើតគម្រោងជាវដំបូងរបស់អ្នក ដើម្បីចាប់ផ្តើម"
             emptyIcon={
               <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -179,8 +179,8 @@ export default function SubscriptionsPage() {
         isOpen={deleteModalOpen}
         onClose={() => !isDeleting && setDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
-        title="Delete Subscription Plan"
-        message="Are you sure you want to delete this subscription plan? This action cannot be undone."
+        title="លុបគម្រោងជាវ"
+        message="តើអ្នកប្រាកដថាចង់លុបគម្រោងជាវនេះទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។"
         itemName={planToDelete?.name}
         isLoading={isDeleting}
       />

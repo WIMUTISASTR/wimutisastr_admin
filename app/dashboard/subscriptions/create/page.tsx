@@ -60,12 +60,12 @@ export default function CreateSubscriptionPlanPage() {
     e.preventDefault()
 
     if (!formData.name.trim()) {
-      alert('Plan name is required')
+      alert('ឈ្មោះគម្រោងត្រូវការ')
       return
     }
 
     if (!formData.price || parseFloat(formData.price) <= 0) {
-      alert('Valid price is required')
+      alert('ត្រូវការតម្លៃត្រឹមត្រូវ')
       return
     }
 
@@ -120,7 +120,7 @@ export default function CreateSubscriptionPlanPage() {
   return (
     <>
       <PageHeader
-        title="Create Subscription Plan"
+        title="បង្កើតគម្រោងជាវ"
         showBackButton
         backHref="/dashboard/subscriptions"
       />
@@ -130,18 +130,18 @@ export default function CreateSubscriptionPlanPage() {
           <div className="space-y-6">
             {/* Basic Information */}
             <Card padding="md">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-4">ព័ត៌មានទូទៅ</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Plan Name <span className="text-red-500">*</span>
+                    ឈ្មោះគម្រោង <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 bg-white"
-                    placeholder="e.g., Monthly Plan, Yearly Plan"
+                    placeholder="ឧ. គម្រោង១ខែ, គម្រោង១ឆ្នាំ"
                     required
                     disabled={isSaving}
                   />
@@ -149,13 +149,13 @@ export default function CreateSubscriptionPlanPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Description
+                    ការពិពណ៌នា
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 bg-white"
-                    placeholder="Describe what's included in this plan"
+                    placeholder="ពិពណ៌នាអំពីអ្វីដែលរួមបញ្ចូលក្នុងគម្រោងនេះ"
                     rows={3}
                     disabled={isSaving}
                   />
@@ -165,11 +165,11 @@ export default function CreateSubscriptionPlanPage() {
 
             {/* Pricing */}
             <Card padding="md">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Pricing</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-4">តម្លៃ</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Price <span className="text-red-500">*</span>
+                    តម្លៃ <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -186,7 +186,7 @@ export default function CreateSubscriptionPlanPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Duration
+                    រយៈពេល
                   </label>
                   <select
                     value={formData.duration_days}
@@ -194,17 +194,17 @@ export default function CreateSubscriptionPlanPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 bg-white"
                     disabled={isSaving}
                   >
-                    <option value="7">1 Week</option>
-                    <option value="30">1 Month</option>
-                    <option value="90">3 Months</option>
-                    <option value="180">6 Months</option>
-                    <option value="365">1 Year</option>
+                    <option value="7">១ សប្តាហ៍</option>
+                    <option value="30">១ ខែ</option>
+                    <option value="90">៣ ខែ</option>
+                    <option value="180">៦ ខែ</option>
+                    <option value="365">១ ឆ្នាំ</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Currency
+                    រូបិយប័ណ្ណ
                   </label>
                   <select
                     value={formData.currency}
@@ -222,7 +222,7 @@ export default function CreateSubscriptionPlanPage() {
 
             {/* Features */}
             <Card padding="md">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Features</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-4">លក្ខណៈ</h3>
               <div className="space-y-2">
                 {formData.features.map((feature, index) => (
                   <div key={index} className="flex gap-2">
@@ -231,7 +231,7 @@ export default function CreateSubscriptionPlanPage() {
                       value={feature}
                       onChange={(e) => handleFeatureChange(index, e.target.value)}
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-slate-900 bg-white"
-                      placeholder="Feature description"
+                      placeholder="ការពិពណ៌នាលក្ខណៈ"
                       disabled={isSaving}
                     />
                     {formData.features.length > 1 && (
@@ -257,14 +257,14 @@ export default function CreateSubscriptionPlanPage() {
                   className="transform-none"
                 >
                   <UIIcons.Plus className="w-4 h-4 mr-2" />
-                  Add Feature
+                  បន្ថែមលក្ខណៈ
                 </Button>
               </div>
             </Card>
 
             {/* QR Code */}
             <Card padding="md">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Payment QR Code</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-4">QR Code ការបង់ប្រាក់</h3>
               <ThumbnailUpload
                 onUpload={handleQrCodeUpload}
                 preview={qrCodePreview}
@@ -276,7 +276,7 @@ export default function CreateSubscriptionPlanPage() {
 
             {/* Settings */}
             <Card padding="md">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Settings</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-4">ការកំណត់</h3>
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -287,7 +287,7 @@ export default function CreateSubscriptionPlanPage() {
                   disabled={isSaving}
                 />
                 <label htmlFor="is_active" className="text-sm font-semibold text-slate-900">
-                  Active (visible to users)
+                  សកម្ម (មើលឃើញដោយអ្នកប្រើ)
                 </label>
               </div>
             </Card>
@@ -301,7 +301,7 @@ export default function CreateSubscriptionPlanPage() {
                   onClick={() => router.push('/dashboard/subscriptions')}
                   disabled={isSaving}
                 >
-                  Cancel
+                  បោះបង់
                 </Button>
                 <Button
                   type="submit"
@@ -309,7 +309,7 @@ export default function CreateSubscriptionPlanPage() {
                   isLoading={isSaving}
                   disabled={isSaving}
                 >
-                  Create Plan
+                  បង្កើតគម្រោង
                 </Button>
               </div>
             </Card>

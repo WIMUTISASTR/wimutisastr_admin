@@ -16,13 +16,13 @@ export default function UploadProgressModal({
   progress,
   currentStep,
   fileName,
-  title = 'Uploading File',
+  title = 'កំពុងបញ្ចូលឯកសារ',
 }: UploadProgressModalProps) {
   return (
     <Modal
       isOpen={isOpen}
       onClose={() => {}}
-      title="Uploading"
+      title="កំពុងបញ្ចូល"
       variant="center"
       isDismissable={false}
       showCloseButton={false}
@@ -44,7 +44,7 @@ export default function UploadProgressModal({
         
         <div className="mb-2">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">{currentStep || 'Preparing...'}</span>
+            <span className="text-sm font-medium text-gray-700">{currentStep || 'កំពុងរៀបចំ...'}</span>
           <span className="text-sm font-semibold text-blue-600">{Math.round(progress)}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">

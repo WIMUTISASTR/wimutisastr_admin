@@ -9,13 +9,13 @@ interface LogoProps {
 const sizeMap = {
   sm: 'w-8 h-8',
   md: 'w-10 h-10',
-  lg: 'w-32 h-32',
+  lg: 'w-28 h-28',
 }
 
 export default function Logo({ size = 'md', showText = false, className = '' }: LogoProps) {
   return (
     <div className={`flex flex-col items-center ${className}`}>
-      <div className={`relative ${sizeMap[size]} ${showText ? 'mb-6' : ''}`}>
+      <div className={`relative ${sizeMap[size]} ${showText ? 'mb-4' : ''}`}>
         <Image
           src="/logo/logo.png"
           alt="WIMUTISASSTR Law Office Logo"
@@ -26,15 +26,13 @@ export default function Logo({ size = 'md', showText = false, className = '' }: 
       </div>
       {showText && (
         <>
-          <h1 className="text-2xl font-bold text-amber-900 mb-2">
+          <h1 className="text-2xl font-bold text-navy-800 mb-1 font-heading tracking-tight">
             WIMUTISASSTR
           </h1>
-          <p className="text-sm text-amber-700 mb-1">Law Office</p>
-          <p className="text-xs text-amber-600">ការិយាល័យមេធាវី វិមុត្តិសាស្ត្រ</p>
+          <p className="text-sm text-navy-600 mb-0.5">Law Office</p>
+          <p className="text-xs text-slate-500">ការិយាល័យមេធាវី វិមុត្តិសាស្ត្រ</p>
         </>
       )}
     </div>
   )
 }
-
-

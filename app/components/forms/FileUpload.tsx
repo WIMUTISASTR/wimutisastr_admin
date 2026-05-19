@@ -106,7 +106,7 @@ export default function FileUpload({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-semibold text-black mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           {label}
         </label>
         {description && (
@@ -121,7 +121,7 @@ export default function FileUpload({
           onClick={() => !isLoading && fileInputRef.current?.click()}
           className={`
             border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer
-            ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white hover:bg-slate-50'}
+            ${dragActive ? 'border-navy-500 bg-navy-50' : 'border-slate-300 bg-white hover:border-navy-300 hover:bg-slate-50'}
             ${error ? 'border-red-300' : ''}
             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
           `}

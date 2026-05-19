@@ -122,7 +122,7 @@ export default function PaymentProofDetailPage() {
   return (
     <>
       <PageHeader
-        title="Payment Proof Details"
+        title="លម្អិតភស្តុតាងការបង់ប្រាក់"
         showBackButton
         backHref="/dashboard/payments"
       />
@@ -160,7 +160,7 @@ export default function PaymentProofDetailPage() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-slate-900">
-                  Payment Status: <Badge
+                  ស្ថានភាពការបង់ប្រាក់: <Badge
                     variant={
                       proof.status === 'pending' ? 'warning' :
                       proof.status === 'verified' ? 'success' : 'error'
@@ -171,9 +171,9 @@ export default function PaymentProofDetailPage() {
                   </Badge>
                 </h2>
                 <p className="text-sm text-slate-600 mt-1">
-                  {proof.status === 'pending' && 'This payment proof is awaiting review'}
-                  {proof.status === 'verified' && 'This payment has been approved'}
-                  {proof.status === 'rejected' && 'This payment has been rejected'}
+                  {proof.status === 'pending' && 'ភស្តុតាងការបង់ប្រាក់នេះកំពុងរង់ចាំការត្រួតពិនិត្យ'}
+                  {proof.status === 'verified' && 'ការបង់ប្រាក់នេះត្រូវបានអនុម័ត'}
+                  {proof.status === 'rejected' && 'ការបង់ប្រាក់នេះត្រូវបានបដិសេធ'}
                 </p>
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function PaymentProofDetailPage() {
                   disabled={isProcessing}
                   className="transform-none"
                 >
-                  Reject
+                  បដិសេធ
                 </Button>
                 <Button
                   variant="primary"
@@ -196,7 +196,7 @@ export default function PaymentProofDetailPage() {
                   disabled={isProcessing}
                   className="transform-none"
                 >
-                  Approve
+                  អនុម័ត
                 </Button>
               </div>
             )}
@@ -206,7 +206,7 @@ export default function PaymentProofDetailPage() {
         {/* Payment Proof Image */}
         <Card padding="none" className="overflow-hidden">
           <div className="bg-slate-50 p-4">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">Payment Proof Image</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-4">រូបភាពភស្តុតាងការបង់ប្រាក់</h3>
             <div className="relative rounded-xl border border-slate-200 overflow-hidden bg-white h-[600px]">
               <Image
                 src={proof.proof_url}
@@ -228,15 +228,15 @@ export default function PaymentProofDetailPage() {
 
         {/* User Information */}
         <Card padding="md">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">User Information</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-4">ព័ត៌មានអ្នកប្រើ</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Email</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">អ៊ីមែល</label>
               <p className="text-slate-900 font-medium">{proof.user?.email || 'Unknown'}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Membership Status</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">ស្ថានភាពសមាជិក</label>
               <div className="flex items-center gap-2">
                 <Badge variant={
                   proof.user?.membership_status === 'approved' ? 'success' :
@@ -250,20 +250,20 @@ export default function PaymentProofDetailPage() {
 
             {proof.user?.membership_approved_at && (
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Membership Approved</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">សមាជិកភាពបានអនុម័ត</label>
                 <p className="text-slate-900">{new Date(proof.user.membership_approved_at).toLocaleString()}</p>
               </div>
             )}
 
             {proof.user?.membership_denied_at && (
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Membership Denied</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">សមាជិកភាពបានបដិសេធ</label>
                 <p className="text-slate-900">{new Date(proof.user.membership_denied_at).toLocaleString()}</p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Registered</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">ថ្ងៃចុះឈ្មោះ</label>
               <p className="text-slate-900">{proof.user?.registered_at ? new Date(proof.user.registered_at).toLocaleString() : 'Unknown'}</p>
             </div>
           </div>
@@ -271,22 +271,22 @@ export default function PaymentProofDetailPage() {
 
         {/* Payment Details */}
         <Card padding="md">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Payment Information</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-4">ព័ត៌មានការបង់ប្រាក់</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Payment Reference</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">លេខយោងការបង់ប្រាក់</label>
               <p className="text-slate-900 font-mono text-sm bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
                 {proof.payment_reference}
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Subscription Plan</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">គម្រោងជាវ</label>
               {proof.subscription_plan ? (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <div className="font-bold text-slate-900 text-lg">{proof.subscription_plan.name}</div>
                   <div className="text-sm text-slate-600 mt-1">
-                    ${proof.subscription_plan.price} {proof.subscription_plan.currency} · {proof.subscription_plan.duration_days} days
+                    ${proof.subscription_plan.price} {proof.subscription_plan.currency} · {proof.subscription_plan.duration_days} ថ្ងៃ
                   </div>
                 </div>
               ) : (
@@ -295,12 +295,12 @@ export default function PaymentProofDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Amount</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">ចំនួនទឹកប្រាក់</label>
               <p className="text-2xl font-bold text-slate-900">${proof.amount}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Uploaded</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">ថ្ងៃបញ្ចូល</label>
               <p className="text-slate-900">
                 {new Date(proof.uploaded_at).toLocaleString('en-US', {
                   dateStyle: 'long',
@@ -310,13 +310,13 @@ export default function PaymentProofDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">File Type</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">ប្រភេទឯកសារ</label>
               <p className="text-slate-900">{proof.file_type}</p>
             </div>
 
             {proof.verified_at && (
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Verified At</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">ថ្ងៃផ្ទៀងផ្ទាត់</label>
                 <p className="text-slate-900">
                   {new Date(proof.verified_at).toLocaleString('en-US', {
                     dateStyle: 'long',
@@ -328,7 +328,7 @@ export default function PaymentProofDetailPage() {
 
             {proof.membership_starts_at && (
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Membership Starts</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">ចាប់ផ្តើមសមាជិកភាព</label>
                 <p className="text-slate-900">
                   {new Date(proof.membership_starts_at).toLocaleDateString('en-US', {
                     dateStyle: 'long'
@@ -339,7 +339,7 @@ export default function PaymentProofDetailPage() {
 
             {proof.membership_ends_at && (
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Membership Ends</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">អស់សុពលភាពសមាជិក</label>
                 <p className="text-slate-900">
                   {new Date(proof.membership_ends_at).toLocaleDateString('en-US', {
                     dateStyle: 'long'
@@ -350,54 +350,14 @@ export default function PaymentProofDetailPage() {
 
             {proof.notes && (
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Notes</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">កំណត់ចំណាំ</label>
                 <p className="text-slate-900 bg-slate-50 px-4 py-3 rounded-lg border border-slate-200">
                   {proof.notes}
                 </p>
               </div>
             )}
           </div>
-        </Card>
-
-        {/* Action Buttons for Pending Status */}
-        {proof.status === 'pending' && (
-          <Card padding="md" className="bg-slate-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Review This Payment</h3>
-                <p className="text-sm text-slate-600 mt-1">
-                  Approve or reject this payment proof to update the user&apos;s membership status
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  variant="danger"
-                  onClick={handleReject}
-                  isLoading={isProcessing}
-                  disabled={isProcessing}
-                  className="transform-none"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Reject
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleApprove}
-                  isLoading={isProcessing}
-                  disabled={isProcessing}
-                  className="transform-none"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Approve
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
+        </Card>      
       </div>
     </>
   )

@@ -1,14 +1,12 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Image from 'next/image'
 import { toast } from 'react-toastify'
 import { DataTable } from '../../../components/data-display'
 import { DeleteConfirmationModal, Modal } from '../../../components/feedback'
 import { Card, Button, UIIcons } from '../../../components/ui'
 import { apiFetch } from '../../shared/api'
 import { Category } from '../../shared/types'
-import ThumbnailUpload from '../../../components/forms/ThumbnailUpload'
 
 interface CategoryManagementProps {
   categories: Category[]
@@ -37,19 +35,15 @@ function flattenCategories(categories: Category[], parentName: string = '', leve
 }
 
 interface SubcategoryForm {
-  id?: string // For editing existing subcategories
+  id?: string
   name: string
   description: string
-  cover_url?: string | null
-  coverFile?: File | null
 }
 
 export default function CategoryManagement({ categories, isLoading, onRefresh }: CategoryManagementProps) {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '' })
-  const [categoryCoverFile, setCategoryCoverFile] = useState<File | null>(null)
-  const [categoryCoverPreview, setCategoryCoverPreview] = useState<string | null>(null)
   const [subcategories, setSubcategories] = useState<SubcategoryForm[]>([])
   const [editingSubcategoryIndex, setEditingSubcategoryIndex] = useState<number | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -60,29 +54,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
   // Flatten categories for table display
   const flattenedCategories = useMemo(() => flattenCategories(categories), [categories])
   
-
-  const uploadCategoryImage = async (file: File): Promise<string> => {
-    // `path` is treated as a server-side hint only; the server generates a safe unique key.
-    const filePath = `category-covers/${file.name}`
-
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('bucket', 'covers')
-    formData.append('path', filePath)
-
-    const response = await apiFetch('/api/storage/upload', {
-      method: 'POST',
-      body: formData,
-    })
-
-    const result = await response.json()
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to upload category image')
-    }
-
-    return result.data?.publicUrl || result.data?.url
-  }
 
   const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,33 +67,21 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
     try {
       let mainCategoryId: string
-      let mainCategoryCoverUrl: string | null = editingCategory?.cover_url || null
-
-      // Upload main category image if provided
-      if (categoryCoverFile) {
-        mainCategoryCoverUrl = await uploadCategoryImage(categoryCoverFile)
-      }
 
       if (editingCategory) {
         // Update existing main category
         const response = await apiFetch(`/api/categories?id=${editingCategory.id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: categoryFormData.name,
             description: categoryFormData.description || null,
-            cover_url: mainCategoryCoverUrl,
-            parent_id: null, // Main categories have no parent
+            parent_id: null,
           }),
         })
 
         const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to update category')
-        }
+        if (!response.ok) throw new Error(result.error || 'Failed to update category')
 
         mainCategoryId = editingCategory.id
         toast.success('Main category updated successfully!')
@@ -130,22 +89,16 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         // Create new main category
         const response = await apiFetch('/api/categories', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: categoryFormData.name,
             description: categoryFormData.description || null,
-            cover_url: mainCategoryCoverUrl,
-            parent_id: null, // Main categories have no parent
+            parent_id: null,
           }),
         })
 
         const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to create category')
-        }
+        if (!response.ok) throw new Error(result.error || 'Failed to create category')
 
         mainCategoryId = result.data.id
         toast.success('Main category created successfully!')
@@ -154,24 +107,14 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       // Now create/update subcategories
       if (subcategories.length > 0) {
         const subcategoryPromises = subcategories.map(async (sub) => {
-          let subcategoryCoverUrl: string | null = sub.cover_url || null
-
-          // Upload subcategory image if provided
-          if (sub.coverFile) {
-            subcategoryCoverUrl = await uploadCategoryImage(sub.coverFile)
-          }
-
           if (sub.id) {
             // Update existing subcategory
             const response = await apiFetch(`/api/categories?id=${sub.id}`, {
               method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 name: sub.name,
                 description: sub.description || null,
-                cover_url: subcategoryCoverUrl,
                 parent_id: mainCategoryId,
               }),
             })
@@ -183,13 +126,10 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
             // Create new subcategory
             const response = await apiFetch('/api/categories', {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 name: sub.name,
                 description: sub.description || null,
-                cover_url: subcategoryCoverUrl,
                 parent_id: mainCategoryId,
               }),
             })
@@ -207,8 +147,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       setIsCategoryModalOpen(false)
       setEditingCategory(null)
       setCategoryFormData({ name: '', description: '' })
-      setCategoryCoverFile(null)
-      setCategoryCoverPreview(null)
       setSubcategories([])
       onRefresh()
     } catch (error: unknown) {
@@ -232,8 +170,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       name: category.name,
       description: category.description || '',
     })
-    setCategoryCoverPreview(category.cover_url)
-    setCategoryCoverFile(null)
     // Load existing subcategories
     if (category.subcategories && category.subcategories.length > 0) {
       setSubcategories(
@@ -241,7 +177,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
           id: sub.id,
           name: sub.name,
           description: sub.description || '',
-          cover_url: sub.cover_url || null,
         }))
       )
     } else {
@@ -298,8 +233,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
   const handleNewMainCategory = () => {
     setEditingCategory(null)
     setCategoryFormData({ name: '', description: '' })
-    setCategoryCoverFile(null)
-    setCategoryCoverPreview(null)
     setSubcategories([])
     setIsCategoryModalOpen(true)
   }
@@ -312,18 +245,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
   const handleSubcategoryChange = (index: number, field: 'name' | 'description', value: string) => {
     const updated = [...subcategories]
     updated[index] = { ...updated[index], [field]: value }
-    setSubcategories(updated)
-  }
-
-  const handleSubcategoryImageUpload = (index: number, file: File) => {
-    const updated = [...subcategories]
-    updated[index] = { ...updated[index], coverFile: file }
-    setSubcategories(updated)
-  }
-
-  const handleSubcategoryImageRemove = (index: number) => {
-    const updated = [...subcategories]
-    updated[index] = { ...updated[index], coverFile: null, cover_url: null }
     setSubcategories(updated)
   }
 
@@ -365,18 +286,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       accessor: 'name',
       render: (value: unknown, row: FlatCategory) => (
         <div className="flex items-center gap-3">
-          {row.cover_url && (
-            <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0">
-              <Image
-                src={row.cover_url}
-                alt={typeof value === 'string' ? value : row.name}
-                fill
-                sizes="40px"
-                className="object-cover"
-                unoptimized
-              />
-            </div>
-          )}
           <div className="flex items-center gap-2">
             {row._level && row._level > 0 && (
               <span className="text-slate-400 text-sm">└─</span>
@@ -477,8 +386,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
           setIsCategoryModalOpen(false)
           setEditingCategory(null)
           setCategoryFormData({ name: '', description: '' })
-          setCategoryCoverFile(null)
-          setCategoryCoverPreview(null)
           setSubcategories([])
           setEditingSubcategoryIndex(null)
         }}
@@ -516,28 +423,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
                 placeholder="Optional description for this category"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-black mb-2">
-                Category Image
-              </label>
-              <ThumbnailUpload
-                onUpload={(file) => {
-                  setCategoryCoverFile(file)
-                  const reader = new FileReader()
-                  reader.onload = (e) => {
-                    setCategoryCoverPreview(e.target?.result as string)
-                  }
-                  reader.readAsDataURL(file)
-                }}
-                preview={categoryCoverPreview || editingCategory?.cover_url || null}
-                maxSize={5}
-                onRemove={() => {
-                  setCategoryCoverFile(null)
-                  setCategoryCoverPreview(null)
-                }}
               />
             </div>
           </div>
@@ -589,17 +474,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                             placeholder="Optional description"
                           />
                         </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-black mb-1">
-                            Subcategory Image
-                          </label>
-                          <ThumbnailUpload
-                            onUpload={(file) => handleSubcategoryImageUpload(index, file)}
-                            preview={sub.coverFile ? URL.createObjectURL(sub.coverFile) : sub.cover_url || null}
-                            maxSize={5}
-                            onRemove={() => handleSubcategoryImageRemove(index)}
-                          />
-                        </div>
                         <div className="flex gap-2">
                           <Button
                             type="button"
@@ -636,18 +510,6 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
-                        {sub.cover_url && (
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                            <Image
-                              src={sub.cover_url}
-                              alt={sub.name}
-                              fill
-                              sizes="48px"
-                              className="object-cover"
-                              unoptimized
-                            />
-                          </div>
-                        )}
                         <div className="flex-1">
                           <div className="font-medium text-slate-900">{sub.name}</div>
                           {sub.description && (
@@ -689,8 +551,8 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                     setIsCategoryModalOpen(false)
                     setEditingCategory(null)
                     setCategoryFormData({ name: '', description: '' })
-                setSubcategories([])
-                setEditingSubcategoryIndex(null)
+                    setSubcategories([])
+                    setEditingSubcategoryIndex(null)
                   }}
                 >
                   Cancel

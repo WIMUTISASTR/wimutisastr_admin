@@ -268,7 +268,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           disabled={isLoading}
                   required
                 >
-                  <option value="">Select a main category</option>
+                  <option value="">ជ្រើសប្រភេទចម្បង</option>
                   {mainCategories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
@@ -280,7 +280,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
               {selectedMainCategoryId && availableSubcategories.length > 0 && (
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Subcategory (Optional)
+                    ប្រភេទរង (ស្រេចចិត្ត)
                   </label>
                   <select
                     value={formData.category_id || ''}
@@ -288,7 +288,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                     disabled={isLoading}
                   >
-                    <option value="">None (Use main category)</option>
+                    <option value="">គ្មាន (ប្រើប្រភេទចម្បង)</option>
                     {availableSubcategories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
@@ -314,8 +314,8 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                   disabled={isLoading}
                   required
                 >
-                  <option value="members">Members only</option>
-                  <option value="free">Free</option>
+                  <option value="members">សមាជិកប៉ុណ្ណោះ</option>
+                  <option value="free">ឥតគិតថ្លៃ</option>
                 </select>
                 <p className="text-xs text-slate-500 mt-1">
                   Choose who can access this document.

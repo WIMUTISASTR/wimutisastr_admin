@@ -227,7 +227,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                   disabled={isLoading}
                   required
                 >
-                  <option value="">Select a category</option>
+                  <option value="">ជ្រើសប្រភេទ</option>
                   {categories && categories.length > 0 ? (
                     categories.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -235,7 +235,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                       </option>
                     ))
                   ) : (
-                    <option value="" disabled>No categories available</option>
+                    <option value="" disabled>គ្មានប្រភេទ</option>
                   )}
                 </select>
                 {errors.category_id && <span className="text-sm text-red-600 mt-1 block">{errors.category_id}</span>}
@@ -257,8 +257,8 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                   disabled={isLoading}
                   required
                 >
-                  <option value="members">Members only</option>
-                  <option value="free">Free</option>
+                  <option value="members">សមាជិកប៉ុណ្ណោះ</option>
+                  <option value="free">ឥតគិតថ្លៃ</option>
                 </select>
                 {errors.access_level && <span className="text-sm text-red-600 mt-1 block">{errors.access_level}</span>}
               </div>

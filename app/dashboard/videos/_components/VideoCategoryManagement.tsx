@@ -18,11 +18,26 @@ interface VideoCategory {
   updated_at: string
 }
 
-// Component to handle image loading with fallback
-function CategoryCoverImage({ name, cover_url, getCategoryColor }: { name: string, cover_url: string | null, getCategoryColor: (name: string) => string }) {
+function getCategoryColor(name: string) {
+  const colors = [
+    'bg-gradient-to-r from-purple-500 to-pink-500',
+    'bg-gradient-to-r from-blue-500 to-indigo-500',
+    'bg-gradient-to-r from-green-500 to-emerald-500',
+    'bg-gradient-to-r from-orange-500 to-red-500',
+    'bg-gradient-to-r from-cyan-500 to-blue-500',
+    'bg-gradient-to-r from-rose-500 to-pink-500',
+    'bg-gradient-to-r from-amber-500 to-orange-500',
+    'bg-gradient-to-r from-teal-500 to-cyan-500',
+    'bg-gradient-to-r from-violet-500 to-purple-500',
+    'bg-gradient-to-r from-indigo-500 to-blue-500',
+  ]
+  const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
+  return colors[index]
+}
+
+function CategoryCoverImage({ name, cover_url }: { name: string; cover_url: string | null }) {
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
-  
   const showFallback = !cover_url || imageError
 
   return (
@@ -31,9 +46,7 @@ function CategoryCoverImage({ name, cover_url, getCategoryColor }: { name: strin
         <>
           {!imageLoaded && (
             <div className={`absolute inset-0 w-full h-full flex items-center justify-center ${getCategoryColor(name)}`}>
-              <span className="text-white font-bold text-lg">
-                {name.charAt(0).toUpperCase()}
-              </span>
+              <span className="text-white font-bold text-lg">{name.charAt(0).toUpperCase()}</span>
             </div>
           )}
           <Image
@@ -49,9 +62,7 @@ function CategoryCoverImage({ name, cover_url, getCategoryColor }: { name: strin
         </>
       ) : (
         <div className="w-full h-full flex items-center justify-center">
-          <span className="text-white font-bold text-lg">
-            {name.charAt(0).toUpperCase()}
-          </span>
+          <span className="text-white font-bold text-lg">{name.charAt(0).toUpperCase()}</span>
         </div>
       )}
     </div>
@@ -119,35 +130,13 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
     setCategoryToDelete(null)
   }
 
-  // Function to get a color based on category name
-  const getCategoryColor = (name: string) => {
-    const colors = [
-      'bg-gradient-to-r from-purple-500 to-pink-500',
-      'bg-gradient-to-r from-blue-500 to-indigo-500',
-      'bg-gradient-to-r from-green-500 to-emerald-500',
-      'bg-gradient-to-r from-orange-500 to-red-500',
-      'bg-gradient-to-r from-cyan-500 to-blue-500',
-      'bg-gradient-to-r from-rose-500 to-pink-500',
-      'bg-gradient-to-r from-amber-500 to-orange-500',
-      'bg-gradient-to-r from-teal-500 to-cyan-500',
-      'bg-gradient-to-r from-violet-500 to-purple-500',
-      'bg-gradient-to-r from-indigo-500 to-blue-500',
-    ]
-    const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
-    return colors[index]
-  }
-
   const categoryColumns = [
     {
       header: 'Category',
       accessor: 'name',
       render: (value: unknown, row: VideoCategory) => (
         <div className="flex items-center gap-3">
-          <CategoryCoverImage 
-            name={typeof value === 'string' ? value : row.name}
-            cover_url={row.cover_url}
-            getCategoryColor={getCategoryColor}
-          />
+          <CategoryCoverImage name={typeof value === 'string' ? value : row.name} cover_url={row.cover_url} />
           <div>
             <span className="font-bold text-slate-900 text-base">{typeof value === 'string' ? value : row.name}</span>
             {row.description && (

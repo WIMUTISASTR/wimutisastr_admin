@@ -46,7 +46,7 @@ export default function LoginPage() {
     } catch (err: unknown) {
       setIsLoading(false)
       // Show the actual error message from Supabase or our custom message
-      let errorMessage = 'Invalid email or password. Please try again.'
+      let errorMessage = 'អ៊ីមែល ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។'
       
       if (err) {
         if (typeof err === 'string') {
@@ -87,9 +87,9 @@ export default function LoginPage() {
             })
             router.push('/')
           }}
-          className="text-xs text-gold-600 hover:text-gold-700 underline"
+          className="text-xs text-navy-600 hover:text-navy-800 underline cursor-pointer transition-colors"
         >
-          Back to PIN Entry
+          ត្រឡប់ទៅបញ្ចូល PIN
         </button>
       }
     >

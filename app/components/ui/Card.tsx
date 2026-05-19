@@ -16,11 +16,11 @@ export default function Card({ children, className = '', padding = 'md', hover =
   }
 
   return (
-    <div 
+    <div
       className={`
-        bg-white rounded-xl shadow-sm border border-slate-200
+        bg-white rounded-xl border border-slate-200/80 shadow-sm
         ${paddingClasses[padding]}
-        ${hover ? 'hover:shadow-md transition-shadow duration-200' : ''}
+        ${hover ? 'hover:shadow-md hover:border-slate-300 transition-shadow duration-200 cursor-pointer' : ''}
         ${className}
       `}
     >
@@ -28,4 +28,3 @@ export default function Card({ children, className = '', padding = 'md', hover =
     </div>
   )
 }
-

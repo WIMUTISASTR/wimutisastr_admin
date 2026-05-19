@@ -17,8 +17,8 @@ export default function DeleteConfirmationModal({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Confirm Deletion',
-  message = 'Are you sure you want to delete this item?',
+  title = 'បញ្ជាក់ការលុប',
+  message = 'តើអ្នកប្រាកដថាចង់លុបធាតុនេះទេ?',
   itemName,
   isLoading = false,
 }: DeleteConfirmationModalProps) {
@@ -47,20 +47,20 @@ export default function DeleteConfirmationModal({
           
           {itemName && (
             <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-              <p className="text-sm text-slate-500 mb-1">Item to delete:</p>
+              <p className="text-sm text-slate-500 mb-1">ធាតុដែលត្រូវលុប:</p>
               <p className="font-semibold text-slate-800">{itemName}</p>
             </div>
           )}
           
-        <p className="text-sm text-red-600 text-center mt-4 font-medium">This action cannot be undone.</p>
+        <p className="text-sm text-red-600 text-center mt-4 font-medium">សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។</p>
         </div>
 
         <div className="px-6 py-4 bg-slate-50 rounded-b-xl flex gap-3">
         <Button variant="secondary" onClick={onClose} disabled={isLoading} fullWidth>
-            Cancel
+            បោះបង់
         </Button>
         <Button variant="danger" onClick={onConfirm} isLoading={isLoading} fullWidth>
-                Delete
+                លុប
         </Button>
       </div>
     </Modal>

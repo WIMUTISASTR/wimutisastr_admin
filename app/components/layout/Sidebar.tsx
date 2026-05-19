@@ -37,49 +37,55 @@ export default function Sidebar({
     return pathname.startsWith(href)
   }
 
-  // Use transition for smoother navigation
-  const handleNavigation = useCallback((href: string) => {
-    onClose()
-    startTransition(() => {
-      router.push(href)
-    })
-  }, [onClose, router])
+  const handleNavigation = useCallback(
+    (href: string) => {
+      onClose()
+      startTransition(() => {
+        router.push(href)
+      })
+    },
+    [onClose, router]
+  )
 
   return (
     <>
       <aside
         className={`
           fixed lg:static inset-y-0 left-0 z-50
-          w-64 bg-white border-r border-slate-200 shadow-lg lg:shadow-none
+          w-[var(--sidebar-width)] bg-navy-900 border-r border-navy-800
+          shadow-xl lg:shadow-none
           transform ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           transition-transform duration-300 ease-in-out
           flex flex-col
         `}
+        aria-label="Main navigation"
       >
-        {/* Sidebar Header */}
-        <div className="p-6 border-b border-gold-200 ">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        {/* Brand */}
+        <div className="p-5 border-b border-navy-800/80">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <Logo size="md" />
-              <div>
-                <h1 className="text-lg font-bold text-gold-500">WIMUTISASTR</h1>
-                <p className="text-xs text-gold-500">Law Office Admin</p>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-white truncate tracking-wide">WIMUTISASTR</p>
+                <p className="text-[11px] text-navy-300 truncate">ការគ្រប់គ្រងការិយាល័យ</p>
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="lg:hidden text-slate-700 hover:text-slate-900 transition-colors"
+              className="lg:hidden p-1.5 rounded-lg text-navy-300 hover:text-white hover:bg-navy-800 transition-colors cursor-pointer"
+              aria-label="បិទម៉ឺនុយ"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <ul className="space-y-2">
+        {/* Nav */}
+        <nav className="flex-1 p-3 overflow-y-auto">
+          <ul className="space-y-1">
             {menuItems.map((item) => {
               const active = isActive(item.href)
               const isNavigating = isPending && !active
@@ -88,7 +94,6 @@ export default function Sidebar({
                   <Link
                     href={item.href}
                     onClick={(e) => {
-                      // Prevent default only for non-active links
                       if (!active) {
                         e.preventDefault()
                         handleNavigation(item.href)
@@ -96,21 +101,29 @@ export default function Sidebar({
                         onClose()
                       }
                     }}
-                    prefetch={true}
+                    prefetch
                     className={`
-                      w-full flex items-center gap-3 px-4 py-3 rounded-lg
-                      transition-all duration-200
+                      w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                      transition-colors duration-200 cursor-pointer
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-900
                       ${active
-                        ? 'bg-gold-500 text-white'
-                        : 'text-slate-700 hover:bg-gold-50 hover:text-gold-700'
+                        ? 'bg-navy-800 text-white border-l-2 border-gold-500 pl-[10px]'
+                        : 'text-navy-200 hover:bg-navy-800/60 hover:text-white border-l-2 border-transparent'
                       }
                       ${isNavigating ? 'opacity-70' : ''}
                     `}
+                    aria-current={active ? 'page' : undefined}
                   >
-                    <svg className={`w-5 h-5 shrink-0 ${isNavigating ? 'animate-pulse' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className={`w-5 h-5 shrink-0 ${active ? 'text-gold-400' : 'text-navy-400'}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                     </svg>
-                    <span className="font-medium">{item.label}</span>
+                    <span>{item.label}</span>
                   </Link>
                 </li>
               )
@@ -118,29 +131,34 @@ export default function Sidebar({
           </ul>
         </nav>
 
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-200">
+        {/* Footer */}
+        <div className="p-3 border-t border-navy-800/80">
           <Button
             onClick={onLogout}
             variant="ghost"
-            className="w-full flex items-center gap-3 px-4 py-3"
+            className="w-full justify-start gap-3 px-3 py-2.5 text-navy-300 hover:text-white hover:bg-navy-800"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
             </svg>
-            <span>Logout</span>
+            <span>ចាកចេញ</span>
           </Button>
         </div>
       </aside>
 
-      {/* Overlay for mobile */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        <button
+          type="button"
+          className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm z-40 lg:hidden cursor-pointer"
           onClick={onClose}
+          aria-label="បិទផ្ទាំងស្រអាប់"
         />
       )}
     </>
   )
 }
-

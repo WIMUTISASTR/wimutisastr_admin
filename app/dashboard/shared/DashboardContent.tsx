@@ -13,23 +13,23 @@ interface DashboardContentProps {
 const QUICK_ACTIONS = [
   {
     id: 'users',
-    title: 'Manage Users',
-    description: 'View and manage registered users',
-    color: 'gold' as const,
+    title: 'គ្រប់គ្រងអ្នកប្រើ',
+    description: 'មើល និងគ្រប់គ្រងអ្នកប្រើប្រាស់ដែលបានចុះឈ្មោះ',
+    color: 'navy' as const,
     icon: Icons.Users,
   },
   {
     id: 'upload-document',
-    title: 'Upload Document',
-    description: 'Add new books and documents',
-    color: 'blue' as const,
+    title: 'បញ្ចូលឯកសារ',
+    description: 'បន្ថែមសៀវភៅ និងឯកសារថ្មី',
+    color: 'gold' as const,
     icon: Icons.Upload,
   },
   {
     id: 'upload-video',
-    title: 'Upload Video',
-    description: 'Add new video content',
-    color: 'purple' as const,
+    title: 'បញ្ចូលវីដេអូ',
+    description: 'បន្ថែមមាតិកាវីដេអូថ្មី',
+    color: 'blue' as const,
     icon: Icons.Video,
   },
 ] as const
@@ -40,39 +40,37 @@ export default function DashboardContent({ onNavigate }: DashboardContentProps) 
   return (
     <>
       <PageHeader
-        title="Dashboard Overview"
-        description="Monitor your platform's key metrics and activity"
+        title="ផ្ទាំងគ្រប់គ្រង"
+        description="ទិដ្ឋភាពទូទៅនៃស្ថិតិវេទិកា និងសកម្មភាពរហ័ស"
       />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         <StatsCard
-          title="Total Users"
+          title="អ្នកប្រើសរុប"
           value={stats.users}
           icon={Icons.Users}
+          color="navy"
+          isLoading={isLoading}
+        />
+        <StatsCard
+          title="ឯកសារ"
+          value={stats.documents}
+          icon={Icons.Document}
           color="gold"
           isLoading={isLoading}
         />
         <StatsCard
-          title="Documents"
-          value={stats.documents}
-          icon={Icons.Document}
-          color="blue"
-          isLoading={isLoading}
-        />
-        <StatsCard
-          title="Videos"
+          title="វីដេអូ"
           value={stats.videos}
           icon={Icons.Video}
-          color="purple"
+          color="blue"
           isLoading={isLoading}
         />
       </div>
 
-      {/* Quick Actions */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold text-slate-900 mb-4 font-heading">សកម្មភាពរហ័ស</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {QUICK_ACTIONS.map((action) => (
             <QuickActionCard
               key={action.id}
@@ -84,23 +82,18 @@ export default function DashboardContent({ onNavigate }: DashboardContentProps) 
             />
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Recent Activity */}
       <Card>
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-slate-900">Recent Activity</h3>
-          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-            View all
-          </button>
+          <h3 className="text-lg font-semibold text-slate-900 font-heading">សកម្មភាពថ្មីៗ</h3>
         </div>
         <EmptyState
           icon={Icons.Activity}
-          title="No recent activity"
-          description="User activities and system events will appear here"
+          title="មិនមានសកម្មភាពថ្មីៗ"
+          description="សកម្មភាពអ្នកប្រើ និងព្រឹត្តិការណ៍ប្រព័ន្ធនឹងបង្ហាញនៅទីនេះ"
         />
       </Card>
     </>
   )
 }
-
