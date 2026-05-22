@@ -105,7 +105,7 @@ export default function DocumentsUploadPage() {
       const categoryName = category?.name || 'uncategorized'
 
       // Upload book file with progress tracking
-      setUploadStep('Uploading document file...')
+      setUploadStep('កំពុងផ្ទុកឯកសារ...')
       
       // Prepare form data for document file
       const fileFormData = new FormData()
@@ -132,7 +132,7 @@ export default function DocumentsUploadPage() {
       }
 
       // Save book metadata
-      setUploadStep('Saving document information...')
+      setUploadStep('កំពុងរក្សាទុកព័ត៌មានឯកសារ...')
       setUploadProgress(90)
 
       const response = await apiFetch('/api/books', {
@@ -159,13 +159,13 @@ export default function DocumentsUploadPage() {
       }
 
       setUploadProgress(100)
-      setUploadStep('Complete!')
+      setUploadStep('រួចរាល់!')
 
       // Brief delay to show completion
       await new Promise(resolve => setTimeout(resolve, 500))
 
       setIsProgressModalOpen(false)
-      toast.success('Book uploaded successfully!')
+      toast.success('ឯកសារត្រូវបានផ្ទុកដោយជោគជ័យ!')
       router.push('/dashboard/documents/list')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to upload book'
@@ -184,7 +184,7 @@ export default function DocumentsUploadPage() {
   return (
     <>
       <PageHeader
-        title="Upload Document"
+        title="ផ្ទុកឯកសារ"
         showBackButton
         backHref="/dashboard/documents"
       />
@@ -202,7 +202,7 @@ export default function DocumentsUploadPage() {
         progress={uploadProgress}
         currentStep={uploadStep}
         fileName={uploadingFileName}
-        title="Uploading Document"
+        title="កំពុងផ្ទុកឯកសារ"
       />
     </>
   )

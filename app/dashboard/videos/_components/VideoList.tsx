@@ -135,9 +135,9 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
           <div className="relative">
             <div className="absolute inset-0 bg-linear-to-br from-slate-50 via-white to-blue-50" />
             <div className="relative flex flex-col gap-2">
-              <h3 className="text-2xl font-extrabold text-slate-900">Video Categories</h3>
+              <h3 className="text-2xl font-extrabold text-slate-900">ប្រភេទវីដេអូ</h3>
               <p className="text-sm text-slate-600">
-                Pick a category to view videos. Click a card to open.
+                ជ្រើសរើសប្រភេទដើម្បីមើលវីដេអូ។ ចុចកាតដើម្បីបើក។
               </p>
             </div>
           </div>
@@ -165,8 +165,8 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
         ) : categories.length === 0 ? (
         <Card padding="none">
             <EmptyState
-              title="No categories available"
-              description="Create categories first to organize your videos."
+              title="មិនមានប្រភេទ"
+              description="បង្កើតប្រភេទជាមុនសិន ដើម្បីរៀបចំវីដេអូ។"
               icon={
                 <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -211,7 +211,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
                           <div className="min-w-0">
                             <div className="text-lg font-bold text-slate-900 truncate">{cat.name}</div>
                             <div className="text-sm text-slate-600 line-clamp-2 mt-0.5">
-                              {cat.description || 'No description'}
+                              {cat.description || 'គ្មានការពិពណ៌នា'}
                             </div>
                           </div>
                           <div className="shrink-0 text-slate-400">
@@ -223,7 +223,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
 
                         <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-2.5 py-1.5">
                           <span className="text-sm font-semibold text-slate-900">{count}</span>
-                          <span className="text-xs text-slate-600">video{count !== 1 ? 's' : ''}</span>
+                          <span className="text-xs text-slate-600">វីដេអូ</span>
                         </div>
                       </div>
                     </div>
@@ -240,7 +240,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
   // Show videos for selected category
   const columns = [
     {
-      header: 'Video',
+      header: 'វីដេអូ',
       accessor: 'title',
       width: '40%',
       render: (value: unknown, row: Video) => (
@@ -274,7 +274,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       ),
     },
     {
-      header: 'Category',
+      header: 'ប្រភេទ',
       accessor: 'category',
       width: '20%',
       render: (value: unknown) => (
@@ -283,25 +283,25 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
             {(value as { name: string }).name}
           </Badge>
         ) : (
-          <span className="text-slate-400 text-sm">Uncategorized</span>
+          <span className="text-slate-400 text-sm">មិនមានប្រភេទ</span>
         )
       ),
     },
     {
-      header: 'Access',
+      header: 'ការចូលប្រើ',
       accessor: 'access_level',
       width: '10%',
       render: (value: unknown) => {
         const access = value === 'free' ? 'free' : 'members'
         return (
           <Badge variant={access === 'free' ? 'info' : 'default'} size="sm">
-            {access === 'free' ? 'Free' : 'Members'}
+            {access === 'free' ? 'ឥតគិតថ្លៃ' : 'សមាជិក'}
           </Badge>
         )
       },
     },
     {
-      header: 'File Size',
+      header: 'ទំហំឯកសារ',
       accessor: 'file_size',
       width: '15%',
       render: (value: unknown) => (
@@ -311,7 +311,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       ),
     },
     {
-      header: 'Uploaded',
+      header: 'ផ្ទុក',
       accessor: 'uploaded_at',
       width: '15%',
       render: (value: unknown) => {
@@ -327,7 +327,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
       },
     },
     {
-      header: 'Actions',
+      header: 'សកម្មភាព',
       accessor: 'id',
       width: '10%',
       render: (_value: unknown, row: Video) => (
@@ -367,7 +367,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-                Back to categories
+                ត្រឡប់ទៅប្រភេទ
               </Button>
           
               <div>
@@ -375,22 +375,22 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
                 {selectedCategory?.description ? (
                   <div className="text-sm text-slate-600 mt-1 max-w-2xl">{selectedCategory.description}</div>
                 ) : (
-                  <div className="text-sm text-slate-500 mt-1">No description</div>
+                  <div className="text-sm text-slate-500 mt-1">គ្មានការពិពណ៌នា</div>
                 )}
               </div>
             </div>
 
             <div className="flex flex-wrap gap-3 sm:justify-end">
               <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                <div className="text-xs text-slate-600">Videos</div>
+                <div className="text-xs text-slate-600">វីដេអូ</div>
                 <div className="text-lg font-bold text-slate-900">{filteredVideos.length}</div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                <div className="text-xs text-slate-600">Total size</div>
+                <div className="text-xs text-slate-600">ទំហំសរុប</div>
                 <div className="text-lg font-bold text-slate-900">{formatFileSize(totalSize)}</div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                <div className="text-xs text-slate-600">Last upload</div>
+                <div className="text-xs text-slate-600">ផ្ទុកចុងក្រោយ</div>
                 <div className="text-sm font-semibold text-slate-900">
                   {lastUploadedAt ? lastUploadedAt.toLocaleDateString() : '—'}
                 </div>
@@ -405,7 +405,7 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
           <div className="relative w-full lg:max-w-xl">
           <input
             type="text"
-              placeholder="Search videos by title..."
+              placeholder="ស្វែងរកវីដេអូតាមចំណងជើង..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white pl-10 pr-10 py-2.5 border border-slate-300 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -427,21 +427,21 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
 
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between lg:justify-end lg:text-right">
             <div className="text-sm text-slate-600">
-              Showing <span className="font-semibold text-slate-900">{filteredVideos.length}</span> video{filteredVideos.length !== 1 ? 's' : ''}
+              បង្ហាញ <span className="font-semibold text-slate-900">{filteredVideos.length}</span> វីដេអូ
               {searchQuery ? (
                 <>
-                  {' '}for &quot;<span className="font-semibold text-slate-900">{searchQuery}</span>&quot;
+                  {' '}សម្រាប់ &quot;<span className="font-semibold text-slate-900">{searchQuery}</span>&quot;
                 </>
               ) : null}
             </div>
             {searchQuery ? (
               <Button type="button" variant="ghost" size="sm" className="transform-none justify-start sm:justify-center" onClick={() => setSearchQuery('')}>
-                Clear search
+                លុបការស្វែងរក
               </Button>
             ) : null}
           </div>
         </div>
-        <div className="mt-3 text-xs text-slate-500">Tip: click a row to edit the video.</div>
+        <div className="mt-3 text-xs text-slate-500">ព័ត៌មានជំនួយ: ចុចជួរដើម្បីកែប្រែវីដេអូ</div>
       </Card>
 
       {/* Videos Table */}
@@ -450,8 +450,8 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
           columns={columns}
           data={filteredVideos}
           isLoading={isLoading}
-          emptyMessage={searchQuery ? "No videos match your search" : `No videos in "${selectedCategory?.name || 'this category'}" yet`}
-          emptyDescription={searchQuery ? "Try a different search term" : "Upload videos to this category to see them here"}
+          emptyMessage={searchQuery ? "មិនមានវីដេអូដែលត្រូវនឹងការស្វែងរក" : `មិនទាន់មានវីដេអូក្នុង "${selectedCategory?.name || 'ប្រភេទនេះ'}"`}
+          emptyDescription={searchQuery ? "សាកល្បងពាក្យស្វែងរកផ្សេង" : "ផ្ទុកវីដេអូទៅក្នុងប្រភេទនេះ"}
           emptyIcon={
             <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -476,8 +476,8 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
         isOpen={deleteModalOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="Delete Video"
-        message="Are you sure you want to delete this video? This action cannot be undone."
+        title="លុបវីដេអូ"
+        message="តើអ្នកប្រាកដជាចង់លុបវីដេអូនេះទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។"
         itemName={videoToDelete?.title}
         isLoading={isDeleting}
       />

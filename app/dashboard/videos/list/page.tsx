@@ -37,14 +37,14 @@ export default function VideosListPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete video')
+        throw new Error(result.error || 'មិនអាចលុបវីដេអូបានទេ')
       }
 
-      toast.success('Video deleted successfully!')
+      toast.success('វីដេអូត្រូវបានលុបដោយជោគជ័យ!')
       setVideos(videos.filter(v => v.id !== videoId))
     } catch (error: unknown) {
       console.error('Delete error:', error)
-      const message = error instanceof Error ? error.message : 'Failed to delete video'
+      const message = error instanceof Error ? error.message : 'មិនអាចលុបវីដេអូបានទេ'
       toast.error(message)
       throw error
     }
@@ -53,7 +53,7 @@ export default function VideosListPage() {
   return (
     <>
       <PageHeader
-        title="Videos"
+        title="វីដេអូ"
         showBackButton
         backHref="/dashboard/videos"
         action={
@@ -61,7 +61,7 @@ export default function VideosListPage() {
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Upload Video
+            ផ្ទុកវីដេអូ
           </Button>
         }
       />

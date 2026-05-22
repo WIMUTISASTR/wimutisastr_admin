@@ -17,7 +17,7 @@ export default function CreateCategoryPage() {
     e.preventDefault()
 
     if (!categoryFormData.name.trim()) {
-      toast.error('Category name is required')
+      toast.error('ឈ្មោះប្រភេទត្រូវតែបំពេញ')
       return
     }
 
@@ -39,14 +39,14 @@ export default function CreateCategoryPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to create category')
+        throw new Error(result.error || 'មិនអាចបង្កើតប្រភេទបានទេ')
       }
 
-      toast.success('Category created successfully!')
+      toast.success('ប្រភេទត្រូវបានបង្កើតដោយជោគជ័យ!')
       router.push('/dashboard/documents/categories')
     } catch (error: unknown) {
       console.error('Submit error:', error)
-      const message = error instanceof Error ? error.message : 'Failed to create category'
+      const message = error instanceof Error ? error.message : 'មិនអាចបង្កើតប្រភេទបានទេ'
       toast.error(message)
     } finally {
       setIsSaving(false)
@@ -56,7 +56,7 @@ export default function CreateCategoryPage() {
   return (
     <>
       <PageHeader
-        title="Create Category"
+        title="បង្កើតប្រភេទ"
         showBackButton
         backHref="/dashboard/documents/categories"
       />
@@ -65,18 +65,18 @@ export default function CreateCategoryPage() {
         <form onSubmit={handleCategorySubmit}>
           <div className="space-y-6">
             <Card padding="md">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Category</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-4">ប្រភេទ</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Category Name <span className="text-red-500">*</span>
+                    ឈ្មោះប្រភេទ <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={categoryFormData.name}
                     onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 bg-white"
-                    placeholder="e.g., Fiction, Science, History"
+                    placeholder="ឧ. ច្បាប់, សេដ្ឋកិច្ច, ប្រវត្តិសាស្ត្រ"
                     required
                     disabled={isSaving}
                   />
@@ -84,13 +84,13 @@ export default function CreateCategoryPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Description
+                    ការពិពណ៌នា
                   </label>
                   <textarea
                     value={categoryFormData.description}
                     onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 bg-white"
-                    placeholder="Category description (optional)"
+                    placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
                     rows={3}
                     disabled={isSaving}
                   />
@@ -108,7 +108,7 @@ export default function CreateCategoryPage() {
                   onClick={() => router.push('/dashboard/documents/categories')}
                   disabled={isSaving}
                 >
-                  Cancel
+                  បោះបង់
                 </Button>
                 <Button
                   type="submit"
@@ -116,7 +116,7 @@ export default function CreateCategoryPage() {
                   isLoading={isSaving}
                   disabled={isSaving}
                 >
-                  Create Category
+                  បង្កើតប្រភេទ
                 </Button>
               </div>
             </Card>

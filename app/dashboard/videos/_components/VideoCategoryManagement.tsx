@@ -132,7 +132,7 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
 
   const categoryColumns = [
     {
-      header: 'Category',
+      header: 'ប្រភេទ',
       accessor: 'name',
       render: (value: unknown, row: VideoCategory) => (
         <div className="flex items-center gap-3">
@@ -147,7 +147,7 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
       ),
     },
     {
-      header: 'Created',
+      header: 'បានបង្កើត',
       accessor: 'created_at',
       render: (value: unknown) => {
         if (typeof value !== 'string') {
@@ -190,12 +190,12 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
 
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h3 className="text-xl font-bold text-slate-900">Video Categories</h3>
-          <p className="text-sm text-slate-600 mt-0.5">Click a row to edit. Use delete to remove a category.</p>
+          <h3 className="text-xl font-bold text-slate-900">ប្រភេទវីដេអូ</h3>
+          <p className="text-sm text-slate-600 mt-0.5">ចុចជួរដើម្បីកែប្រែ។ ប្រើលុបដើម្បីដកប្រភេទចេញ។</p>
         </div>
         <Button onClick={handleNewCategory} size="sm">
           <UIIcons.Plus className="w-4 h-4" />
-          New
+          ថ្មី
         </Button>
       </div>
       
@@ -205,8 +205,8 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
             columns={categoryColumns}
             data={categories}
             isLoading={isLoading}
-            emptyMessage="No video categories created yet"
-            emptyDescription="Create your first category to organize your videos"
+            emptyMessage="មិនទាន់មានប្រភេទវីដេអូ"
+            emptyDescription="បង្កើតប្រភេទទីមួយ ដើម្បីរៀបចំវីដេអូ"
             emptyIcon={
               <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
@@ -233,8 +233,8 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
         isOpen={deleteModalOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleCategoryDeleteConfirm}
-        title="Delete Category"
-        message="Are you sure you want to delete this category? All videos in this category will be moved to uncategorized."
+        title="លុបប្រភេទ"
+        message="តើអ្នកប្រាកដជាចង់លុបប្រភេទនេះទេ? វីដេអូទាំងអស់ក្នុងប្រភេទនេះនឹងក្លាយជាមិនមានប្រភេទ។"
         itemName={categoryToDelete?.name}
         isLoading={isDeleting}
       />

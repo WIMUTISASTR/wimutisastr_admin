@@ -17,7 +17,7 @@ export default function VideosCategoriesPage() {
   return (
     <>
       <PageHeader
-        title="Video Categories"
+        title="ប្រភេទវីដេអូ"
         showBackButton
         backHref="/dashboard/videos"
       />

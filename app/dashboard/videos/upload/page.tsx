@@ -43,7 +43,7 @@ export default function VideosUploadPage() {
       const categoryName =
         categories.find((c) => c.id === videoData.category_id)?.name ?? null
 
-      setUploadStep('Uploading video to storage...')
+      setUploadStep('កំពុងផ្ទុកវីដេអូ...')
       const videoUploadResult = await presignAndUploadFile(videoData.file, {
         bucket: 'videos',
         pathHint: `videos/${videoData.file.name}`,
@@ -66,7 +66,7 @@ export default function VideosUploadPage() {
         thumbnailFormData.append('bucket', 'video-thumbnails')
         thumbnailFormData.append('path', thumbnailPathHint)
 
-        setUploadStep('Uploading thumbnail...')
+        setUploadStep('កំពុងផ្ទុករូបថតតូច...')
         setUploadProgress(70)
 
         const thumbnailUploadResponse = await apiFetch('/api/storage/upload', {
@@ -76,13 +76,13 @@ export default function VideosUploadPage() {
 
         const thumbnailUploadResult = await thumbnailUploadResponse.json()
         if (!thumbnailUploadResponse.ok) {
-          throw new Error(thumbnailUploadResult.error || 'Failed to upload thumbnail')
+          throw new Error(thumbnailUploadResult.error || 'មិនអាចផ្ទុករូបថតតូចបានទេ')
         }
         thumbnailPath = thumbnailUploadResult.data?.path || thumbnailUploadResult.data?.url || null
       }
 
       // Save video metadata
-      setUploadStep('Saving video information...')
+      setUploadStep('កំពុងរក្សាទុកព័ត៌មានវីដេអូ...')
       setUploadProgress(90)
       
       const videoMetadata = {
@@ -112,18 +112,18 @@ export default function VideosUploadPage() {
       }
 
       setUploadProgress(100)
-      setUploadStep('Complete!')
+      setUploadStep('រួចរាល់!')
       
       await new Promise(resolve => setTimeout(resolve, 500))
       
       setIsProgressModalOpen(false)
-      toast.success('Video uploaded successfully!')
+      toast.success('វីដេអូត្រូវបានផ្ទុកដោយជោគជ័យ!')
       
       router.push('/dashboard/videos/list')
     } catch (error: unknown) {
       console.error('Upload error:', error)
       setIsProgressModalOpen(false)
-      const message = error instanceof Error ? error.message : 'Failed to upload video'
+      const message = error instanceof Error ? error.message : 'មិនអាចផ្ទុកវីដេអូបានទេ'
       toast.error(message)
       throw error
     } finally {
@@ -137,7 +137,7 @@ export default function VideosUploadPage() {
   return (
     <>
       <PageHeader
-        title="Upload Video"
+        title="ផ្ទុកវីដេអូ"
         showBackButton
         backHref="/dashboard/videos"
       />
@@ -155,7 +155,7 @@ export default function VideosUploadPage() {
         progress={uploadProgress}
         currentStep={uploadStep}
         fileName={uploadingFileName}
-        title="Uploading Video"
+        title="កំពុងផ្ទុកវីដេអូ"
       />
     </>
   )

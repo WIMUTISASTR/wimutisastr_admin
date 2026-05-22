@@ -74,14 +74,14 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     
     // Check file size
     if (selectedFile.size > FILE_SIZE_LIMITS.BOOK_FILE) {
-      setError(`File size must be less than ${formatFileSize(FILE_SIZE_LIMITS.BOOK_FILE)}`)
+      setError(`ទំហំឯកសារត្រូវតែតិចជាង ${formatFileSize(FILE_SIZE_LIMITS.BOOK_FILE)}`)
       return
     }
 
     // Check file type - allow both regular and edit document types
     const ext = selectedFile.name.split('.').pop()?.toLowerCase()
     if (!ext) {
-      setError('Invalid file name')
+      setError('ឈ្មោះឯកសារមិនត្រឹមត្រូវ')
       return
     }
     const fileExt = `.${ext}` as
@@ -89,7 +89,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
       | (typeof ALLOWED_FILE_TYPES.BOOK_DOCUMENTS_EDIT)[number]
     const allowedTypes = [...new Set([...ALLOWED_FILE_TYPES.BOOK_DOCUMENTS, ...ALLOWED_FILE_TYPES.BOOK_DOCUMENTS_EDIT])]
     if (!allowedTypes.includes(fileExt)) {
-      setError(`Invalid file type. Allowed: ${allowedTypes.join(', ').replace(/\./g, '').toUpperCase()}`)
+      setError(`ប្រភេទឯកសារមិនត្រឹមត្រូវ។ ប្រភេទដែលអនុញ្ញាត: ${allowedTypes.join(', ').replace(/\./g, '').toUpperCase()}`)
       return
     }
 
@@ -132,30 +132,30 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
 
     // Validation
     if (!formData.title.trim()) {
-      setError('Book title is required')
+      setError('ចំណងជើងឯកសារត្រូវតែបំពេញ')
       return
     }
     if (!formData.author.trim()) {
-      setError('Author is required')
+      setError('អ្នកនិពន្ធត្រូវតែបំពេញ')
       return
     }
     if (!formData.year.trim()) {
-      setError('Year is required')
+      setError('ឆ្នាំត្រូវតែបំពេញ')
       return
     }
     if (!formData.file) {
-      setError('Please select a file')
+      setError('សូមជ្រើសឯកសារ')
       return
     }
     // Determine final category_id: use subcategory if selected, otherwise use main category
     const finalCategoryId = formData.category_id || selectedMainCategoryId
-    
+
     if (!finalCategoryId) {
-      setError('Please select a category')
+      setError('សូមជ្រើសប្រភេទ')
       return
     }
     if (!formData.access_level) {
-      setError('Please select an access level')
+      setError('សូមជ្រើសកម្រិតការចូលប្រើ')
       return
     }
 
@@ -181,7 +181,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
         fileInputRef.current.value = ''
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Upload failed. Please try again.'
+      const message = err instanceof Error ? err.message : 'ការផ្ទុកបានបរាជ័យ។ សូមព្យាយាមម្តងទៀត។'
       setError(message)
     }
   }
@@ -191,20 +191,20 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
     <form onSubmit={handleSubmit} className="bg-slate-50">
       <div className="mx-auto w-full max-w-5xl p-4 md:p-6 space-y-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
-          <h3 className="text-xl font-bold text-slate-900">Upload Book</h3>
-          <p className="text-sm text-slate-600 mt-1">Fill in details and upload files.</p>
+          <h3 className="text-xl font-bold text-slate-900">ផ្ទុកឯកសារ</h3>
+          <p className="text-sm text-slate-600 mt-1">បំពេញព័ត៌មានលម្អិត និងផ្ទុកឯកសារ</p>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Details */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
-            <h4 className="text-lg font-bold text-slate-900">Details</h4>
-            <p className="text-sm text-slate-600 mt-1">Book metadata.</p>
+            <h4 className="text-lg font-bold text-slate-900">ព័ត៌មានលម្អិត</h4>
+            <p className="text-sm text-slate-600 mt-1">ព័ត៌មានឯកសារ</p>
 
             <div className="mt-5 grid grid-cols-1 gap-4">
       <div>
                 <label htmlFor="title" className="block text-sm font-semibold text-slate-900 mb-2">
-          Book Title <span className="text-red-500">*</span>
+          ចំណងជើងឯកសារ <span className="text-red-500">*</span>
         </label>
         <input
           id="title"
@@ -213,7 +213,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           value={formData.title}
           onChange={handleInputChange}
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
-          placeholder="Enter book title"
+          placeholder="បញ្ចូលចំណងជើងឯកសារ"
           disabled={isLoading}
           required
         />
@@ -222,7 +222,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
                   <label htmlFor="author" className="block text-sm font-semibold text-slate-900 mb-2">
-            Author <span className="text-red-500">*</span>
+            អ្នកនិពន្ធ <span className="text-red-500">*</span>
           </label>
           <input
             id="author"
@@ -231,7 +231,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
             value={formData.author}
             onChange={handleInputChange}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
-            placeholder="Enter author name"
+            placeholder="បញ្ចូលឈ្មោះអ្នកនិពន្ធ"
             disabled={isLoading}
             required
           />
@@ -239,7 +239,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
 
         <div>
                   <label htmlFor="year" className="block text-sm font-semibold text-slate-900 mb-2">
-            Year <span className="text-red-500">*</span>
+            ឆ្នាំ <span className="text-red-500">*</span>
           </label>
           <input
             id="year"
@@ -259,7 +259,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
 
               <div>
                 <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Main Category <span className="text-red-500">*</span>
+                  ប្រភេទ <span className="text-red-500">*</span>
         </label>
                 <select
                   value={selectedMainCategoryId}
@@ -296,14 +296,14 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                     ))}
                   </select>
                   <p className="text-xs text-slate-500 mt-1">
-                    Optional: Select a subcategory for more specific organization
+                    ស្រេចចិត្ត: ជ្រើសប្រភេទរងដើម្បីរៀបចំបន្ថែម
                   </p>
                 </div>
               )}
 
               <div>
                 <label htmlFor="access_level" className="block text-sm font-semibold text-slate-900 mb-2">
-                  Access Level <span className="text-red-500">*</span>
+                  កម្រិតការចូលប្រើ <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="access_level"
@@ -318,13 +318,13 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                   <option value="free">ឥតគិតថ្លៃ</option>
                 </select>
                 <p className="text-xs text-slate-500 mt-1">
-                  Choose who can access this document.
+                  ជ្រើសថានរណាអាចចូលប្រើឯកសារនេះ
                 </p>
               </div>
 
       <div>
                 <label htmlFor="description" className="block text-sm font-semibold text-slate-900 mb-2">
-          Description
+          ការពិពណ៌នា
         </label>
         <textarea
           id="description"
@@ -333,7 +333,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           onChange={handleInputChange}
                   rows={5}
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none"
-                  placeholder="Optional description"
+                  placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
           disabled={isLoading}
         />
       </div>
@@ -342,8 +342,8 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
 
           {/* Files */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
-            <h4 className="text-lg font-bold text-slate-900">Files</h4>
-            <p className="text-sm text-slate-600 mt-1">Drag & drop or click to choose.</p>
+            <h4 className="text-lg font-bold text-slate-900">ឯកសារ</h4>
+            <p className="text-sm text-slate-600 mt-1">អូសទម្លាក់ ឬចុចដើម្បីជ្រើស</p>
 
             <div className="mt-5 space-y-5">
               {/* Book file */}
@@ -372,16 +372,16 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
           
                 {!formData.file ? (
                   <div className="space-y-2">
-                    <div className="text-sm font-semibold text-slate-900">Upload your Book File</div>
+                    <div className="text-sm font-semibold text-slate-900">ផ្ទុកឯកសាររបស់អ្នក</div>
                     <div className="mx-auto h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
                       <svg className="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3" />
                       </svg>
                     </div>
-                    <div className="text-base font-semibold text-slate-900">Upload a File</div>
-                    <div className="text-sm text-slate-500">Drag and drop files here</div>
+                    <div className="text-base font-semibold text-slate-900">ផ្ទុកឯកសារ</div>
+                    <div className="text-sm text-slate-500">អូសទម្លាក់ឯកសារទីនេះ</div>
                     <div className="text-xs text-slate-400">
-                      Supported: PDF, DOC, DOCX, TXT, XLS, XLSX, EPUB, MOBI. Max {formatFileSize(FILE_SIZE_LIMITS.BOOK_FILE)}
+                      ប្រភេទគាំទ្រ: PDF, DOC, DOCX, TXT, XLS, XLSX, EPUB, MOBI។ អតិបរមា {formatFileSize(FILE_SIZE_LIMITS.BOOK_FILE)}
                     </div>
                   </div>
                 ) : (
@@ -400,7 +400,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                         }}
                         disabled={isLoading}
                       >
-                        Change
+                        ផ្លាស់ប្តូរ
                       </Button>
                       <Button
                 type="button"
@@ -414,7 +414,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
                         }}
                 disabled={isLoading}
               >
-                        Remove
+                        យកចេញ
                       </Button>
           </div>
         </div>
@@ -438,7 +438,7 @@ export default function BookUploadForm({ onUpload, isLoading = false, categories
               disabled={isLoading || !formData.title || !formData.author || !formData.year || !formData.file || !selectedMainCategoryId}
         isLoading={isLoading}
               >
-              Submit
+              បញ្ជូន
       </Button>
           </div>
         </div>

@@ -20,13 +20,13 @@ export default function DocumentsCategoriesPage() {
   return (
     <>
       <PageHeader
-        title="Document Categories"
+        title="ប្រភេទឯកសារ"
         showBackButton
         backHref="/dashboard/documents"
         action={
           <Button onClick={() => router.push('/dashboard/documents/categories/create')}>
             <UIIcons.Plus className="w-5 h-5 mr-2" />
-            New Category
+            ប្រភេទថ្មី
           </Button>
         }
       />

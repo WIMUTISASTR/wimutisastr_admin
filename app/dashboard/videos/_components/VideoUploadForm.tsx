@@ -46,45 +46,45 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
 
     // Validate title
     if (!formData.title.trim()) {
-      newErrors.title = 'Video title is required'
+      newErrors.title = 'ចំណងជើងវីដេអូត្រូវតែបំពេញ'
     } else if (formData.title.trim().length > MAX_TITLE_LENGTH) {
-      newErrors.title = `Title must be less than ${MAX_TITLE_LENGTH} characters`
+      newErrors.title = `ចំណងជើងត្រូវតែតិចជាង ${MAX_TITLE_LENGTH} តួអក្សរ`
     }
 
     // Validate category
     if (!formData.category_id) {
-      newErrors.category_id = 'Please select a category'
+      newErrors.category_id = 'សូមជ្រើសប្រភេទ'
     }
 
     // Validate access level
     if (!formData.access_level) {
-      newErrors.access_level = 'Please select an access level'
+      newErrors.access_level = 'សូមជ្រើសកម្រិតការចូលប្រើ'
     }
 
     // Validate presented by (optional)
     if (formData.presented_by.trim().length > MAX_PRESENTED_BY_LENGTH) {
-      newErrors.presented_by = `Presented by must be less than ${MAX_PRESENTED_BY_LENGTH} characters`
+      newErrors.presented_by = `ឈ្មោះអ្នកបង្ហាញត្រូវតែតិចជាង ${MAX_PRESENTED_BY_LENGTH} តួអក្សរ`
     }
 
     // Validate file
     if (!formData.file) {
-      newErrors.file = 'Please select a video file'
+      newErrors.file = 'សូមជ្រើសឯកសារវីដេអូ'
     } else {
       // Validate file type
       const ext = formData.file.name.split('.').pop()?.toLowerCase()
       if (!ext) {
-        newErrors.file = 'Invalid file name'
+        newErrors.file = 'ឈ្មោះឯកសារមិនត្រឹមត្រូវ'
       } else {
         const fileExt = `.${ext}` as (typeof ALLOWED_FILE_TYPES.VIDEOS)[number]
         if (!ALLOWED_FILE_TYPES.VIDEOS.includes(fileExt)) {
-          newErrors.file = `Invalid file type. Allowed: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()}`
+          newErrors.file = `ប្រភេទឯកសារមិនត្រឹមត្រូវ។ ប្រភេទដែលអនុញ្ញាត: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()}`
         }
       }
     }
 
     // Validate description length
     if (formData.description.length > MAX_DESCRIPTION_LENGTH) {
-      newErrors.description = `Description must be less than ${MAX_DESCRIPTION_LENGTH} characters`
+      newErrors.description = `ការពិពណ៌នាត្រូវតែតិចជាង ${MAX_DESCRIPTION_LENGTH} តួអក្សរ`
     }
 
     setErrors(newErrors)
@@ -154,13 +154,13 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Details */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm" ref={categoryDropdownRef}>
-            <h4 className="text-lg font-bold text-slate-900">Details</h4>
-            <p className="text-sm text-slate-600 mt-1">Video information.</p>
+            <h4 className="text-lg font-bold text-slate-900">ព័ត៌មានលម្អិត</h4>
+            <p className="text-sm text-slate-600 mt-1">ព័ត៌មានវីដេអូ</p>
 
             <div className="mt-5 grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Video Title <span className="text-red-500">*</span>
+                  ចំណងជើងវីដេអូ <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -172,7 +172,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                   className={`w-full px-4 py-2.5 border rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 ${
                     errors.title ? 'border-red-500' : 'border-slate-300'
                   }`}
-                  placeholder="Enter video title"
+                  placeholder="បញ្ចូលចំណងជើងវីដេអូ"
                   disabled={isLoading}
                   maxLength={MAX_TITLE_LENGTH}
                   required
@@ -187,7 +187,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
 
               <div>
                 <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Presented by
+                  បង្ហាញដោយ
                 </label>
                 <input
                   type="text"
@@ -199,7 +199,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                   className={`w-full px-4 py-2.5 border rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 ${
                     errors.presented_by ? 'border-red-500' : 'border-slate-300'
                   }`}
-                  placeholder="e.g., John Doe"
+                  placeholder="ឧ. ឈ្មោះអ្នកបង្ហាញ"
                   disabled={isLoading}
                   maxLength={MAX_PRESENTED_BY_LENGTH}
                 />
@@ -213,7 +213,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
 
               <div>
                 <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Category <span className="text-red-500">*</span>
+                  ប្រភេទ <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.category_id}
@@ -243,7 +243,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
 
               <div>
                 <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Access Level <span className="text-red-500">*</span>
+                  កម្រិតការចូលប្រើ <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.access_level}
@@ -265,7 +265,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
 
               <div>
                 <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Description
+                  ការពិពណ៌នា
                 </label>
                 <textarea
                   value={formData.description}
@@ -276,7 +276,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                   className={`w-full px-4 py-2.5 border rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none ${
                     errors.description ? 'border-red-500' : 'border-slate-300'
                   }`}
-                  placeholder="Optional description"
+                  placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
                   rows={5}
                   disabled={isLoading}
                   maxLength={MAX_DESCRIPTION_LENGTH}
@@ -293,8 +293,8 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
 
           {/* Files */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
-            <h4 className="text-lg font-bold text-slate-900">Files</h4>
-            <p className="text-sm text-slate-600 mt-1">Drag & drop or click to choose.</p>
+            <h4 className="text-lg font-bold text-slate-900">ឯកសារ</h4>
+            <p className="text-sm text-slate-600 mt-1">អូសទម្លាក់ ឬចុចដើម្បីជ្រើស</p>
 
             <div className="mt-5 space-y-5">
               <div>
@@ -311,15 +311,15 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                     if (errors.file) setErrors({ ...errors, file: '' })
                   }}
                   hideUploadButton={true}
-                  label="Upload your Video"
-                  description={`Supported formats: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()}`}
+                  label="ផ្ទុកវីដេអូ"
+                  description={`ប្រភេទដែលគាំទ្រ: ${ALLOWED_FILE_TYPES.VIDEOS.join(', ').replace(/\./g, '').toUpperCase()}`}
                   isLoading={isLoading}
                 />
                 {errors.file && <span className="text-sm text-red-600 mt-1 block">{errors.file}</span>}
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-slate-900 mb-2">Thumbnail Image (optional)</p>
+                <p className="text-sm font-semibold text-slate-900 mb-2">រូបថតតូច (ស្រេចចិត្ត)</p>
                 <ThumbnailUpload
                   onUpload={handleThumbnailUpload}
                   preview={thumbnailPreview}
@@ -338,7 +338,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
               disabled={isLoading || !formData.title.trim() || !formData.category_id || !formData.file}
               isLoading={isLoading}
             >
-              Submit
+              បញ្ជូន
             </Button>
           </div>
         </div>

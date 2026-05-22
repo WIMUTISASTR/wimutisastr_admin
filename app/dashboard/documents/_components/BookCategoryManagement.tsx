@@ -59,7 +59,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
     e.preventDefault()
 
     if (!categoryFormData.name.trim()) {
-      toast.error('Category name is required')
+      toast.error('ឈ្មោះប្រភេទត្រូវតែបំពេញ')
       return
     }
 
@@ -81,10 +81,10 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         })
 
         const result = await response.json()
-        if (!response.ok) throw new Error(result.error || 'Failed to update category')
+        if (!response.ok) throw new Error(result.error || 'មិនអាចធ្វើបច្ចុប្បន្នភាពប្រភេទបានទេ')
 
         mainCategoryId = editingCategory.id
-        toast.success('Main category updated successfully!')
+        toast.success('ប្រភេទត្រូវបានធ្វើបច្ចុប្បន្នភាព!')
       } else {
         // Create new main category
         const response = await apiFetch('/api/categories', {
@@ -98,10 +98,10 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         })
 
         const result = await response.json()
-        if (!response.ok) throw new Error(result.error || 'Failed to create category')
+        if (!response.ok) throw new Error(result.error || 'មិនអាចបង្កើតប្រភេទបានទេ')
 
         mainCategoryId = result.data.id
-        toast.success('Main category created successfully!')
+        toast.success('ប្រភេទត្រូវបានបង្កើតដោយជោគជ័យ!')
       }
 
       // Now create/update subcategories
@@ -120,7 +120,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
             })
             if (!response.ok) {
               const result = await response.json()
-              throw new Error(result.error || `Failed to update subcategory: ${sub.name}`)
+              throw new Error(result.error || `មិនអាចធ្វើបច្ចុប្បន្នភាពប្រភេទរង: ${sub.name}`)
             }
           } else {
             // Create new subcategory
@@ -135,13 +135,13 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
             })
             if (!response.ok) {
               const result = await response.json()
-              throw new Error(result.error || `Failed to create subcategory: ${sub.name}`)
+              throw new Error(result.error || `មិនអាចបង្កើតប្រភេទរង: ${sub.name}`)
             }
           }
         })
 
         await Promise.all(subcategoryPromises)
-        toast.success(`Main category and ${subcategories.length} subcategory(ies) saved successfully!`)
+        toast.success(`ប្រភេទ និងប្រភេទរង ${subcategories.length} ត្រូវបានរក្សាទុក!`)
       }
 
       setIsCategoryModalOpen(false)
@@ -151,7 +151,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       onRefresh()
     } catch (error: unknown) {
       console.error('Error saving category:', error)
-      const message = error instanceof Error ? error.message : 'Failed to save category'
+      const message = error instanceof Error ? error.message : 'មិនអាចរក្សាទុកប្រភេទបានទេ'
       toast.error(message)
     } finally {
       setIsSaving(false)
@@ -161,7 +161,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
   const handleCategoryEdit = (category: Category) => {
     // Only allow editing main categories (categories without parent_id)
     if (category.parent_id) {
-      toast.info('Please edit subcategories from their main category')
+      toast.info('សូមកែប្រែប្រភេទរងពីប្រភេទរបស់វា')
       return
     }
 
@@ -205,7 +205,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         throw new Error(result.error || 'Failed to delete category')
       }
 
-      toast.success('Category deleted successfully!')
+      toast.success('ប្រភេទត្រូវបានលុបដោយជោគជ័យ!')
       
       // If deleting a subcategory from the modal, remove it from local state
       if (editingSubcategoryIndex !== null) {
@@ -218,7 +218,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       onRefresh()
     } catch (error: unknown) {
       console.error('Delete error:', error)
-      const message = error instanceof Error ? error.message : 'Failed to delete category'
+      const message = error instanceof Error ? error.message : 'មិនអាចលុបប្រភេទបានទេ'
       toast.error(message)
     } finally {
       setIsDeleting(false)
@@ -270,7 +270,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
   const handleSubcategorySave = (index: number) => {
     const sub = subcategories[index]
     if (!sub.name.trim()) {
-      toast.error('Subcategory name is required')
+      toast.error('ឈ្មោះប្រភេទរងត្រូវតែបំពេញ')
       return
     }
     setEditingSubcategoryIndex(null)
@@ -282,7 +282,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
   const categoryColumns = [
     {
-      header: 'Category',
+      header: 'ប្រភេទ',
       accessor: 'name',
       render: (value: unknown, row: FlatCategory) => (
         <div className="flex items-center gap-3">
@@ -295,7 +295,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
             </span>
             {row.parent && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                Parent: {row.parent.name}
+                ចំបង: {row.parent.name}
               </span>
             )}
           </div>
@@ -303,16 +303,16 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       ),
     },
     {
-      header: 'Description',
+      header: 'ការពិពណ៌នា',
       accessor: 'description',
       render: (value: unknown) => (
         <span className="text-slate-600 text-sm">
-          {typeof value === 'string' && value.trim() ? value : 'No description'}
+          {typeof value === 'string' && value.trim() ? value : 'គ្មានការពិពណ៌នា'}
         </span>
       ),
     },
     {
-      header: 'Created',
+      header: 'បានបង្កើត',
       accessor: 'created_at',
       render: (value: unknown) => {
         if (typeof value !== 'string') {
@@ -327,7 +327,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
       },
     },
     {
-      header: 'Actions',
+      header: 'សកម្មភាព',
       accessor: 'id',
       render: (_value: unknown, row: FlatCategory) => (
         <div className="relative">
@@ -352,12 +352,12 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
 
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 mb-1">Book Categories</h3>
-          <p className="text-sm text-slate-600">Click a row to edit. Use delete to remove a category.</p>
+          <h3 className="text-lg font-bold text-slate-900 mb-1">ប្រភេទឯកសារ</h3>
+          <p className="text-sm text-slate-600">ចុចជួរដើម្បីកែប្រែ។ ប្រើលុបដើម្បីដកប្រភេទចេញ។</p>
         </div>
         <Button onClick={handleNewMainCategory} size="sm">
           <UIIcons.Plus className="w-4 h-4" />
-          New Main Category
+          ប្រភេទ
         </Button>
       </div>
       
@@ -368,8 +368,8 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
             data={flattenedCategories}
             isLoading={isLoading}
             onRowClick={handleCategoryEdit}
-            emptyMessage="No categories created yet"
-            emptyDescription="Create your first category to organize your books"
+            emptyMessage="មិនទាន់មានប្រភេទ"
+            emptyDescription="បង្កើតប្រភេទទីមួយ ដើម្បីរៀបចំឯកសារ"
             emptyIcon={
               <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -389,7 +389,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
           setSubcategories([])
           setEditingSubcategoryIndex(null)
         }}
-        title={editingCategory ? 'Edit Main Category' : 'New Main Category'}
+        title={editingCategory ? 'កែប្រែប្រភេទ' : 'ប្រភេទថ្មី'}
         variant="center"
         isDismissable={!isLoading}
         className="p-6"
@@ -397,32 +397,32 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         <form onSubmit={handleCategorySubmit} className="space-y-6">
           {/* Main Category Section */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-700 border-b pb-2">Main Category</h3>
-            
+            <h3 className="text-sm font-semibold text-slate-700 border-b pb-2">ប្រភេទ</h3>
+
               <div>
                 <label className="block text-sm font-semibold text-black mb-2">
-                  Category Name <span className="text-red-500">*</span>
+                  ឈ្មោះប្រភេទ <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={categoryFormData.name}
                   onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-                  placeholder="e.g., Fiction, Non-Fiction, Law"
+                  placeholder="ឧ. ច្បាប់, សេដ្ឋកិច្ច, ប្រវត្តិសាស្ត្រ"
                   required
                 />
               </div>
 
             <div>
               <label className="block text-sm font-semibold text-black mb-2">
-                Description
+                ការពិពណ៌នា
               </label>
               <textarea
                 value={categoryFormData.description}
                 onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-                placeholder="Optional description for this category"
+                placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
               />
             </div>
           </div>
@@ -430,7 +430,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
           {/* Subcategories Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b pb-2">
-              <h3 className="text-sm font-semibold text-slate-700">Subcategories</h3>
+              <h3 className="text-sm font-semibold text-slate-700">ប្រភេទរង</h3>
               <Button
                 type="button"
                 size="sm"
@@ -438,12 +438,12 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                 onClick={handleAddSubcategory}
               >
                 <UIIcons.Plus className="w-4 h-4" />
-                Add Subcategory
+                បន្ថែមប្រភេទរង
               </Button>
             </div>
 
             {subcategories.length === 0 ? (
-              <p className="text-sm text-slate-500 italic">No subcategories yet. Click &quot;Add Subcategory&quot; to create one.</p>
+              <p className="text-sm text-slate-500 italic">មិនទាន់មានប្រភេទរង។ ចុច &quot;បន្ថែមប្រភេទរង&quot; ដើម្បីបង្កើត។</p>
             ) : (
               <div className="space-y-3">
                 {subcategories.map((sub, index) => (
@@ -452,26 +452,26 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                       <div className="space-y-3">
                         <div>
                           <label className="block text-xs font-semibold text-black mb-1">
-                            Subcategory Name <span className="text-red-500">*</span>
+                            ឈ្មោះប្រភេទរង <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
                             value={sub.name}
                             onChange={(e) => handleSubcategoryChange(index, 'name', e.target.value)}
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg text-black bg-white"
-                            placeholder="Subcategory name"
+                            placeholder="ឈ្មោះប្រភេទរង"
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-black mb-1">
-                            Description
+                            ការពិពណ៌នា
                           </label>
                           <textarea
                             value={sub.description}
                             onChange={(e) => handleSubcategoryChange(index, 'description', e.target.value)}
                             rows={2}
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg text-black bg-white"
-                            placeholder="Optional description"
+                            placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -480,7 +480,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                             size="sm"
                             onClick={() => handleSubcategorySave(index)}
                           >
-                            Save
+                            រក្សាទុក
                           </Button>
                           <Button
                             type="button"
@@ -494,7 +494,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                               setEditingSubcategoryIndex(null)
                             }}
                           >
-                            Cancel
+                            បោះបង់
                           </Button>
                           {sub.id && (
                             <Button
@@ -555,7 +555,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                     setEditingSubcategoryIndex(null)
                   }}
                 >
-                  Cancel
+                  បោះបង់
             </Button>
             <Button
                   type="submit"
@@ -564,11 +564,11 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                 >
               {isSaving
                     ? editingCategory
-                  ? 'Saving...'
-                      : 'Creating...'
+                  ? 'កំពុងរក្សាទុក...'
+                      : 'កំពុងបង្កើត...'
                     : editingCategory
-                ? 'Save Changes'
-                    : 'Create Category'}
+                ? 'រក្សាទុក'
+                    : 'បង្កើតប្រភេទ'}
             </Button>
           </div>
         </form>
@@ -578,8 +578,8 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         isOpen={deleteModalOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleCategoryDeleteConfirm}
-        title="Delete Category"
-        message="Are you sure you want to delete this category? All books in this category will be moved to uncategorized. Subcategories must be deleted or moved first."
+        title="លុបប្រភេទ"
+        message="តើអ្នកប្រាកដជាចង់លុបប្រភេទនេះទេ? ឯកសារទាំងអស់ក្នុងប្រភេទនេះនឹងក្លាយជាមិនមានប្រភេទ។ ប្រភេទរងត្រូវតែលុប ឬផ្លាស់ទីជាមុន។"
         itemName={categoryToDelete?.name}
         isLoading={isDeleting}
       />

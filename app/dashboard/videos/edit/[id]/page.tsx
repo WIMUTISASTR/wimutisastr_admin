@@ -85,7 +85,7 @@ export default function EditVideoPage() {
         }
       } catch (error) {
         console.error('Fetch error:', error)
-        toast.error('Failed to load video')
+        toast.error('បរាជ័យក្នុងការទាញយកវីដេអូ')
         router.push('/dashboard/videos/list')
       } finally {
         setIsFetching(false)
@@ -184,7 +184,7 @@ export default function EditVideoPage() {
     e.preventDefault()
     
     if (!video || !formData.title.trim() || !formData.category_id || !formData.access_level) {
-      toast.error('Please fill in all required fields including category and access level')
+      toast.error('សូមបំពេញវាលទាំងអស់ដែលត្រូវការ រួមទាំងប្រភេទ និងកម្រិតការចូលប្រើ')
       return
     }
 
@@ -205,7 +205,7 @@ export default function EditVideoPage() {
         const categoryName =
           categories.find((c) => c.id === formData.category_id)?.name ?? null
 
-        setUploadStep('Uploading video to storage...')
+        setUploadStep('កំពុងផ្ទុកវីដេអូ...')
         const videoUploadResult = await presignAndUploadFile(videoFile, {
           bucket: 'videos',
           pathHint: `videos/${videoFile.name}`,
@@ -221,7 +221,7 @@ export default function EditVideoPage() {
       }
 
       if (thumbnailFile) {
-        setUploadStep('Uploading thumbnail...')
+        setUploadStep('កំពុងផ្ទុករូបតំណាង...')
         setUploadProgress(70)
         // `path` is treated as a server-side hint only; the server generates a safe unique key.
         const thumbnailPath = `video-thumbnails/${thumbnailFile.name}`
@@ -240,11 +240,11 @@ export default function EditVideoPage() {
         if (thumbnailUploadResponse.ok) {
           thumbnailUrl = thumbnailUploadResult.data?.path || thumbnailUploadResult.data?.url || null
         } else {
-          toast.warning('Failed to upload thumbnail, continuing without it')
+          toast.warning('បរាជ័យក្នុងការផ្ទុករូបតំណាង បន្តដោយគ្មានវា')
         }
       }
 
-      setUploadStep('Saving changes...')
+      setUploadStep('កំពុងរក្សាទុកការផ្លាស់ប្តូរ...')
       setUploadProgress(90)
 
       const response = await apiFetch(`/api/videos?id=${video.id}`, {
@@ -275,12 +275,12 @@ export default function EditVideoPage() {
 
       if (videoFile) {
         setUploadProgress(100)
-        setUploadStep('Complete!')
+        setUploadStep('រួចរាល់!')
         await new Promise((resolve) => setTimeout(resolve, 400))
         setIsProgressModalOpen(false)
       }
 
-      toast.success('Video updated successfully!')
+      toast.success('វីដេអូត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!')
       router.push('/dashboard/videos/list')
     } catch (error: unknown) {
       console.error('Update error:', error)
@@ -306,7 +306,7 @@ export default function EditVideoPage() {
   return (
     <>
       <PageHeader
-        title="Edit Video"
+        title="កែប្រែវីដេអូ"
         showBackButton
         backHref="/dashboard/videos"
       />
@@ -324,7 +324,7 @@ export default function EditVideoPage() {
                 </div>
                 <div className="min-w-0">
                   <h3 className="truncate text-xl md:text-2xl font-bold text-slate-900">{video.title}</h3>
-                  {video.presented_by && <p className="truncate text-slate-600">Presented by {video.presented_by}</p>}
+                  {video.presented_by && <p className="truncate text-slate-600">បង្ហាញដោយ {video.presented_by}</p>}
                 </div>
               </div>
 
@@ -355,13 +355,13 @@ export default function EditVideoPage() {
               preload="metadata"
               key={videoPreviewUrl || video.file_url}
             >
-              Your browser does not support the video tag.
+              កម្មវិធីរុករករបស់អ្នកមិនគាំទ្រស្លាក video ទេ។
             </video>
           </div>
           {videoFile && (
             <div className="mt-3 rounded-xl bg-blue-50 border border-blue-200 p-3">
               <p className="text-sm text-blue-800 font-medium">
-                Previewing newly selected file: <span className="font-semibold">{videoFile.name}</span>
+                មើលព្រលត់ឯកសារថ្មី: <span className="font-semibold">{videoFile.name}</span>
               </p>
             </div>
           )}
@@ -371,13 +371,13 @@ export default function EditVideoPage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Details */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
-              <h4 className="text-lg font-bold text-slate-900">Details</h4>
-              <p className="text-sm text-slate-600 mt-1">Update the video information.</p>
+              <h4 className="text-lg font-bold text-slate-900">ព័ត៌មានលម្អិត</h4>
+              <p className="text-sm text-slate-600 mt-1">ធ្វើបច្ចុប្បន្នភាពព័ត៌មានវីដេអូ</p>
 
               <div className="mt-5 grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Title <span className="text-red-500">*</span>
+                    ចំណងជើង <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -391,21 +391,21 @@ export default function EditVideoPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Presented by
+                    បង្ហាញដោយ
                   </label>
                   <input
                     type="text"
                     value={formData.presented_by}
                     onChange={(e) => setFormData({ ...formData, presented_by: e.target.value })}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g., John Doe"
+                    placeholder="ឧ. សម្ដេច ហ៊ុន សែន"
                     disabled={isLoading}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Category <span className="text-red-500">*</span>
+                    ប្រភេទ <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.category_id || ''}
@@ -414,7 +414,7 @@ export default function EditVideoPage() {
                     required
                     disabled={isLoading}
                   >
-                    <option value="">Select a category</option>
+                    <option value="">ជ្រើសរើសប្រភេទ</option>
                     {categories && categories.length > 0 ? (
                       categories.map((category) => (
                         <option key={category.id} value={category.id}>
@@ -422,14 +422,14 @@ export default function EditVideoPage() {
                         </option>
                       ))
                     ) : (
-                      <option value="" disabled>No categories available</option>
+                      <option value="" disabled>មិនមានប្រភេទ</option>
                     )}
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Access Level <span className="text-red-500">*</span>
+                    កម្រិតការចូលប្រើ <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.access_level}
@@ -438,14 +438,14 @@ export default function EditVideoPage() {
                     required
                     disabled={isLoading}
                   >
-                    <option value="members">Members only</option>
-                    <option value="free">Free</option>
+                    <option value="members">សមាជិកប៉ុណ្ណោះ</option>
+                    <option value="free">ឥតគិតថ្លៃ</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Description
+                    ការពិពណ៌នា
                   </label>
                   <textarea
                     value={formData.description}
@@ -453,7 +453,7 @@ export default function EditVideoPage() {
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none"
                     rows={5}
                     disabled={isLoading}
-                    placeholder="Optional description"
+                    placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
                   />
                 </div>
               </div>
@@ -461,8 +461,8 @@ export default function EditVideoPage() {
 
             {/* Files */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
-              <h4 className="text-lg font-bold text-slate-900">Files</h4>
-              <p className="text-sm text-slate-600 mt-1">Replace the video or thumbnail (optional).</p>
+              <h4 className="text-lg font-bold text-slate-900">ឯកសារ</h4>
+              <p className="text-sm text-slate-600 mt-1">ជំនួសវីដេអូ ឬរូបតំណាង (ស្រេចចិត្ត)</p>
 
               <div className="mt-5 space-y-5">
                 {/* Video file */}
@@ -480,12 +480,12 @@ export default function EditVideoPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">Video file</p>
+                      <p className="text-sm font-semibold text-slate-900">ឯកសារវីដេអូ</p>
                       <p className="mt-1 text-sm text-slate-700 truncate">{video.file_name}</p>
                       <p className="text-xs text-slate-500 mt-1">{formatMb(video.file_size)}</p>
                       {videoFile && (
                         <p className="text-xs text-blue-700 mt-2">
-                          New file: <span className="font-semibold">{videoFile.name}</span> ({formatMb(videoFile.size)})
+                          ឯកសារថ្មី: <span className="font-semibold">{videoFile.name}</span> ({formatMb(videoFile.size)})
                         </p>
                       )}
                     </div>
@@ -511,7 +511,7 @@ export default function EditVideoPage() {
                         onClick={() => videoFileInputRef.current?.click()}
                         disabled={isLoading}
                       >
-                        Change file
+                        ផ្លាស់ប្តូរឯកសារ
                       </Button>
                       {videoFile && (
                         <Button
@@ -527,17 +527,17 @@ export default function EditVideoPage() {
                           }}
                           disabled={isLoading}
                         >
-                          Clear
+                          លុបចោល
                         </Button>
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-slate-500 mt-3">Drag & drop a file here, or click to choose.</p>
+                  <p className="text-xs text-slate-500 mt-3">អូស & ទម្លាក់ឯកសារ ឬចុចដើម្បីជ្រើស</p>
                 </div>
 
                 {/* Thumbnail */}
                 <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
-                  <p className="text-sm font-semibold text-slate-900 mb-3">Thumbnail image</p>
+                  <p className="text-sm font-semibold text-slate-900 mb-3">រូបតំណាង</p>
                   <ThumbnailUpload
                     onUpload={handleThumbnailUpload}
                     preview={thumbnailPreview}
@@ -559,10 +559,10 @@ export default function EditVideoPage() {
               disabled={isLoading}
               className="transform-none"
             >
-              Cancel
+              បោះបង់
             </Button>
             <Button type="submit" isLoading={isLoading} className="transform-none">
-              Save changes
+              រក្សាទុក
             </Button>
           </div>
         </form>
@@ -573,7 +573,7 @@ export default function EditVideoPage() {
         progress={uploadProgress}
         currentStep={uploadStep}
         fileName={uploadingFileName}
-        title="Uploading Video"
+        title="កំពុងផ្ទុកវីដេអូ"
       />
     </>
   )

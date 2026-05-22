@@ -77,7 +77,7 @@ export default function BookList({ books, isLoading, onEdit, onDelete, paginatio
 
   const columns = [
     {
-      header: 'Book',
+      header: 'ឯកសារ',
       accessor: 'title',
       width: '35%',
       render: (value: unknown, row: Book) => (
@@ -93,7 +93,7 @@ export default function BookList({ books, isLoading, onEdit, onDelete, paginatio
       ),
     },
     {
-      header: 'Category',
+      header: 'ប្រភេទ',
       accessor: 'category',
       width: '20%',
       render: (value: unknown) => (
@@ -102,25 +102,25 @@ export default function BookList({ books, isLoading, onEdit, onDelete, paginatio
             {(value as { name: string }).name}
           </Badge>
         ) : (
-          <span className="text-slate-400 text-sm">Uncategorized</span>
+          <span className="text-slate-400 text-sm">មិនមានប្រភេទ</span>
         )
       ),
     },
     {
-      header: 'Access',
+      header: 'ការចូលប្រើ',
       accessor: 'access_level',
       width: '10%',
       render: (value: unknown) => {
         const access = value === 'free' ? 'free' : 'members'
         return (
           <Badge variant={access === 'free' ? 'info' : 'default'} size="sm">
-            {access === 'free' ? 'Free' : 'Members'}
+            {access === 'free' ? 'ឥតគិតថ្លៃ' : 'សមាជិក'}
           </Badge>
         )
       },
     },
     {
-      header: 'File Size',
+      header: 'ទំហំឯកសារ',
       accessor: 'file_size',
       width: '15%',
       render: (value: unknown) => (
@@ -130,7 +130,7 @@ export default function BookList({ books, isLoading, onEdit, onDelete, paginatio
       ),
     },
     {
-      header: 'Uploaded',
+      header: 'ផ្ទុក',
       accessor: 'uploaded_at',
       width: '20%',
       render: (value: unknown) => {
@@ -146,7 +146,7 @@ export default function BookList({ books, isLoading, onEdit, onDelete, paginatio
       },
     },
     {
-      header: 'Actions',
+      header: 'សកម្មភាព',
       accessor: 'id',
       width: '10%',
       render: (value: unknown, row: Book) => (
@@ -175,7 +175,7 @@ export default function BookList({ books, isLoading, onEdit, onDelete, paginatio
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search by title or author..."
+                placeholder="ស្វែងរកតាមចំណងជើង ឬអ្នកនិពន្ធ..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg transition-all"
@@ -223,7 +223,7 @@ export default function BookList({ books, isLoading, onEdit, onDelete, paginatio
                 }}
                 className="text-gold-600 hover:text-gold-700 font-medium"
               >
-                Clear filters
+                លុបតម្រង
               </button>
             )}
           </div>
@@ -235,8 +235,8 @@ export default function BookList({ books, isLoading, onEdit, onDelete, paginatio
           columns={columns}
           data={filteredBooks}
           isLoading={isLoading}
-          emptyMessage={searchQuery || selectedCategory ? "No books match your filters" : "No books uploaded yet"}
-          emptyDescription={searchQuery || selectedCategory ? "Try adjusting your search or filters" : "Start by uploading your first book"}
+          emptyMessage={searchQuery || selectedCategory ? "មិនមានឯកសារដែលត្រូវនឹងតម្រងរបស់អ្នក" : "មិនទាន់មានឯកសារ"}
+          emptyDescription={searchQuery || selectedCategory ? "សាកល្បងកែការស្វែងរករបស់អ្នក" : "ចាប់ផ្តើមដោយផ្ទុកឯកសារទីមួយ"}
           emptyIcon={
             <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -261,8 +261,8 @@ export default function BookList({ books, isLoading, onEdit, onDelete, paginatio
         isOpen={deleteModalOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="Delete Book"
-        message="Are you sure you want to delete this book? This action cannot be undone."
+        title="លុបឯកសារ"
+        message="តើអ្នកប្រាកដជាចង់លុបឯកសារនេះទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។"
         itemName={bookToDelete?.title}
         isLoading={isDeleting}
       />
