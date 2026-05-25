@@ -120,7 +120,7 @@ export default function CreateSubscriptionPlanPage() {
   return (
     <>
       <PageHeader
-        title="បង្កើតគម្រោងជាវ"
+        title="បង្កើតគម្រោងសមាជិក"
         showBackButton
         backHref="/dashboard/subscriptions"
       />

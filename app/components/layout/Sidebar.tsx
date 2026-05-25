@@ -51,11 +51,11 @@ export default function Sidebar({
     <>
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-50
-          w-[var(--sidebar-width)] bg-navy-900 border-r border-navy-800
+          fixed inset-y-0 left-0 z-50
+          w-[var(--sidebar-width)] h-screen bg-navy-900 border-r border-navy-800
           shadow-xl lg:shadow-none
           transform ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          transition-transform duration-300 ease-in-out
+          transition-transform duration-300 ease-in-out motion-reduce:transition-none
           flex flex-col
         `}
         aria-label="Main navigation"

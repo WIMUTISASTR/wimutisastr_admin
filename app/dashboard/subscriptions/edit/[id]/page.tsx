@@ -167,7 +167,7 @@ export default function EditSubscriptionPlanPage() {
     return (
       <>
         <PageHeader
-          title="កែប្រែគម្រោងជាវ"
+          title="កែប្រែគម្រោងសមាជិក"
           showBackButton
           backHref="/dashboard/subscriptions"
         />
@@ -191,7 +191,7 @@ export default function EditSubscriptionPlanPage() {
   return (
     <>
       <PageHeader
-        title="កែប្រែគម្រោងជាវ"
+        title="កែប្រែគម្រោងសមាជិក"
         showBackButton
         backHref="/dashboard/subscriptions"
       />

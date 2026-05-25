@@ -185,11 +185,12 @@ export default function DocumentsUploadPage() {
     <>
       <PageHeader
         title="ផ្ទុកឯកសារ"
+        description="បន្ថែមឯកសារថ្មីទៅបណ្ណាល័យ — ជ្រើសឯកសារ បំពេញព័ត៌មាន រួចផ្ទុក"
         showBackButton
         backHref="/dashboard/documents"
       />
 
-      <div className="mt-6">
+      <div>
         <BookUploadForm
           onUpload={handleUpload}
           isLoading={isUploading}

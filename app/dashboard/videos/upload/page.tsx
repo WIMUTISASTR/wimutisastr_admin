@@ -138,11 +138,12 @@ export default function VideosUploadPage() {
     <>
       <PageHeader
         title="ផ្ទុកវីដេអូ"
+        description="បន្ថែមវីដេអូថ្មី — ជ្រើសឯកសារ បំពេញព័ត៌មាន រួចផ្ទុក"
         showBackButton
         backHref="/dashboard/videos"
       />
 
-      <div className="mt-6">
+      <div>
         <VideoUploadForm
           categories={categories}
           isLoading={isUploading}
