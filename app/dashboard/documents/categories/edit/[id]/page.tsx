@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { PageHeader } from '../../../../../components/layout'
 import { Card, Button } from '../../../../../components/ui'
 import { apiFetch } from '../../../../shared/api'
@@ -40,7 +40,7 @@ export default function EditCategoryPage() {
       } catch (error: unknown) {
         console.error('Fetch error:', error)
         const message = error instanceof Error ? error.message : 'មិនអាចផ្ទុកប្រភេទបានទេ'
-        toast.error(message)
+        notify.error(message)
         router.push('/dashboard/documents/categories')
       } finally {
         setIsLoading(false)
@@ -56,7 +56,7 @@ export default function EditCategoryPage() {
     e.preventDefault()
 
     if (!categoryFormData.name.trim()) {
-      toast.error('ឈ្មោះប្រភេទត្រូវតែបំពេញ')
+      notify.error('ឈ្មោះប្រភេទត្រូវតែបំពេញ')
       return
     }
 
@@ -81,12 +81,12 @@ export default function EditCategoryPage() {
         throw new Error(result.error || 'មិនអាចធ្វើបច្ចុប្បន្នភាពប្រភេទបានទេ')
       }
 
-      toast.success('ប្រភេទត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!')
+      notify.success('ប្រភេទត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!')
       router.push('/dashboard/documents/categories')
     } catch (error: unknown) {
       console.error('Submit error:', error)
       const message = error instanceof Error ? error.message : 'មិនអាចធ្វើបច្ចុប្បន្នភាពប្រភេទបានទេ'
-      toast.error(message)
+      notify.error(message)
     } finally {
       setIsSaving(false)
     }

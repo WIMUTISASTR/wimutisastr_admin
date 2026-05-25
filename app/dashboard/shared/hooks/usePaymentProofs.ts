@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import useSWR from 'swr'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { apiFetch } from '../api'
 import { fetcher, swrConfig } from '../swr-config'
 import { PaymentProof } from '../types'
@@ -95,12 +95,16 @@ export function usePaymentProofs() {
         { revalidate: false }
       )
       
-      toast.success(`Payment proof ${newStatus === 'verified' ? 'approved' : 'rejected'} successfully!`)
+      notify.success(
+        newStatus === 'verified'
+          ? 'បង្កាត់បង់ប្រាក់ត្រូវបានអនុម័តដោយជោគជ័យ!'
+          : 'បង្កាត់បង់ប្រាក់ត្រូវបានបដិសេធដោយជោគជ័យ!'
+      )
       return true
     } catch (err: unknown) {
       console.error('Update error:', err)
-      const message = err instanceof Error ? err.message : 'Failed to update payment proof'
-      toast.error(message)
+      const message = err instanceof Error ? err.message : 'ធ្វើបច្ចុប្បន្នភាពបង្កាត់បង់ប្រាក់មិនជោគជ័យ។'
+      notify.error(message)
       return false
     }
   }

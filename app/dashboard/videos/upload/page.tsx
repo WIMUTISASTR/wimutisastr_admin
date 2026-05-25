@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { useRouter } from 'next/navigation'
 import VideoUploadForm from '../_components/VideoUploadForm'
 import { UploadProgressModal } from '../../../components/feedback'
@@ -117,14 +117,14 @@ export default function VideosUploadPage() {
       await new Promise(resolve => setTimeout(resolve, 500))
       
       setIsProgressModalOpen(false)
-      toast.success('វីដេអូត្រូវបានផ្ទុកដោយជោគជ័យ!')
+      notify.success('វីដេអូត្រូវបានផ្ទុកដោយជោគជ័យ!')
       
       router.push('/dashboard/videos/list')
     } catch (error: unknown) {
       console.error('Upload error:', error)
       setIsProgressModalOpen(false)
       const message = error instanceof Error ? error.message : 'មិនអាចផ្ទុកវីដេអូបានទេ'
-      toast.error(message)
+      notify.error(message)
       throw error
     } finally {
       setIsUploading(false)

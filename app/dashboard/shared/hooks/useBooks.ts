@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import useSWR from 'swr'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { apiFetch } from '../api'
 import { fetcher, swrConfig } from '../swr-config'
 import type { Book } from '../types'
@@ -104,12 +104,12 @@ export function useBooks(): UseBooksReturn {
         throw new Error(result.error || 'Failed to delete book')
       }
 
-      toast.success('Book deleted successfully!')
+      notify.success('ឯកសារត្រូវបានលុបដោយជោគជ័យ!')
       return true
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete book'
+      const message = err instanceof Error ? err.message : 'លុបឯកសារមិនជោគជ័យ។'
       console.error('Error deleting book:', err)
-      toast.error(message)
+      notify.error(message)
       return false
     }
   }, [data, mutate])

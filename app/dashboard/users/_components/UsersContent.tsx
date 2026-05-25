@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { DataTable, Pagination } from '../../../components/data-display'
 import { DeleteConfirmationModal } from '../../../components/feedback'
 import { PageHeader } from '../../../components/layout'
@@ -158,10 +158,15 @@ export default function UsersContent() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to update membership status')
+        throw new Error(result.error || 'ធ្វើបច្ចុប្បន្នភាពស្ថានភាពសមាជិកមិនជោគជ័យ។')
       }
 
-      toast.success(`User membership ${status}!`)
+      const statusLabels: Record<'pending' | 'approved' | 'denied', string> = {
+        approved: 'បានអនុម័ត',
+        denied: 'បានបដិសេធ',
+        pending: 'កំពុងរង់ចាំ',
+      }
+      notify.success(`ស្ថានភាពសមាជិកអ្នកប្រើប្រាស់ ${statusLabels[status]}!`)
 
       const updatedProfile = (result.data as Partial<User> | null) || null
       setUsers((prev) =>
@@ -179,8 +184,8 @@ export default function UsersContent() {
       )
     } catch (error: unknown) {
       console.error('Update error:', error)
-      const message = error instanceof Error ? error.message : 'Failed to update membership status'
-      toast.error(message)
+      const message = error instanceof Error ? error.message : 'ធ្វើបច្ចុប្បន្នភាពស្ថានភាពសមាជិកមិនជោគជ័យ។'
+      notify.error(message)
     } finally {
       setUpdatingUserId(null)
     }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { DataTable } from '../../../components/data-display'
 import { DeleteConfirmationModal } from '../../../components/feedback'
 import VideoCategoryModal from './VideoCategoryModal'
@@ -112,14 +112,14 @@ export default function VideoCategoryManagement({ categories, isLoading, onRefre
         throw new Error(result.error || 'Failed to delete category')
       }
 
-      toast.success('Category deleted successfully!')
+      notify.success('ប្រភេទត្រូវបានលុបដោយជោគជ័យ!')
       setDeleteModalOpen(false)
       setCategoryToDelete(null)
       onRefresh()
     } catch (error: unknown) {
       console.error('Delete error:', error)
-      const message = error instanceof Error ? error.message : 'Failed to delete category'
-      toast.error(message)
+      const message = error instanceof Error ? error.message : 'លុបប្រភេទមិនជោគជ័យ។'
+      notify.error(message)
     } finally {
       setIsDeleting(false)
     }

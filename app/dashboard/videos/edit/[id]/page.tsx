@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import ThumbnailUpload from '../../../../components/forms/ThumbnailUpload'
 import { Button } from '../../../../components/ui'
 import { PageHeader } from '../../../../components/layout'
@@ -85,7 +85,7 @@ export default function EditVideoPage() {
         }
       } catch (error) {
         console.error('Fetch error:', error)
-        toast.error('បរាជ័យក្នុងការទាញយកវីដេអូ')
+        notify.error('បរាជ័យក្នុងការទាញយកវីដេអូ')
         router.push('/dashboard/videos/list')
       } finally {
         setIsFetching(false)
@@ -184,7 +184,7 @@ export default function EditVideoPage() {
     e.preventDefault()
     
     if (!video || !formData.title.trim() || !formData.category_id || !formData.access_level) {
-      toast.error('សូមបំពេញវាលទាំងអស់ដែលត្រូវការ រួមទាំងប្រភេទ និងកម្រិតការចូលប្រើ')
+      notify.error('សូមបំពេញវាលទាំងអស់ដែលត្រូវការ រួមទាំងប្រភេទ និងកម្រិតការចូលប្រើ')
       return
     }
 
@@ -240,7 +240,7 @@ export default function EditVideoPage() {
         if (thumbnailUploadResponse.ok) {
           thumbnailUrl = thumbnailUploadResult.data?.path || thumbnailUploadResult.data?.url || null
         } else {
-          toast.warning('បរាជ័យក្នុងការផ្ទុករូបតំណាង បន្តដោយគ្មានវា')
+          notify.warning('បរាជ័យក្នុងការផ្ទុករូបតំណាង បន្តដោយគ្មានវា')
         }
       }
 
@@ -280,13 +280,13 @@ export default function EditVideoPage() {
         setIsProgressModalOpen(false)
       }
 
-      toast.success('វីដេអូត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!')
+      notify.success('វីដេអូត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!')
       router.push('/dashboard/videos/list')
     } catch (error: unknown) {
       console.error('Update error:', error)
       setIsProgressModalOpen(false)
-      const message = error instanceof Error ? error.message : 'Failed to update video'
-      toast.error(message)
+      const message = error instanceof Error ? error.message : 'ធ្វើបច្ចុប្បន្នភាពវីដេអូមិនជោគជ័យ។'
+      notify.error(message)
     } finally {
       setIsLoading(false)
       setUploadProgress(0)

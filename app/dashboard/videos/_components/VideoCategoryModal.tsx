@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, useEffect } from 'react'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import ThumbnailUpload from '../../../components/forms/ThumbnailUpload'
 import Modal from '../../../components/feedback/Modal'
 import { useZodForm } from '@/app/lib/useZodForm'
@@ -83,7 +83,7 @@ export default function VideoCategoryModal({
         if (coverUploadResponse.ok) {
           coverUrl = coverUploadResult.data?.publicUrl || coverUploadResult.data?.url
         } else {
-          toast.warning('Failed to upload cover image, continuing without it')
+          notify.warning('ផ្ទុករូបតំណាងមិនជោគជ័យ បន្តដោយគ្មានរូបតំណាង។')
         }
       }
 
@@ -95,7 +95,7 @@ export default function VideoCategoryModal({
 
       const validation = form.validate(payload)
       if (!validation.success) {
-        toast.error('Please fix the highlighted fields.')
+        notify.error('សូមកែប្រែវាលដែលបានសម្គាល់។')
         return
       }
 
@@ -118,13 +118,15 @@ export default function VideoCategoryModal({
         throw new Error(result.error || 'Failed to save category')
       }
 
-      toast.success(editingCategory ? 'Category updated successfully!' : 'Category created successfully!')
+      notify.success(
+        editingCategory ? 'ប្រភេទត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!' : 'ប្រភេទត្រូវបានបង្កើតដោយជោគជ័យ!'
+      )
       onSave()
       onClose()
     } catch (error: unknown) {
       console.error('Category save error:', error)
-      const message = error instanceof Error ? error.message : 'Failed to save category'
-      toast.error(message)
+      const message = error instanceof Error ? error.message : 'រក្សាទុកប្រភេទមិនជោគជ័យ។'
+      notify.error(message)
     }
   }
 

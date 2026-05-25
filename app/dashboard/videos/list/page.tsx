@@ -7,7 +7,7 @@ import { PageHeader } from '../../../components/layout'
 import { useVideos, useVideoCategories } from '../../shared/hooks/useVideos'
 import { apiFetch } from '../../shared/api'
 import { Button } from '../../../components/ui'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 
 export default function VideosListPage() {
   const router = useRouter()
@@ -40,12 +40,12 @@ export default function VideosListPage() {
         throw new Error(result.error || 'មិនអាចលុបវីដេអូបានទេ')
       }
 
-      toast.success('វីដេអូត្រូវបានលុបដោយជោគជ័យ!')
+      notify.success('វីដេអូត្រូវបានលុបដោយជោគជ័យ!')
       setVideos(videos.filter(v => v.id !== videoId))
     } catch (error: unknown) {
       console.error('Delete error:', error)
       const message = error instanceof Error ? error.message : 'មិនអាចលុបវីដេអូបានទេ'
-      toast.error(message)
+      notify.error(message)
       throw error
     }
   }

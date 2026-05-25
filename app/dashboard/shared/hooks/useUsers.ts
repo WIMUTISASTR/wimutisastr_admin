@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import useSWR from 'swr'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { apiFetch } from '../api'
 import { fetcher, swrConfig } from '../swr-config'
 import { User } from '../types'
@@ -84,11 +84,11 @@ export function useUsers() {
         throw new Error(result.error || 'Failed to delete user')
       }
 
-      toast.success('User deleted successfully!')
+      notify.success('អ្នកប្រើប្រាស់ត្រូវបានលុបដោយជោគជ័យ!')
       return true
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to delete user'
-      toast.error(message)
+      const message = err instanceof Error ? err.message : 'លុបអ្នកប្រើប្រាស់មិនជោគជ័យ។'
+      notify.error(message)
       return false
     }
   }

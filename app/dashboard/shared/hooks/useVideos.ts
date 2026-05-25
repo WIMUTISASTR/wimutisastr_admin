@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import useSWR from 'swr'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { apiFetch } from '../api'
 import { fetcher, swrConfig } from '../swr-config'
 import { Video, VideoCategory } from '../types'
@@ -76,12 +76,12 @@ export function useVideos() {
         throw new Error(result.error || 'Failed to delete video')
       }
 
-      toast.success('Video deleted successfully!')
+      notify.success('វីដេអូត្រូវបានលុបដោយជោគជ័យ!')
       return true
     } catch (err: unknown) {
       console.error('Delete error:', err)
-      const message = err instanceof Error ? err.message : 'Failed to delete video'
-      toast.error(message)
+      const message = err instanceof Error ? err.message : 'លុបវីដេអូមិនជោគជ័យ។'
+      notify.error(message)
       return false
     }
   }

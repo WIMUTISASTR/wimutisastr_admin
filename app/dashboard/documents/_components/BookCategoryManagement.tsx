@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { DataTable } from '../../../components/data-display'
 import { DeleteConfirmationModal, Modal } from '../../../components/feedback'
 import { Card, Button, UIIcons } from '../../../components/ui'
@@ -59,7 +59,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
     e.preventDefault()
 
     if (!categoryFormData.name.trim()) {
-      toast.error('ឈ្មោះប្រភេទត្រូវតែបំពេញ')
+      notify.error('ឈ្មោះប្រភេទត្រូវតែបំពេញ')
       return
     }
 
@@ -84,7 +84,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         if (!response.ok) throw new Error(result.error || 'មិនអាចធ្វើបច្ចុប្បន្នភាពប្រភេទបានទេ')
 
         mainCategoryId = editingCategory.id
-        toast.success('ប្រភេទត្រូវបានធ្វើបច្ចុប្បន្នភាព!')
+        notify.success('ប្រភេទត្រូវបានធ្វើបច្ចុប្បន្នភាព!')
       } else {
         // Create new main category
         const response = await apiFetch('/api/categories', {
@@ -101,7 +101,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         if (!response.ok) throw new Error(result.error || 'មិនអាចបង្កើតប្រភេទបានទេ')
 
         mainCategoryId = result.data.id
-        toast.success('ប្រភេទត្រូវបានបង្កើតដោយជោគជ័យ!')
+        notify.success('ប្រភេទត្រូវបានបង្កើតដោយជោគជ័យ!')
       }
 
       // Now create/update subcategories
@@ -141,7 +141,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         })
 
         await Promise.all(subcategoryPromises)
-        toast.success(`ប្រភេទ និងប្រភេទរង ${subcategories.length} ត្រូវបានរក្សាទុក!`)
+        notify.success(`ប្រភេទ និងប្រភេទរង ${subcategories.length} ត្រូវបានរក្សាទុក!`)
       }
 
       setIsCategoryModalOpen(false)
@@ -152,7 +152,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
     } catch (error: unknown) {
       console.error('Error saving category:', error)
       const message = error instanceof Error ? error.message : 'មិនអាចរក្សាទុកប្រភេទបានទេ'
-      toast.error(message)
+      notify.error(message)
     } finally {
       setIsSaving(false)
     }
@@ -161,7 +161,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
   const handleCategoryEdit = (category: Category) => {
     // Only allow editing main categories (categories without parent_id)
     if (category.parent_id) {
-      toast.info('សូមកែប្រែប្រភេទរងពីប្រភេទរបស់វា')
+      notify.info('សូមកែប្រែប្រភេទរងពីប្រភេទរបស់វា')
       return
     }
 
@@ -205,7 +205,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
         throw new Error(result.error || 'Failed to delete category')
       }
 
-      toast.success('ប្រភេទត្រូវបានលុបដោយជោគជ័យ!')
+      notify.success('ប្រភេទត្រូវបានលុបដោយជោគជ័យ!')
       
       // If deleting a subcategory from the modal, remove it from local state
       if (editingSubcategoryIndex !== null) {
@@ -219,7 +219,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
     } catch (error: unknown) {
       console.error('Delete error:', error)
       const message = error instanceof Error ? error.message : 'មិនអាចលុបប្រភេទបានទេ'
-      toast.error(message)
+      notify.error(message)
     } finally {
       setIsDeleting(false)
     }
@@ -270,7 +270,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
   const handleSubcategorySave = (index: number) => {
     const sub = subcategories[index]
     if (!sub.name.trim()) {
-      toast.error('ឈ្មោះប្រភេទរងត្រូវតែបំពេញ')
+      notify.error('ឈ្មោះប្រភេទរងត្រូវតែបំពេញ')
       return
     }
     setEditingSubcategoryIndex(null)

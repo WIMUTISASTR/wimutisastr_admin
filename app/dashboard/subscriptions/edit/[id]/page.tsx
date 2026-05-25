@@ -7,7 +7,7 @@ import { Card, Button, UIIcons } from '../../../../components/ui'
 import { ThumbnailUpload } from '../../../../components/forms'
 import { apiFetch } from '../../../shared/api'
 import { useSubscriptionPlans, SubscriptionPlan } from '../../../shared/hooks/useSubscriptionPlans'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 
 export default function EditSubscriptionPlanPage() {
   const router = useRouter()
@@ -60,8 +60,8 @@ export default function EditSubscriptionPlanPage() {
         setQrCodePreview(planData.qr_code_url)
       } catch (error: unknown) {
         console.error('Fetch error:', error)
-        const message = error instanceof Error ? error.message : 'Failed to load subscription plan'
-        toast.error(message)
+        const message = error instanceof Error ? error.message : 'ផ្ទុកគម្រោងសមាជិកមិនជោគជ័យ។'
+        notify.error(message)
         router.push('/dashboard/subscriptions')
       } finally {
         setIsLoading(false)

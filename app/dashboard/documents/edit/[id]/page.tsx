@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { z } from 'zod'
 import { apiFetch, getAuthToken } from '../../../shared/api'
 import { Book } from '../../../shared/types'
@@ -156,7 +156,7 @@ export default function EditDocumentPage() {
         }
       } catch (error) {
         console.error('Fetch error:', error)
-        toast.error('Failed to load book')
+        notify.error('ផ្ទុកឯកសារមិនជោគជ័យ។')
         router.push('/dashboard/documents/list')
       } finally {
         setIsFetching(false)
@@ -282,7 +282,7 @@ export default function EditDocumentPage() {
       })
 
       if (!validated.success) {
-        toast.error('Please fix the highlighted fields.')
+        notify.error('សូមកែប្រែវាលដែលបានសម្គាល់។')
         return
       }
 
@@ -296,7 +296,7 @@ export default function EditDocumentPage() {
 
       const finalCategoryId = (validated.data.category_id as string | undefined) || selectedMainCategoryId
       if (!finalCategoryId) {
-        toast.error('Please select a main category.')
+        notify.error('សូមជ្រើសរើសប្រភេទចម្បង។')
         return
       }
       const category = categories.find(cat => cat.id === finalCategoryId) || book?.category
@@ -375,13 +375,13 @@ export default function EditDocumentPage() {
         setIsProgressModalOpen(false)
       }
 
-      toast.success('Book updated successfully!')
+      notify.success('ឯកសារត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!')
       router.push('/dashboard/documents/list')
     } catch (error: unknown) {
       console.error('Update error:', error)
       setIsProgressModalOpen(false)
-      const message = error instanceof Error ? error.message : 'Failed to update book'
-      toast.error(message)
+      const message = error instanceof Error ? error.message : 'ធ្វើបច្ចុប្បន្នភាពឯកសារមិនជោគជ័យ។'
+      notify.error(message)
     } finally {
       setIsLoading(false)
       setUploadProgress(0)
@@ -398,11 +398,13 @@ export default function EditDocumentPage() {
       const allowedTypes = [...ALLOWED_FILE_TYPES.BOOK_DOCUMENTS_EDIT]
       const fileExt = ext ? `.${ext}` : ''
       if (!allowedTypes.includes(fileExt as typeof allowedTypes[number])) {
-        toast.error(`Invalid file type. Allowed: ${allowedTypes.join(', ').replace(/\./g, '').toUpperCase()}`)
+        notify.error(
+          `ប្រភេទឯកសារមិនត្រឹមត្រូវ។ អនុញ្ញាត៖ ${allowedTypes.join(', ').replace(/\./g, '').toUpperCase()}`
+        )
         return
       }
       if (file.size > FILE_SIZE_LIMITS.BOOK_FILE_EDIT) {
-        toast.error(`Book file must be less than ${formatFileSize(FILE_SIZE_LIMITS.BOOK_FILE_EDIT)}`)
+        notify.error(`ឯកសារត្រូវតែតូចជាង ${formatFileSize(FILE_SIZE_LIMITS.BOOK_FILE_EDIT)}`)
         return
       }
       setBookFile(file)

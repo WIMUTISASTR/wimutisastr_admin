@@ -7,7 +7,7 @@ import { DeleteConfirmationModal } from '../../../components/feedback'
 import { Card, Button, UIIcons } from '../../../components/ui'
 import { apiFetch } from '../../shared/api'
 import { Category } from '../../shared/types'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 
 interface CategoryListProps {
   categories: Category[]
@@ -45,14 +45,14 @@ export default function CategoryList({ categories, isLoading, onRefresh }: Categ
         throw new Error(result.error || 'Failed to delete category')
       }
 
-      toast.success('Category deleted successfully!')
+      notify.success('ប្រភេទត្រូវបានលុបដោយជោគជ័យ!')
       setDeleteModalOpen(false)
       setCategoryToDelete(null)
       onRefresh()
     } catch (error: unknown) {
       console.error('Delete error:', error)
-      const message = error instanceof Error ? error.message : 'Failed to delete category'
-      toast.error(message)
+      const message = error instanceof Error ? error.message : 'លុបប្រភេទមិនជោគជ័យ។'
+      notify.error(message)
     } finally {
       setIsDeleting(false)
     }

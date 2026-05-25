@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { useRouter } from 'next/navigation'
 import BookUploadForm from '../_components/BookUploadForm'
 import { UploadProgressModal } from '../../../components/feedback'
@@ -165,13 +165,13 @@ export default function DocumentsUploadPage() {
       await new Promise(resolve => setTimeout(resolve, 500))
 
       setIsProgressModalOpen(false)
-      toast.success('ឯកសារត្រូវបានផ្ទុកដោយជោគជ័យ!')
+      notify.success('ឯកសារត្រូវបានផ្ទុកដោយជោគជ័យ!')
       router.push('/dashboard/documents/list')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload book'
+      const message = error instanceof Error ? error.message : 'ផ្ទុកឯកសារមិនជោគជ័យ។'
       console.error('Upload error:', error)
       setIsProgressModalOpen(false)
-      toast.error(message)
+      notify.error(message)
       throw error
     } finally {
       setIsUploading(false)

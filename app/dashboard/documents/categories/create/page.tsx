@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { apiFetch } from '../../../shared/api'
 import { PageHeader } from '../../../../components/layout'
 import { Card, Button } from '../../../../components/ui'
@@ -17,7 +17,7 @@ export default function CreateCategoryPage() {
     e.preventDefault()
 
     if (!categoryFormData.name.trim()) {
-      toast.error('ឈ្មោះប្រភេទត្រូវតែបំពេញ')
+      notify.error('ឈ្មោះប្រភេទត្រូវតែបំពេញ')
       return
     }
 
@@ -42,12 +42,12 @@ export default function CreateCategoryPage() {
         throw new Error(result.error || 'មិនអាចបង្កើតប្រភេទបានទេ')
       }
 
-      toast.success('ប្រភេទត្រូវបានបង្កើតដោយជោគជ័យ!')
+      notify.success('ប្រភេទត្រូវបានបង្កើតដោយជោគជ័យ!')
       router.push('/dashboard/documents/categories')
     } catch (error: unknown) {
       console.error('Submit error:', error)
       const message = error instanceof Error ? error.message : 'មិនអាចបង្កើតប្រភេទបានទេ'
-      toast.error(message)
+      notify.error(message)
     } finally {
       setIsSaving(false)
     }

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import useSWR from 'swr'
-import { toast } from 'react-toastify'
+import { notify } from '@/lib/utils/notify'
 import { apiFetch } from '../api'
 import { fetcher, swrConfig } from '../swr-config'
 
@@ -70,13 +70,13 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         throw new Error(result.error || 'Failed to create subscription plan')
       }
 
-      toast.success('Subscription plan created successfully!')
+      notify.success('គម្រោងសមាជិកត្រូវបានបង្កើតដោយជោគជ័យ!')
       mutate() // Refresh the list
       return true
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create subscription plan'
+      const message = err instanceof Error ? err.message : 'បង្កើតគម្រោងសមាជិកមិនជោគជ័យ។'
       console.error('Error creating subscription plan:', err)
-      toast.error(message)
+      notify.error(message)
       return false
     }
   }, [mutate])
@@ -95,13 +95,13 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         throw new Error(result.error || 'Failed to update subscription plan')
       }
 
-      toast.success('Subscription plan updated successfully!')
+      notify.success('គម្រោងសមាជិកត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!')
       mutate() // Refresh the list
       return true
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update subscription plan'
+      const message = err instanceof Error ? err.message : 'ធ្វើបច្ចុប្បន្នភាពគម្រោងសមាជិកមិនជោគជ័យ។'
       console.error('Error updating subscription plan:', err)
-      toast.error(message)
+      notify.error(message)
       return false
     }
   }, [mutate])
@@ -133,12 +133,12 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         throw new Error(result.error || 'Failed to delete subscription plan')
       }
 
-      toast.success('Subscription plan deleted successfully!')
+      notify.success('គម្រោងសមាជិកត្រូវបានលុបដោយជោគជ័យ!')
       return true
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete subscription plan'
+      const message = err instanceof Error ? err.message : 'លុបគម្រោងសមាជិកមិនជោគជ័យ។'
       console.error('Error deleting subscription plan:', err)
-      toast.error(message)
+      notify.error(message)
       return false
     }
   }, [data, mutate])
