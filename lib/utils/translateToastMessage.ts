@@ -31,7 +31,7 @@ const EXACT_TRANSLATIONS: Record<string, string> = {
   "failed to update subscription plan": "ធ្វើបច្ចុប្បន្នភាពគម្រោងសមាជិកមិនជោគជ័យ។",
   "failed to delete subscription plan": "លុបគម្រោងសមាជិកមិនជោគជ័យ។",
   "failed to update payment proof": "ធ្វើបច្ចុប្បន្នភាពបង្កាត់បង់ប្រាក់មិនជោគជ័យ។",
-  "payment proof approved successfully!": "បង្កាត់បង់ប្រាក់ត្រូវបានអនុម័តដោយជោគជ័យ!",
+  "payment proof approved successfully!": "បង្កាត់បង់ប្រាក់ត្រូវបានទទួលដោយជោគជ័យ!",
   "payment proof rejected successfully!": "បង្កាត់បង់ប្រាក់ត្រូវបានបដិសេធដោយជោគជ័យ!",
   "upload failed. please try again.": "ការផ្ទុកបានបរាជ័យ។ សូមព្យាយាមម្តងទៀត។",
   "failed to render document": "មិនអាចបង្ហាញឯកសារបានទេ។",
@@ -39,6 +39,15 @@ const EXACT_TRANSLATIONS: Record<string, string> = {
   "not found": "មិនរកឃើញទិន្នន័យដែលស្នើ។",
   "unauthorized": "អ្នកមិនមានសិទ្ធិចូលប្រើទេ។",
   "forbidden": "អ្នកមិនមានសិទ្ធិធ្វើសកម្មភាពនេះទេ។",
+  "invalid login credentials": "អ៊ីមែល ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។",
+  "invalid email or password. please verify your credentials in supabase dashboard.":
+    "អ៊ីមែល ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។",
+  "please confirm your email address before logging in.": "សូមបញ្ជាក់អ៊ីមែលរបស់អ្នក មុនចូលប្រើប្រាស់។",
+  "user not found. please create the user in supabase dashboard first.":
+    "មិនរកឃើញអ្នកប្រើប្រាស់។ សូមទាក់ទងអ្នកគ្រប់គ្រងប្រព័ន្ធ។",
+  "access denied. only admin email is allowed.": "ការចូលប្រើត្រូវបានបដិសេធ។ អនុញ្ញាតតែអ៊ីមែលអ្នកគ្រប់គ្រងប៉ុណ្ណោះ។",
+  "authentication failed. please check your credentials.":
+    "ការផ្ទៀងផ្ទាត់បរាជ័យ។ សូមពិនិត្យអ៊ីមែល និងពាក្យសម្ងាត់ម្តងទៀត។",
 };
 
 const PATTERN_TRANSLATIONS: Array<{ test: RegExp; translate: (match: RegExpMatchArray) => string }> = [
@@ -50,7 +59,7 @@ const PATTERN_TRANSLATIONS: Array<{ test: RegExp; translate: (match: RegExpMatch
     test: /^user membership\s+(approved|denied|pending)!$/i,
     translate: (m) => {
       const labels: Record<string, string> = {
-        approved: "បានអនុម័ត",
+        approved: "បានទទួល",
         denied: "បានបដិសេធ",
         pending: "កំពុងរង់ចាំ",
       };
@@ -62,7 +71,7 @@ const PATTERN_TRANSLATIONS: Array<{ test: RegExp; translate: (match: RegExpMatch
     test: /^payment proof\s+(approved|rejected)\s+successfully!$/i,
     translate: (m) =>
       m[1].toLowerCase() === "approved"
-        ? "បង្កាត់បង់ប្រាក់ត្រូវបានអនុម័តដោយជោគជ័យ!"
+        ? "បង្កាត់បង់ប្រាក់ត្រូវបានទទួលដោយជោគជ័យ!"
         : "បង្កាត់បង់ប្រាក់ត្រូវបានបដិសេធដោយជោគជ័យ!",
   },
   {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthCard, LoginForm } from '../components/auth'
 import { signIn, getSession } from '../lib/auth'
+import { notify } from '@/lib/utils/notify'
 
 export default function LoginPage() {
   const [error, setError] = useState('')
@@ -62,6 +63,7 @@ export default function LoginPage() {
       }
       
       setError(errorMessage)
+      notify.error(errorMessage)
       
       // Log error details for debugging
       if (process.env.NODE_ENV === 'development') {

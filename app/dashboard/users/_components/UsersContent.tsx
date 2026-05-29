@@ -162,7 +162,7 @@ export default function UsersContent() {
       }
 
       const statusLabels: Record<'pending' | 'approved' | 'denied', string> = {
-        approved: 'បានអនុម័ត',
+        approved: 'បានទទួល',
         denied: 'បានបដិសេធ',
         pending: 'កំពុងរង់ចាំ',
       }

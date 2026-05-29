@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSession, signOut, getUser, isAdminEmail } from '../lib/auth'
+import { notify } from '@/lib/utils/notify'
 
 interface AuthContextType {
   isAuthenticated: boolean
@@ -85,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetch('/api/auth/verify-pin', { method: 'DELETE' })
     } catch (error) {
       console.error('Error signing out:', error)
+      notify.error('ចាកចេញមិនជោគជ័យ។ សូមព្យាយាមម្តងទៀត។')
       await fetch('/api/auth/verify-pin', { method: 'DELETE' })
     } finally {
       // Clear auth cache on logout

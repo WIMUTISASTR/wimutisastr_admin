@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import PINInput, { PINInputRef } from '@/app/components/auth/PINInput'
 import AuthCard from '@/app/components/auth/AuthCard'
 import { Button } from '@/app/components/ui'
+import { notify } from '@/lib/utils/notify'
 
 export default function PINPage() {
   const [error, setError] = useState('')
@@ -31,7 +32,9 @@ export default function PINPage() {
     const pin = pinInputRef.current?.getValue() || ''
 
     if (pin.length !== 6) {
-      setError('សូមបញ្ចូល PIN ចំនួន ៦ ខ្ទង់')
+      const message = 'សូមបញ្ចូល PIN ចំនួន ៦ ខ្ទង់'
+      setError(message)
+      notify.error(message)
       return
     }
 
@@ -50,12 +53,16 @@ export default function PINPage() {
       if (response.ok && data.success) {
         router.push('/login')
       } else {
-        setError('PIN មិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។')
+        const message = 'PIN មិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។'
+        setError(message)
+        notify.error(message)
         pinInputRef.current?.reset()
         setIsLoading(false)
       }
     } catch {
-      setError('មានបញ្ហាកើតឡើង។ សូមព្យាយាមម្តងទៀត។')
+      const message = 'មានបញ្ហាកើតឡើង។ សូមព្យាយាមម្តងទៀត។'
+      setError(message)
+      notify.error(message)
       pinInputRef.current?.reset()
       setIsLoading(false)
     }

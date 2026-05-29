@@ -97,7 +97,7 @@ export function usePaymentProofs() {
       
       notify.success(
         newStatus === 'verified'
-          ? 'បង្កាត់បង់ប្រាក់ត្រូវបានអនុម័តដោយជោគជ័យ!'
+          ? 'បង្កាត់បង់ប្រាក់ត្រូវបានទទួលដោយជោគជ័យ!'
           : 'បង្កាត់បង់ប្រាក់ត្រូវបានបដិសេធដោយជោគជ័យ!'
       )
       return true
