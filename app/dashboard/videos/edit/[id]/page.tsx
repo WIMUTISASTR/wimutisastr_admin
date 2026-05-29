@@ -7,9 +7,8 @@ import ThumbnailUpload from '../../../../components/forms/ThumbnailUpload'
 import { Button } from '../../../../components/ui'
 import { PageHeader } from '../../../../components/layout'
 import { apiFetch } from '../../../shared/api'
-import { presignAndUploadFile } from '../../../shared/presignedUpload'
 import { useVideoCategories } from '../../../shared/hooks/useVideos'
-import { UploadProgressModal } from '../../../../components/feedback'
+import { useUploadQueue } from '@/app/contexts/UploadQueueContext'
 
 interface Video {
   id: string
@@ -31,14 +30,11 @@ export default function EditVideoPage() {
   const params = useParams()
   const videoId = params.id as string
   const { categories, fetchCategories } = useVideoCategories()
+  const { enqueueVideoUpdate } = useUploadQueue()
 
   const [video, setVideo] = useState<Video | null>(null)
   const [isFetching, setIsFetching] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadStep, setUploadStep] = useState('')
-  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
-  const [uploadingFileName, setUploadingFileName] = useState('')
   const [formData, setFormData] = useState({
     title: '',
     presented_by: '',
@@ -188,41 +184,42 @@ export default function EditVideoPage() {
       return
     }
 
+    if (videoFile) {
+      const categoryName =
+        categories.find((c) => c.id === formData.category_id)?.name ?? null
+
+      enqueueVideoUpdate({
+        videoId: video.id,
+        title: formData.title,
+        presented_by: formData.presented_by,
+        description: formData.description,
+        category_id: formData.category_id,
+        category_name: categoryName,
+        access_level: formData.access_level,
+        videoFile,
+        thumbnailFile,
+        isThumbnailRemoved,
+        existingThumbnailUrl: video.thumbnail_url,
+        existingFileUrl: video.file_url,
+        existingFileName: video.file_name,
+        existingFileSize: video.file_size,
+      })
+
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+      setVideoFile(null)
+      setVideoPreviewUrl(null)
+      if (videoFileInputRef.current) videoFileInputRef.current.value = ''
+
+      notify.info('កំពុងផ្ទុកវីដេអូថ្មី — មើលវឌ្ឍនភាពក្នុងម៉ឺនុយ «ផ្ទុកវីដេអូ» ខាងលើ')
+      return
+    }
+
     try {
       setIsLoading(true)
-      if (videoFile) {
-        setIsProgressModalOpen(true)
-        setUploadProgress(0)
-        setUploadingFileName(videoFile.name)
-      }
 
       let thumbnailUrl = isThumbnailRemoved ? null : video.thumbnail_url
-      let fileUrl = video.file_url
-      let fileName = video.file_name
-      let fileSize = video.file_size
-
-      if (videoFile) {
-        const categoryName =
-          categories.find((c) => c.id === formData.category_id)?.name ?? null
-
-        setUploadStep('កំពុងផ្ទុកវីដេអូ...')
-        const videoUploadResult = await presignAndUploadFile(videoFile, {
-          bucket: 'videos',
-          pathHint: `videos/${videoFile.name}`,
-          category_id: formData.category_id,
-          category_name: categoryName,
-          onProgress: (progress) => {
-            setUploadProgress(thumbnailFile ? progress * 0.7 : progress * 0.9)
-          },
-        })
-        fileUrl = videoUploadResult.path
-        fileName = videoFile.name
-        fileSize = videoFile.size
-      }
 
       if (thumbnailFile) {
-        setUploadStep('កំពុងផ្ទុករូបតំណាង...')
-        setUploadProgress(70)
         // `path` is treated as a server-side hint only; the server generates a safe unique key.
         const thumbnailPath = `video-thumbnails/${thumbnailFile.name}`
 
@@ -244,9 +241,6 @@ export default function EditVideoPage() {
         }
       }
 
-      setUploadStep('កំពុងរក្សាទុកការផ្លាស់ប្តូរ...')
-      setUploadProgress(90)
-
       const response = await apiFetch(`/api/videos?id=${video.id}`, {
         method: 'PUT',
         headers: {
@@ -259,11 +253,6 @@ export default function EditVideoPage() {
           category_id: formData.category_id,
           access_level: formData.access_level,
           thumbnail_url: thumbnailUrl,
-          ...(videoFile && {
-            file_url: fileUrl,
-            file_name: fileName,
-            file_size: fileSize,
-          }),
         }),
       })
 
@@ -273,25 +262,14 @@ export default function EditVideoPage() {
         throw new Error(result.error || 'Failed to update video')
       }
 
-      if (videoFile) {
-        setUploadProgress(100)
-        setUploadStep('រួចរាល់!')
-        await new Promise((resolve) => setTimeout(resolve, 400))
-        setIsProgressModalOpen(false)
-      }
-
       notify.success('វីដេអូត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!')
       router.push('/dashboard/videos/list')
     } catch (error: unknown) {
       console.error('Update error:', error)
-      setIsProgressModalOpen(false)
       const message = error instanceof Error ? error.message : 'ធ្វើបច្ចុប្បន្នភាពវីដេអូមិនជោគជ័យ។'
       notify.error(message)
     } finally {
       setIsLoading(false)
-      setUploadProgress(0)
-      setUploadStep('')
-      setUploadingFileName('')
     }
   }
 
@@ -568,13 +546,6 @@ export default function EditVideoPage() {
         </form>
       </div>
 
-      <UploadProgressModal
-        isOpen={isProgressModalOpen}
-        progress={uploadProgress}
-        currentStep={uploadStep}
-        fileName={uploadingFileName}
-        title="កំពុងផ្ទុកវីដេអូ"
-      />
     </>
   )
 }

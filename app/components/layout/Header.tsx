@@ -1,5 +1,7 @@
 'use client'
 
+import UploadQueueDropdown from './UploadQueueDropdown'
+
 interface HeaderProps {
   onMenuToggle: () => void
   userInfo?: string
@@ -25,6 +27,7 @@ export default function Header({ onMenuToggle, userInfo = 'Administrator' }: Hea
         </div>
 
         <div className="flex items-center gap-3 ml-auto">
+          <UploadQueueDropdown />
           <div className="hidden sm:flex items-center gap-2.5 pl-3 pr-1 py-1 rounded-full bg-slate-50 border border-slate-200/80">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-700 text-white text-xs font-bold">
               {userInfo.charAt(0).toUpperCase()}

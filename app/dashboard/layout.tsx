@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Sidebar, Header } from '../components/layout'
-import { AuthProvider, useAuth } from '../contexts'
+import { AuthProvider, UploadQueueProvider, useAuth } from '../contexts'
 
 function DashboardSkeleton() {
   return (
@@ -82,7 +82,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      <UploadQueueProvider>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      </UploadQueueProvider>
     </AuthProvider>
   )
 }

@@ -1,6 +1,13 @@
 'use client'
 
 import { apiFetch } from './api'
+import { multipartUploadFile, type ProgressCallback } from './multipartUpload'
+
+/**
+ * Files at or above this size use multipart upload (parallel parts + retries).
+ * Smaller files use a single presigned PUT, which has less overhead.
+ */
+export const MULTIPART_THRESHOLD = 16 * 1024 * 1024
 
 export type PresignStorageBucket =
   | 'videos'
@@ -33,14 +40,37 @@ export function uploadFileToPresignedUrl(
   file: File,
   uploadUrl: string,
   contentType: string,
-  onProgress?: (progress: number) => void
+  onProgress?: ProgressCallback
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
 
+    let lastLoaded = 0
+    let lastTime = 0
+    let ema = 0
+
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable && onProgress) {
-        onProgress((e.loaded / e.total) * 100)
+        const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+        let bytesPerSec = ema
+        if (lastTime !== 0) {
+          const dt = (now - lastTime) / 1000
+          if (dt >= 0.15) {
+            const instant = (e.loaded - lastLoaded) / dt
+            ema = ema === 0 ? instant : ema * 0.7 + instant * 0.3
+            bytesPerSec = ema
+            lastTime = now
+            lastLoaded = e.loaded
+          }
+        } else {
+          lastTime = now
+          lastLoaded = e.loaded
+        }
+        onProgress((e.loaded / e.total) * 100, {
+          loaded: e.loaded,
+          total: e.total,
+          bytesPerSec,
+        })
       }
     })
 
@@ -80,9 +110,14 @@ export async function presignAndUploadFile(
     pathHint?: string
     category_id?: string | null
     category_name?: string | null
-    onProgress?: (progress: number) => void
+    onProgress?: ProgressCallback
   }
 ): Promise<PresignedUploadResult> {
+  // Large files: parallel multipart upload (direct to R2) with per-part retries.
+  if (file.size >= MULTIPART_THRESHOLD) {
+    return multipartUploadFile(file, options)
+  }
+
   const contentType = file.type || 'application/octet-stream'
 
   const presignResponse = await apiFetch('/api/storage/presign', {

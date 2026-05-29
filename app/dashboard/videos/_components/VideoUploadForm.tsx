@@ -104,11 +104,6 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
       clearFieldError('file')
       clearFieldError('form')
 
-      if (file.size > FILE_SIZE_LIMITS.VIDEO_FILE) {
-        setFieldError('file', `ទំហំវីដេអូត្រូវតែតិចជាង ${formatFileSize(FILE_SIZE_LIMITS.VIDEO_FILE)}`)
-        return
-      }
-
       const ext = file.name.split('.').pop()?.toLowerCase()
       if (!ext) {
         setFieldError('file', 'ឈ្មោះឯកសារមិនត្រឹមត្រូវ')
@@ -367,7 +362,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                     </p>
                   </div>
                   <p id={fileRequirementsId} className="text-xs text-slate-500 max-w-xs">
-                    អតិបរមា {formatFileSize(FILE_SIZE_LIMITS.VIDEO_FILE)}
+                    ទំហំឯកសារគ្មានកំណត់ — ផ្ទុកវីដេអូទំហំណាក៏បាន
                   </p>
                 </div>
               ) : (

@@ -31,9 +31,9 @@ export async function POST(request: NextRequest) {
       throw new ValidationError('Missing required fields: file or bucket')
     }
 
-    // Validate file size (max 2GB)
+    // Validate file size (thumbnails, covers, documents — not raw video uploads via presign)
     const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
-    if (file.size > MAX_FILE_SIZE) {
+    if (bucket !== 'videos' && file.size > MAX_FILE_SIZE) {
       throw new ValidationError('File size exceeds maximum limit of 2GB')
     }
 
