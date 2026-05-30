@@ -4,14 +4,15 @@ import { useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { notify } from '@/lib/utils/notify'
 import { z } from 'zod'
-import { apiFetch, getAuthToken } from '../../../shared/api'
+import { apiFetch } from '../../../shared/api'
+import { useUploadQueue } from '@/app/contexts/UploadQueueContext'
 import { Book } from '../../../shared/types'
 import { formatFileSize } from '../../../shared/utils'
 import { FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from '../../../shared/constants'
 import { useZodForm } from '@/app/lib/useZodForm'
 import { Button } from '../../../../components/ui'
 import { PageHeader } from '../../../../components/layout'
-import { Modal, UploadProgressModal } from '../../../../components/feedback'
+import { Modal } from '../../../../components/feedback'
 import { useCategories } from '../../../shared/hooks/useCategories'
 import { DocxPreview } from '../../_components/DocxPreview'
 
@@ -40,20 +41,13 @@ const formSchema = z.object({
 
 type BookFormInput = z.input<typeof formSchema>
 
-// Helper type for upload result
-type UploadResult = {
-  data?: {
-    publicUrl?: string
-    url?: string
-  }
-}
-
 export default function EditDocumentPage() {
   const router = useRouter()
   const params = useParams()
   const bookId = params.id as string
   const { categories, fetchCategories } = useCategories()
   
+  const { enqueueDocumentUpdate } = useUploadQueue()
   const [book, setBook] = useState<Book | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
@@ -62,12 +56,6 @@ export default function EditDocumentPage() {
   const [isFilePreviewOpen, setIsFilePreviewOpen] = useState(false)
   const [isFilePreviewFullscreenOpen, setIsFilePreviewFullscreenOpen] = useState(false)
   const categoryInitializedRef = useRef(false)
-  
-  // Upload progress state
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadStep, setUploadStep] = useState('')
-  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
-  const [uploadingFileName, setUploadingFileName] = useState('')
 
   const filePreviewUrl = useMemo(() => {
     if (!book?.file_url) return ''
@@ -211,57 +199,6 @@ export default function EditDocumentPage() {
     }
   }, [book?.category_id, categories, formSetValue])
 
-  // Helper function to upload file with progress tracking
-  const uploadFileWithProgress = useCallback(async (
-    formData: FormData,
-    url: string,
-    onProgress: (progress: number) => void
-  ): Promise<UploadResult> => {
-    const token = await getAuthToken()
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest()
-
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const progress = (e.loaded / e.total) * 100
-          onProgress(progress)
-        }
-      })
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const result = JSON.parse(xhr.responseText)
-            resolve(result)
-          } catch {
-            reject(new Error('Failed to parse response'))
-          }
-        } else {
-          try {
-            const error = JSON.parse(xhr.responseText)
-            reject(new Error(error.error || 'Upload failed'))
-          } catch {
-            reject(new Error('Upload failed'))
-          }
-        }
-      })
-
-      xhr.addEventListener('error', () => {
-        reject(new Error('Network error during upload'))
-      })
-
-      xhr.addEventListener('abort', () => {
-        reject(new Error('Upload aborted'))
-      })
-
-      xhr.open('POST', url)
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-      }
-      xhr.send(formData)
-    })
-  }, [])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -286,14 +223,6 @@ export default function EditDocumentPage() {
         return
       }
 
-      // Show progress modal if there are files to upload
-      const hasFilesToUpload = bookFile
-      if (hasFilesToUpload) {
-        setIsProgressModalOpen(true)
-        setUploadProgress(0)
-        setUploadingFileName(bookFile?.name || '')
-      }
-
       const finalCategoryId = (validated.data.category_id as string | undefined) || selectedMainCategoryId
       if (!finalCategoryId) {
         notify.error('សូមជ្រើសរើសប្រភេទចម្បង។')
@@ -302,45 +231,27 @@ export default function EditDocumentPage() {
       const category = categories.find(cat => cat.id === finalCategoryId) || book?.category
       const categoryName = category?.name || 'uncategorized'
 
-      let fileUrl = book.file_url
-      let fileName = book.file_name
-      let fileSize = book.file_size
-
-      // Upload new book file if provided
       if (bookFile) {
-        setUploadStep('Uploading document file...')
-        const filePath = `documents/${bookFile.name}`
+        enqueueDocumentUpdate({
+          bookId: book.id,
+          title: validated.data.title,
+          author: validated.data.author,
+          year: String(validated.data.year),
+          description: validated.data.description || '',
+          category_id: finalCategoryId,
+          category_name: categoryName,
+          access_level: validated.data.access_level,
+          documentFile: bookFile,
+          existingFileUrl: book.file_url,
+          existingFileName: book.file_name,
+          existingFileSize: book.file_size,
+        })
 
-        const fileFormData = new FormData()
-        fileFormData.append('file', bookFile)
-        fileFormData.append('bucket', 'documents')
-        fileFormData.append('path', filePath)
-        if (finalCategoryId) {
-          fileFormData.append('category_id', finalCategoryId)
-          fileFormData.append('category_name', categoryName)
-        }
+        setBookFile(null)
+        if (bookInputRef.current) bookInputRef.current.value = ''
 
-        const fileUploadResult = await uploadFileWithProgress(
-          fileFormData,
-          '/api/storage/upload',
-          (progress) => {
-            const totalProgress = progress * 0.9
-            setUploadProgress(totalProgress)
-          }
-        )
-
-        fileUrl = fileUploadResult.data?.publicUrl || fileUploadResult.data?.url || ''
-        if (!fileUrl) {
-          throw new Error('Failed to get file URL from upload response')
-        }
-        fileName = bookFile.name
-        fileSize = bookFile.size
-      }
-
-      // Update book via API
-      if (hasFilesToUpload) {
-        setUploadStep('Saving changes...')
-        setUploadProgress(90)
+        notify.info('កំពុងផ្ទុកឯកសារថ្មី — មើលវឌ្ឍនភាពក្នុងម៉ឺនុយ «ការផ្ទុក» ខាងលើ')
+        return
       }
 
       const response = await apiFetch(`/api/books?id=${book.id}`, {
@@ -354,9 +265,9 @@ export default function EditDocumentPage() {
           year: validated.data.year,
           description: validated.data.description || null,
           cover_url: null,
-          file_url: fileUrl,
-          file_name: fileName,
-          file_size: fileSize,
+          file_url: book.file_url,
+          file_name: book.file_name,
+          file_size: book.file_size,
           category_id: finalCategoryId,
           access_level: validated.data.access_level,
         }),
@@ -368,25 +279,14 @@ export default function EditDocumentPage() {
         throw new Error(result.error || 'Failed to update book')
       }
 
-      if (hasFilesToUpload) {
-        setUploadProgress(100)
-        setUploadStep('Complete!')
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setIsProgressModalOpen(false)
-      }
-
       notify.success('ឯកសារត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!')
       router.push('/dashboard/documents/list')
     } catch (error: unknown) {
       console.error('Update error:', error)
-      setIsProgressModalOpen(false)
       const message = error instanceof Error ? error.message : 'ធ្វើបច្ចុប្បន្នភាពឯកសារមិនជោគជ័យ។'
       notify.error(message)
     } finally {
       setIsLoading(false)
-      setUploadProgress(0)
-      setUploadStep('')
-      setUploadingFileName('')
     }
   }
 
@@ -828,14 +728,6 @@ export default function EditDocumentPage() {
           </div>
         </form>
       </div>
-
-      <UploadProgressModal
-        isOpen={isProgressModalOpen}
-        progress={uploadProgress}
-        currentStep={uploadStep}
-        fileName={uploadingFileName}
-        title="កំពុងធ្វើបច្ចុប្បន្នភាពឯកសារ"
-      />
     </>
   )
 }

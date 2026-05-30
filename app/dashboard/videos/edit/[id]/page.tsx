@@ -210,7 +210,7 @@ export default function EditVideoPage() {
       setVideoPreviewUrl(null)
       if (videoFileInputRef.current) videoFileInputRef.current.value = ''
 
-      notify.info('កំពុងផ្ទុកវីដេអូថ្មី — មើលវឌ្ឍនភាពក្នុងម៉ឺនុយ «ផ្ទុកវីដេអូ» ខាងលើ')
+      notify.info('កំពុងផ្ទុកវីដេអូថ្មី — មើលវឌ្ឍនភាពក្នុងម៉ឺនុយ «ការផ្ទុក» ខាងលើ')
       return
     }
 

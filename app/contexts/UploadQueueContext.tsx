@@ -29,6 +29,7 @@ export type UploadJobStatus = 'uploading' | 'saving' | 'completed' | 'error'
 
 export type UploadJob = {
   id: string
+  mediaType: 'video' | 'document'
   fileName: string
   label: string
   progress: number
@@ -67,6 +68,32 @@ export type VideoUpdatePayload = {
   existingFileSize: number
 }
 
+export type DocumentUploadPayload = {
+  title: string
+  author: string
+  year: string
+  description: string
+  category_id: string
+  category_name: string | null
+  file: File
+  access_level: 'free' | 'members'
+}
+
+export type DocumentUpdatePayload = {
+  bookId: string
+  title: string
+  author: string
+  year: string
+  description: string
+  category_id: string
+  category_name: string | null
+  access_level: 'free' | 'members'
+  documentFile: File
+  existingFileUrl: string
+  existingFileName: string
+  existingFileSize: number
+}
+
 type UploadQueueContextValue = {
   jobs: UploadJob[]
   activeCount: number
@@ -77,6 +104,8 @@ type UploadQueueContextValue = {
   clearCompleted: () => void
   enqueueVideoUpload: (payload: VideoUploadPayload) => string
   enqueueVideoUpdate: (payload: VideoUpdatePayload) => string
+  enqueueDocumentUpload: (payload: DocumentUploadPayload) => string
+  enqueueDocumentUpdate: (payload: DocumentUpdatePayload) => string
 }
 
 const UploadQueueContext = createContext<UploadQueueContextValue | null>(null)
@@ -85,12 +114,13 @@ function createJobId() {
   return `upload-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-function videoScaleFor(record: PersistedUploadRecord): number {
+function uploadScaleFor(record: PersistedUploadRecord): number {
+  if (record.mediaType === 'document') return 0.9
   return record.thumbnailFile ? 0.7 : 0.9
 }
 
 function initialProgressFor(record: PersistedUploadRecord): number {
-  const scale = videoScaleFor(record)
+  const scale = uploadScaleFor(record)
   if (record.phase === 'save') return 90
   if (record.phase === 'thumb') return scale * 100
   const total = record.multipart?.partCount ?? 1
@@ -99,8 +129,10 @@ function initialProgressFor(record: PersistedUploadRecord): number {
 }
 
 function jobFromRecord(record: PersistedUploadRecord): UploadJob {
+  const mediaType = record.mediaType ?? 'video'
   return {
     id: record.id,
+    mediaType,
     fileName: record.videoFile?.name ?? record.uploadedFileName ?? record.existingFileName ?? '',
     label: record.label,
     progress: initialProgressFor(record),
@@ -136,10 +168,10 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
    * Drives a job from its current phase to completion. Safe to call on a fresh job or on a
    * job restored from persistence (it skips finished phases / multipart parts).
    */
-  const runJob = useCallback(
+  const runVideoJob = useCallback(
     async (record: PersistedUploadRecord) => {
       const jobId = record.id
-      const scale = videoScaleFor(record)
+      const scale = uploadScaleFor(record)
 
       try {
         // --- Phase: video upload ---
@@ -267,7 +299,6 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
           if (!response.ok) throw new Error(result.error || 'Failed to update video')
         }
 
-        // Remove persistence first to minimize any duplicate-save window on refresh.
         await deleteUploadRecord(jobId)
         patchJob(jobId, { status: 'completed', step: 'រួចរាល់', progress: 100 })
         notify.success(
@@ -277,13 +308,133 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
         )
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'មិនអាចផ្ទុកវីដេអូបានទេ'
-        // Unrecoverable in-session error: the multipart upload was aborted, so it can't resume.
         await deleteUploadRecord(jobId)
         patchJob(jobId, { status: 'error', step: 'បរាជ័យ', error: message })
         notify.error(`${record.videoFile?.name ?? record.title}: ${message}`)
       }
     },
     [patchJob]
+  )
+
+  const runDocumentJob = useCallback(
+    async (record: PersistedUploadRecord) => {
+      const jobId = record.id
+      const scale = uploadScaleFor(record)
+
+      try {
+        if (record.phase === 'file' && record.videoFile) {
+          patchJob(jobId, { status: 'uploading', step: 'កំពុងផ្ទុកឯកសារ...' })
+
+          let result
+          if (record.videoFile.size >= MULTIPART_THRESHOLD) {
+            result = await multipartUploadFile(record.videoFile, {
+              bucket: 'documents',
+              pathHint: `documents/${record.videoFile.name}`,
+              category_id: record.category_id,
+              category_name: record.category_name,
+              resumeState: record.multipart,
+              onCreated: (state) => {
+                record.multipart = state
+                void saveUploadMeta(record)
+              },
+              onPartCompleted: () => {
+                void saveUploadMeta(record)
+              },
+              onProgress: (p, info) =>
+                patchJob(jobId, { progress: p * scale, bytesPerSec: info?.bytesPerSec }),
+            })
+          } else {
+            result = await presignAndUploadFile(record.videoFile, {
+              bucket: 'documents',
+              pathHint: `documents/${record.videoFile.name}`,
+              category_id: record.category_id,
+              category_name: record.category_name,
+              onProgress: (p, info) =>
+                patchJob(jobId, { progress: p * scale, bytesPerSec: info?.bytesPerSec }),
+            })
+          }
+
+          record.uploadedVideoPath = result.publicUrl || result.url || result.path
+          record.uploadedFileName = record.videoFile.name
+          record.uploadedFileSize = record.videoFile.size
+          record.phase = 'save'
+          void saveUploadMeta(record)
+        }
+
+        patchJob(jobId, {
+          status: 'saving',
+          step: 'កំពុងរក្សាទុកព័ត៌មានឯកសារ...',
+          progress: 90,
+          bytesPerSec: undefined,
+        })
+
+        if (record.kind === 'create') {
+          const response = await apiFetch('/api/books', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: record.title.trim(),
+              author: record.author?.trim() || '',
+              year: record.year?.trim() || '',
+              description: record.description.trim() || null,
+              file_name: record.uploadedFileName,
+              file_url: record.uploadedVideoPath,
+              file_size: record.uploadedFileSize,
+              cover_url: null,
+              category_id: record.category_id,
+              access_level: record.access_level,
+            }),
+          })
+          const result = await response.json()
+          if (!response.ok) throw new Error(result.error || 'Failed to save document metadata')
+        } else {
+          const response = await apiFetch(`/api/books?id=${record.bookId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: record.title.trim(),
+              author: record.author?.trim() || '',
+              year: record.year?.trim() || '',
+              description: record.description.trim() || null,
+              cover_url: null,
+              file_url: record.uploadedVideoPath,
+              file_name: record.uploadedFileName,
+              file_size: record.uploadedFileSize,
+              category_id: record.category_id,
+              access_level: record.access_level,
+            }),
+          })
+          const result = await response.json()
+          if (!response.ok) throw new Error(result.error || 'Failed to update document')
+        }
+
+        await deleteUploadRecord(jobId)
+        patchJob(jobId, { status: 'completed', step: 'រួចរាល់', progress: 100 })
+        notify.success(
+          record.kind === 'create'
+            ? `ឯកសារ "${record.title.trim()}" ផ្ទុកជោគជ័យ`
+            : `ឯកសារ "${record.title.trim()}" ធ្វើបច្ចុប្បន្នភាពជោគជ័យ`
+        )
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'មិនអាចផ្ទុកឯកសារបានទេ'
+        await deleteUploadRecord(jobId)
+        patchJob(jobId, { status: 'error', step: 'បរាជ័យ', error: message })
+        notify.error(`${record.videoFile?.name ?? record.title}: ${message}`)
+      }
+    },
+    [patchJob]
+  )
+
+  const runJob = useCallback(
+    async (record: PersistedUploadRecord) => {
+      const mediaType = record.mediaType ?? 'video'
+      if (mediaType === 'document') {
+        await runDocumentJob(record)
+      } else {
+        await runVideoJob(record)
+      }
+    },
+    [runDocumentJob, runVideoJob]
   )
 
   const enqueueVideoUpload = useCallback(
@@ -293,6 +444,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
 
       const record: PersistedUploadRecord = {
         id: jobId,
+        mediaType: 'video',
         kind: 'create',
         createdAt: Date.now(),
         label,
@@ -314,6 +466,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
       setJobs((prev) => [
         {
           id: jobId,
+          mediaType: 'video',
           fileName: payload.file.name,
           label,
           progress: 0,
@@ -342,6 +495,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
 
       const record: PersistedUploadRecord = {
         id: jobId,
+        mediaType: 'video',
         kind: 'update',
         createdAt: Date.now(),
         label,
@@ -369,6 +523,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
       setJobs((prev) => [
         {
           id: jobId,
+          mediaType: 'video',
           fileName,
           label,
           progress: 0,
@@ -380,6 +535,110 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
       ])
 
       void saveUploadFiles(jobId, payload.videoFile, payload.thumbnailFile)
+      void saveUploadMeta(record)
+      void runJob(record)
+      return jobId
+    },
+    [runJob]
+  )
+
+  const enqueueDocumentUpload = useCallback(
+    (payload: DocumentUploadPayload) => {
+      const jobId = createJobId()
+      const label = payload.title.trim() || payload.file.name
+
+      const record: PersistedUploadRecord = {
+        id: jobId,
+        mediaType: 'document',
+        kind: 'create',
+        createdAt: Date.now(),
+        label,
+        videoFile: payload.file,
+        thumbnailFile: null,
+        videoFileName: payload.file.name,
+        videoFileType: payload.file.type,
+        videoFileSize: payload.file.size,
+        title: payload.title,
+        presented_by: '',
+        author: payload.author,
+        year: payload.year,
+        description: payload.description,
+        category_id: payload.category_id,
+        category_name: payload.category_name,
+        access_level: payload.access_level,
+        phase: 'file',
+        multipart: null,
+      }
+
+      setJobs((prev) => [
+        {
+          id: jobId,
+          mediaType: 'document',
+          fileName: payload.file.name,
+          label,
+          progress: 0,
+          step: 'កំពុងរៀបចំ...',
+          status: 'uploading',
+          createdAt: record.createdAt,
+        },
+        ...prev,
+      ])
+
+      void saveUploadFiles(jobId, payload.file, null)
+      void saveUploadMeta(record)
+      void runJob(record)
+      return jobId
+    },
+    [runJob]
+  )
+
+  const enqueueDocumentUpdate = useCallback(
+    (payload: DocumentUpdatePayload) => {
+      const jobId = createJobId()
+      const label = payload.title.trim() || payload.documentFile.name
+
+      const record: PersistedUploadRecord = {
+        id: jobId,
+        mediaType: 'document',
+        kind: 'update',
+        createdAt: Date.now(),
+        label,
+        videoFile: payload.documentFile,
+        thumbnailFile: null,
+        videoFileName: payload.documentFile.name,
+        videoFileType: payload.documentFile.type,
+        videoFileSize: payload.documentFile.size,
+        title: payload.title,
+        presented_by: '',
+        author: payload.author,
+        year: payload.year,
+        description: payload.description,
+        category_id: payload.category_id,
+        category_name: payload.category_name,
+        access_level: payload.access_level,
+        bookId: payload.bookId,
+        existingFileUrl: payload.existingFileUrl,
+        existingFileName: payload.existingFileName,
+        existingFileSize: payload.existingFileSize,
+        phase: 'file',
+        multipart: null,
+      }
+
+      setJobs((prev) => [
+        {
+          id: jobId,
+          mediaType: 'document',
+          fileName: payload.documentFile.name,
+          label,
+          progress: 0,
+          step: 'កំពុងរៀបចំ...',
+          status: 'uploading',
+          createdAt: record.createdAt,
+        },
+        ...prev,
+      ])
+
+      void saveUploadFiles(jobId, payload.documentFile, null)
       void saveUploadMeta(record)
       void runJob(record)
       return jobId
@@ -410,7 +669,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
 
       if (ordered.length > 0) {
         setPanelOpen(true)
-        notify.info(`កំពុងបន្តការផ្ទុកវីដេអូ ${ordered.length} ដែលមិនទាន់រួចរាល់`)
+        notify.info(`កំពុងបន្តការផ្ទុក ${ordered.length} ដែលមិនទាន់រួចរាល់`)
       }
     })()
 
@@ -435,6 +694,8 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
       clearCompleted,
       enqueueVideoUpload,
       enqueueVideoUpdate,
+      enqueueDocumentUpload,
+      enqueueDocumentUpdate,
     }),
     [
       jobs,
@@ -444,6 +705,8 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
       clearCompleted,
       enqueueVideoUpload,
       enqueueVideoUpdate,
+      enqueueDocumentUpload,
+      enqueueDocumentUpdate,
       togglePanel,
     ]
   )

@@ -11,6 +11,10 @@ function formatSpeed(bytesPerSec?: number): string | null {
   return `${Math.round(bytesPerSec)} B/s`
 }
 
+function mediaTypeLabel(mediaType: 'video' | 'document') {
+  return mediaType === 'document' ? 'ឯកសារ' : 'វីដេអូ'
+}
+
 function statusLabel(status: string) {
   switch (status) {
     case 'uploading':
@@ -67,7 +71,7 @@ export default function UploadQueueDropdown() {
         className="relative inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-navy-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500 focus-visible:ring-offset-2"
         aria-expanded={panelOpen}
         aria-haspopup="true"
-        aria-label="មើលវឌ្ឍនភាពផ្ទុកវីដេអូ"
+        aria-label="មើលវឌ្ឍនភាពការផ្ទុក"
       >
         <svg className="h-5 w-5 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
           <path
@@ -77,7 +81,7 @@ export default function UploadQueueDropdown() {
             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
           />
         </svg>
-        <span className="hidden sm:inline">ផ្ទុកវីដេអូ</span>
+        <span className="hidden sm:inline">ការផ្ទុក</span>
         {activeCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">
             {activeCount}
@@ -111,7 +115,7 @@ export default function UploadQueueDropdown() {
 
           <div className="max-h-[min(60vh,20rem)] overflow-y-auto p-2">
             {jobs.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-slate-500">មិនទាន់មានការផ្ទុកវីដេអូ</p>
+              <p className="px-3 py-6 text-center text-sm text-slate-500">មិនទាន់មានការផ្ទុក</p>
             ) : (
               <ul className="space-y-2">
                 {jobs.map((job) => (
@@ -121,7 +125,12 @@ export default function UploadQueueDropdown() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-slate-900">{job.label}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-semibold text-slate-900">{job.label}</p>
+                          <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                            {mediaTypeLabel(job.mediaType)}
+                          </span>
+                        </div>
                         <p className="truncate text-xs text-slate-500">{job.fileName}</p>
                       </div>
                       <span
@@ -178,13 +187,20 @@ export default function UploadQueueDropdown() {
             )}
           </div>
 
-          <div className="border-t border-slate-100 px-3 py-2">
+          <div className="grid grid-cols-2 gap-1 border-t border-slate-100 px-3 py-2">
             <Link
               href="/dashboard/videos/upload"
               onClick={() => setPanelOpen(false)}
-              className="block rounded-lg px-2 py-2 text-center text-xs font-medium text-navy-700 hover:bg-navy-50"
+              className="rounded-lg px-2 py-2 text-center text-xs font-medium text-navy-700 hover:bg-navy-50"
             >
-              + ផ្ទុកវីដេអូថ្មី
+              + វីដេអូ
+            </Link>
+            <Link
+              href="/dashboard/documents/upload"
+              onClick={() => setPanelOpen(false)}
+              className="rounded-lg px-2 py-2 text-center text-xs font-medium text-navy-700 hover:bg-navy-50"
+            >
+              + ឯកសារ
             </Link>
           </div>
         </div>

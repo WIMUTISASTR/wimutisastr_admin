@@ -22,11 +22,14 @@ export type MultipartState = {
   completedParts: { partNumber: number; etag: string }[]
 }
 
-export type UploadJobPhase = 'video' | 'thumb' | 'save'
+export type UploadMediaType = 'video' | 'document'
+
+export type UploadJobPhase = 'video' | 'thumb' | 'file' | 'save'
 
 // Lightweight, frequently-updated portion (no file blobs).
 export type UploadMetaRecord = {
   id: string
+  mediaType: UploadMediaType
   kind: 'create' | 'update'
   createdAt: number
   label: string
@@ -42,9 +45,16 @@ export type UploadMetaRecord = {
   category_name: string | null
   access_level: 'free' | 'members'
 
+  // Video-only
   videoId?: string
   isThumbnailRemoved?: boolean
   existingThumbnailUrl?: string | null
+
+  // Document-only
+  author?: string
+  year?: string
+  bookId?: string
+
   existingFileUrl?: string
   existingFileName?: string
   existingFileSize?: number
@@ -96,6 +106,7 @@ function openDb(): Promise<IDBDatabase> {
 function toMeta(record: PersistedUploadRecord): UploadMetaRecord {
   return {
     id: record.id,
+    mediaType: record.mediaType,
     kind: record.kind,
     createdAt: record.createdAt,
     label: record.label,
@@ -111,6 +122,9 @@ function toMeta(record: PersistedUploadRecord): UploadMetaRecord {
     videoId: record.videoId,
     isThumbnailRemoved: record.isThumbnailRemoved,
     existingThumbnailUrl: record.existingThumbnailUrl,
+    author: record.author,
+    year: record.year,
+    bookId: record.bookId,
     existingFileUrl: record.existingFileUrl,
     existingFileName: record.existingFileName,
     existingFileSize: record.existingFileSize,
@@ -210,6 +224,7 @@ export async function getAllUploadRecords(): Promise<PersistedUploadRecord[]> {
 
     const records: PersistedUploadRecord[] = []
     for (const meta of result.metas) {
+      const mediaType = meta.mediaType ?? 'video'
       const blobs = result.files.get(meta.id)
       // If the file bytes never got persisted (e.g. refreshed in the first moment),
       // the job can't be resumed — drop it.
@@ -219,6 +234,7 @@ export async function getAllUploadRecords(): Promise<PersistedUploadRecord[]> {
       }
       records.push({
         ...meta,
+        mediaType,
         videoFile: blobs.videoFile,
         thumbnailFile: blobs.thumbnailFile,
       })

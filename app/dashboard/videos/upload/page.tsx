@@ -32,7 +32,7 @@ export default function VideosUploadPage() {
       category_name: categoryName,
     })
 
-    notify.info('បានចាប់ផ្ទុកវីដេអូ — មើលវឌ្ឍនភាពក្នុងម៉ឺនុយ «ផ្ទុកវីដេអូ» ខាងលើ')
+    notify.info('បានចាប់ផ្ទុកវីដេអូ — មើលវឌ្ឍនភាពក្នុងម៉ឺនុយ «ការផ្ទុក» ខាងលើ')
   }
 
   return (
