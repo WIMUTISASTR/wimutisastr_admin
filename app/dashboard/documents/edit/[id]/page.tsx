@@ -588,7 +588,7 @@ export default function EditDocumentPage() {
                 {selectedMainCategoryId && availableSubcategories.length > 0 && (
                   <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-2">
-                      ប្រភេទរង (ស្រេចចិត្ត)
+                      ប្រភេទរង 
                     </label>
                     <select
                       value={(form.values.category_id as string) || ''}
@@ -638,7 +638,7 @@ export default function EditDocumentPage() {
                     rows={5}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none"
                     disabled={isLoading}
-                    placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
+                    placeholder="ការពិពណ៌នា "
                   />
                   {form.errors.description && (
                     <p className="mt-1 text-sm text-red-600 font-medium">{form.errors.description}</p>
@@ -650,7 +650,7 @@ export default function EditDocumentPage() {
             {/* Files */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
               <h4 className="text-lg font-bold text-slate-900">ឯកសារ</h4>
-              <p className="text-sm text-slate-600 mt-1">ជំនួសឯកសារ (ស្រេចចិត្ត)</p>
+              <p className="text-sm text-slate-600 mt-1">ជំនួសឯកសារ </p>
 
               <div className="mt-5 space-y-5">
                 {/* Book file */}

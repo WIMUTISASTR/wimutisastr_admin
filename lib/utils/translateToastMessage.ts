@@ -109,7 +109,10 @@ function isMostlyLatin(text: string): boolean {
 export function translateToastMessage(message: string): string {
   const trimmed = normalizeKey(message);
   if (!trimmed) return GENERIC_ERROR;
-  if (KHMER_SCRIPT.test(trimmed) && !isMostlyLatin(trimmed)) {
+  // Any message containing Khmer script is an app-authored, already-localized string
+  // (it may also embed Latin titles/filenames/sizes). Always show it verbatim instead of
+  // letting it fall through to GENERIC_ERROR.
+  if (KHMER_SCRIPT.test(trimmed)) {
     return trimmed;
   }
 

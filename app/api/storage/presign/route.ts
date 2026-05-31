@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       categoryName: body.category_name ?? null,
     })
 
-    const { bucketName: actualBucketName, publicUrlBase } = resolveBucketInfo(cfg, body.bucket)
+    const { bucketName: actualBucketName } = resolveBucketInfo(cfg, body.bucket)
     const s3Client = getR2Client(cfg)
     const contentType = body.contentType || 'application/octet-stream'
 
@@ -87,23 +87,10 @@ export async function POST(request: NextRequest) {
       body.bucket === 'videos' ? PRESIGN_EXPIRY_SECONDS : 15 * 60
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn })
 
+    // Always serve through our authenticated endpoint (private buckets, paywall-gated).
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
       (request.headers.get('origin') || request.url.split('/api')[0])
-    const defaultPublicUrl = `https://${cfg.r2AccountId}.r2.cloudflarestorage.com/${actualBucketName}`
-    let publicUrl: string
-    if (
-      body.bucket === 'videos' ||
-      body.bucket === 'video-thumbnails' ||
-      body.bucket === 'video-category-covers'
-    ) {
-      publicUrl = `${baseUrl}/api/storage/serve?key=${encodeURIComponent(key)}&bucket=${encodeURIComponent(actualBucketName)}`
-    } else if (publicUrlBase && publicUrlBase !== defaultPublicUrl) {
-      publicUrl = publicUrlBase.endsWith('/')
-        ? `${publicUrlBase}${key}`
-        : `${publicUrlBase}/${key}`
-    } else {
-      publicUrl = `${baseUrl}/api/storage/serve?key=${encodeURIComponent(key)}&bucket=${encodeURIComponent(actualBucketName)}`
-    }
+    const publicUrl = `${baseUrl}/api/storage/serve?key=${encodeURIComponent(key)}&bucket=${encodeURIComponent(actualBucketName)}`
 
     return successResponse({
       uploadUrl,

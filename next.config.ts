@@ -40,16 +40,20 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              // Avoid unsafe-* in production.
+              // Avoid unsafe-* in production. blob: + wasm-unsafe-eval are required for
+              // client-side media compression (ffmpeg.wasm / ghostscript.wasm).
               isDevelopment
-                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live"
-                : "script-src 'self' 'unsafe-inline' https://vercel.live",
+                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://vercel.live"
+                : "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://vercel.live",
+              // Web Workers (ffmpeg.wasm internal worker + PDF compression worker).
+              "worker-src 'self' blob:",
               "style-src 'self' 'unsafe-inline'",
               // Allow http: in development, only https: in production
               isDevelopment ? "img-src 'self' data: http: https: blob:" : "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
-              // Include wss for Supabase realtime if enabled.
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://vercel.live wss://vercel.live",
+              // Include wss for Supabase realtime if enabled. blob: is required by
+              // ffmpeg.wasm, which fetches its core/wasm through blob: URLs.
+              "connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://vercel.live wss://vercel.live",
               // Allow http: in development for media as well
               isDevelopment ? "media-src 'self' http: https: blob:" : "media-src 'self' https: blob:",
               "frame-ancestors 'self'",

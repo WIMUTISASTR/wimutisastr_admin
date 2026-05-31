@@ -1,5 +1,16 @@
 import { z } from 'zod'
 
+// Accepts any 8-4-4-4-12 hex string, matching what Postgres' `uuid` column stores.
+// We intentionally do NOT use z.string().uuid(), which enforces RFC 4122 version/variant
+// nibbles and rejects valid seed ids such as "a1000000-0000-0000-0000-000000000001".
+const uuidLike = (message: string) =>
+  z
+    .string()
+    .regex(
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+      message
+    )
+
 // Auth validations
 export const pinSchema = z.object({
   pin: z.string()
@@ -43,7 +54,7 @@ export const createVideoSchema = z.object({
   file_url: storagePathOrUrlSchema,
   file_size: z.number().positive('File size must be positive').optional(),
   thumbnail_url: storagePathOrUrlSchema.optional().nullable(),
-  category_id: z.string().uuid('Invalid category ID'),
+  category_id: uuidLike('Invalid category ID'),
   access_level: z.enum(['free', 'members']).default('members'),
 })
 
@@ -67,7 +78,7 @@ export const updateVideoSchema = z.object({
   file_url: storagePathOrUrlSchema.optional(),
   file_size: z.number().positive().optional(),
   thumbnail_url: storagePathOrUrlSchema.optional().nullable(),
-  category_id: z.string().uuid('Invalid category ID'),
+  category_id: uuidLike('Invalid category ID'),
   access_level: z.enum(['free', 'members']).optional(),
 })
 
@@ -95,7 +106,7 @@ export const createBookSchema = z.object({
   file_url: z.string().url('Invalid file URL'),
   file_size: z.number().positive('File size must be positive').optional(),
   cover_url: z.string().url('Invalid cover URL').optional().nullable(),
-  category_id: z.string().uuid('Invalid category ID'),
+  category_id: uuidLike('Invalid category ID'),
   access_level: z.enum(['free', 'members']).default('members'),
 })
 
@@ -124,7 +135,7 @@ export const updateBookSchema = z.object({
   file_url: z.string().url().optional(),
   file_size: z.number().positive().optional(),
   cover_url: z.string().url().optional().nullable(),
-  category_id: z.string().uuid('Invalid category ID'),
+  category_id: uuidLike('Invalid category ID'),
   access_level: z.enum(['free', 'members']).optional(),
 })
 
@@ -140,7 +151,7 @@ export const createCategorySchema = z.object({
     .optional()
     .nullable(),
   cover_url: z.string().url('Invalid cover URL').optional().nullable(),
-  parent_id: z.string().uuid('Invalid parent category ID').optional().nullable(),
+  parent_id: uuidLike('Invalid parent category ID').optional().nullable(),
 })
 
 export const updateCategorySchema = z.object({
@@ -154,7 +165,7 @@ export const updateCategorySchema = z.object({
     .trim()
     .optional()
     .nullable(),
-  parent_id: z.string().uuid('Invalid parent category ID').optional().nullable(),
+  parent_id: uuidLike('Invalid parent category ID').optional().nullable(),
   cover_url: z.string().url('Invalid cover URL').optional().nullable(),
 })
 
@@ -162,7 +173,7 @@ export const updateCategorySchema = z.object({
 export const uploadSchema = z.object({
   bucket: z.enum(['documents', 'books', 'videos', 'video-thumbnails', 'covers', 'video-category-covers']),
   path: z.string().min(1, 'Path is required'),
-  category_id: z.string().uuid().optional().nullable(),
+  category_id: uuidLike('Invalid category ID').optional().nullable(),
   category_name: z.string().max(100).optional().nullable(),
 })
 

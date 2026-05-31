@@ -431,7 +431,7 @@ export default function EditVideoPage() {
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none"
                     rows={5}
                     disabled={isLoading}
-                    placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
+                    placeholder="ការពិពណ៌នា "
                   />
                 </div>
               </div>
@@ -440,7 +440,7 @@ export default function EditVideoPage() {
             {/* Files */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
               <h4 className="text-lg font-bold text-slate-900">ឯកសារ</h4>
-              <p className="text-sm text-slate-600 mt-1">ជំនួសវីដេអូ ឬរូបតំណាង (ស្រេចចិត្ត)</p>
+              <p className="text-sm text-slate-600 mt-1">ជំនួសវីដេអូ ឬរូបតំណាង </p>
 
               <div className="mt-5 space-y-5">
                 {/* Video file */}

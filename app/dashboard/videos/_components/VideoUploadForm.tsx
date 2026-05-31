@@ -230,9 +230,9 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
       <Card padding="md" className="mb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900">វឌ្ឍនភាពការបំពេញ</p>
+            <p className="text-sm font-semibold text-slate-900">ការបំពេញ</p>
             <p className="mt-0.5 text-sm text-slate-600">
-              {completion.doneCount} / {completion.total} ជំហានចាំបាច់
+              {completion.doneCount} / {completion.total} ជំហាន
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -266,7 +266,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
             aria-valuenow={completion.percent}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="វឌ្ឍនភាពការបំពេញទម្រង់"
+            aria-label="ការបំពេញទម្រង់"
           />
         </div>
       </Card>
@@ -422,15 +422,14 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                 +
               </span>
               <div>
-                <h4 className="text-base font-bold text-slate-900">រូបថតតូច</h4>
-                <p className="text-xs text-slate-600">ស្រេចចិត្ត — បង្ហាញមុនពេលចាក់</p>
+                <h4 className="text-base font-bold text-slate-900">រូបភាព</h4>
               </div>
             </div>
 
             <div
               role="button"
               tabIndex={isLoading ? -1 : 0}
-              aria-label="ជ្រើសរូបថតតូច"
+              aria-label="ជ្រើសរូបភាព"
               onDragEnter={(e) => {
                 e.preventDefault()
                 setThumbDragActive(true)
@@ -476,7 +475,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                   <div className="relative w-full aspect-video bg-slate-100">
                     <Image
                       src={thumbnailPreview}
-                      alt="រូបថតតូច"
+                      alt="រូបភាព"
                       fill
                       sizes="(min-width: 1024px) 320px, 100vw"
                       className="object-cover"
@@ -509,7 +508,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                       d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <p className="mt-2 text-sm font-medium text-slate-700">រូបថតតូច</p>
+                  <p className="mt-2 text-sm font-medium text-slate-700">រូបភាព</p>
                   <p className="text-xs text-slate-500 mt-0.5">JPG, PNG, WEBP · {formatFileSize(FILE_SIZE_LIMITS.THUMBNAIL_IMAGE)}</p>
                 </div>
               )}
@@ -536,7 +535,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
                 <ul className="list-disc list-inside space-y-0.5 text-slate-600">
                   <li>វីដេអូធំអាចចំណាយពេលផ្ទុកបន្តិច</li>
                   <li>MP4 ជាជម្រើសល្អបំផុតសម្រាប់គ្រប់ឧបករណ៍</li>
-                  <li>រូបថតតូចជួយអ្នកប្រើស្វែងរកវីដេអូ</li>
+                  <li>រូបភាពជួយអ្នកប្រើស្វែងរកវីដេអូ</li>
                 </ul>
               </div>
             </div>
@@ -551,7 +550,6 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
               </span>
               <div>
                 <h4 className="text-lg font-bold text-slate-900 font-heading">ព័ត៌មានលម្អិត</h4>
-                <p className="text-sm text-slate-600">ព័ត៌មានវីដេអូសម្រាប់បង្ហាញ</p>
               </div>
             </div>
 
@@ -590,7 +588,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
 
               <div>
                 <label htmlFor="presented-by" className="block text-sm font-semibold text-slate-900 mb-2">
-                  បង្ហាញដោយ <span className="text-slate-500 font-normal">(ស្រេចចិត្ត)</span>
+                  បង្ហាញដោយ
                 </label>
                 <input
                   id="presented-by"
@@ -646,7 +644,7 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
 
               <div>
                 <label htmlFor="video-description" className="block text-sm font-semibold text-slate-900 mb-2">
-                  ការពិពណ៌នា <span className="text-slate-500 font-normal">(ស្រេចចិត្ត)</span>
+                  ការពិពណ៌នា
                 </label>
                 <textarea
                   id="video-description"
@@ -774,26 +772,9 @@ export default function VideoUploadForm({ categories, isLoading, onUpload }: Vid
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 -mx-4 sm:-mx-6 lg:-mx-8 mt-8 border-t border-slate-200 bg-white/95 backdrop-blur-sm shadow-[0_-4px_24px_-4px_rgb(15_23_42/0.08)]">
+      <div className="sticky bottom-0 z-10 -mx-4 sm:-mx-6 lg:-mx-8 mt-8">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <div className="min-w-0 text-sm text-slate-600">
-            {canSubmit ? (
-              <span className="font-medium text-emerald-700">រួចរាល់ផ្ទុក — ចុចផ្ទុកវីដេអូដើម្បីចាប់ផ្តើម</span>
-            ) : (
-              <span>
-                នៅសល់{' '}
-                <span className="font-semibold text-slate-900">
-                  {completion.total - completion.doneCount}
-                </span>{' '}
-                ជំហានមុនផ្ទុក
-              </span>
-            )}
-            {formData.file && (
-              <span className="block text-xs text-slate-500 mt-0.5 truncate">
-                {formData.file.name} · {formatFileSize(formData.file.size)}
-              </span>
-            )}
-          </div>
+          <div className="min-w-0 text-sm text-slate-600"></div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:shrink-0">
             <Link href="/dashboard/videos/list">
               <Button type="button" variant="secondary" fullWidth className="sm:w-auto" disabled={isLoading}>

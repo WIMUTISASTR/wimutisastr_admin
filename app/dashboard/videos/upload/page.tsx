@@ -39,7 +39,6 @@ export default function VideosUploadPage() {
     <>
       <PageHeader
         title="ផ្ទុកវីដេអូ"
-        description="បន្ថែមវីដេអូថ្មី — អាចផ្ទុករួមគ្នាច្រើនវីដេអូ ហើយមើលវឌ្ឍនភាពក្នុងម៉ឺនុយខាងលើ"
         showBackButton
         backHref="/dashboard/videos"
       />

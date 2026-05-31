@@ -131,18 +131,6 @@ export default function VideoList({ videos, categories, isLoading, onEdit, onDel
   if (!selectedCategoryId) {
     return (
       <>
-        <Card padding="md" className="mb-6 overflow-hidden">
-          <div className="relative">
-            <div className="absolute inset-0 bg-linear-to-br from-slate-50 via-white to-blue-50" />
-            <div className="relative flex flex-col gap-2">
-              <h3 className="text-2xl font-extrabold text-slate-900">ប្រភេទវីដេអូ</h3>
-              <p className="text-sm text-slate-600">
-                ជ្រើសរើសប្រភេទដើម្បីមើលវីដេអូ។ ចុចកាតដើម្បីបើក។
-              </p>
-            </div>
-          </div>
-        </Card>
-
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, idx) => (

@@ -422,7 +422,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                 onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black bg-white"
-                placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
+                placeholder="ការពិពណ៌នា"
               />
             </div>
           </div>
@@ -471,7 +471,7 @@ export default function CategoryManagement({ categories, isLoading, onRefresh }:
                             onChange={(e) => handleSubcategoryChange(index, 'description', e.target.value)}
                             rows={2}
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg text-black bg-white"
-                            placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
+                            placeholder="ការពិពណ៌នា "
                           />
                         </div>
                         <div className="flex gap-2">

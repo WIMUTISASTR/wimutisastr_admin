@@ -24,7 +24,7 @@ export type MultipartState = {
 
 export type UploadMediaType = 'video' | 'document'
 
-export type UploadJobPhase = 'video' | 'thumb' | 'file' | 'save'
+export type UploadJobPhase = 'compress' | 'video' | 'thumb' | 'file' | 'save'
 
 // Lightweight, frequently-updated portion (no file blobs).
 export type UploadMetaRecord = {

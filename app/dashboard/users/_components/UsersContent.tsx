@@ -215,7 +215,7 @@ export default function UsersContent() {
       ),
     },
     {
-      header: 'សមាជិកភាព',
+      header: 'សមាជិក',
       accessor: 'membership_status',
       width: '13%',
       render: (value: unknown) => {
@@ -324,7 +324,7 @@ export default function UsersContent() {
     <>
       <PageHeader
         title="គ្រប់គ្រងអ្នកប្រើ"
-        description="មើល និងគ្រប់គ្រងអ្នកប្រើប្រាស់ ស្ថានភាពសមាជិកភាព និងការចូលប្រើ"
+        description="មើល និងគ្រប់គ្រងអ្នកប្រើប្រាស់ ស្ថានភាពសមាជិក និងការចូលប្រើ"
       />
 
       {error && (

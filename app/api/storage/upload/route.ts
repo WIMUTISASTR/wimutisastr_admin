@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine which R2 bucket to use based on the bucket parameter
-    const { bucketName: actualBucketName, publicUrlBase } = resolveBucketInfo(cfg, bucket as UploadBucket)
+    const { bucketName: actualBucketName } = resolveBucketInfo(cfg, bucket as UploadBucket)
 
     // Upload file to R2
     const s3Client = getR2Client(cfg)
@@ -141,30 +141,12 @@ export async function POST(request: NextRequest) {
 
     await s3Client.send(command)
 
-    // Generate public URL
-    // If R2_PUBLIC_URL is set (custom domain with public access), use it
-    // Otherwise, use our API serve endpoint which handles authentication
-    let publicUrl: string
+    // Always serve through our authenticated endpoint so access control (membership /
+    // admin) is enforced on every read. Both documents/books and videos use private
+    // buckets behind /api/storage/serve — we never mint direct public-object URLs.
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
       (request.headers.get('origin') || request.url.split('/api')[0])
-    const defaultPublicUrl = `https://${cfg.r2AccountId}.r2.cloudflarestorage.com/${actualBucketName}`
-
-    if (
-      bucket === 'videos' ||
-      bucket === 'video-thumbnails' ||
-      bucket === 'video-category-covers'
-    ) {
-      // Always serve videos via authenticated endpoint
-      publicUrl = `${baseUrl}/api/storage/serve?key=${encodeURIComponent(key)}&bucket=${encodeURIComponent(actualBucketName)}`
-    } else if (publicUrlBase && publicUrlBase !== defaultPublicUrl) {
-      // Custom domain is set (assumed to be public)
-      publicUrl = publicUrlBase.endsWith('/')
-        ? `${publicUrlBase}${key}`
-        : `${publicUrlBase}/${key}`
-    } else {
-      // Use our API serve endpoint (works with private buckets)
-      publicUrl = `${baseUrl}/api/storage/serve?key=${encodeURIComponent(key)}&bucket=${encodeURIComponent(actualBucketName)}`
-    }
+    const publicUrl = `${baseUrl}/api/storage/serve?key=${encodeURIComponent(key)}&bucket=${encodeURIComponent(actualBucketName)}`
 
     return successResponse({ 
       path: key,

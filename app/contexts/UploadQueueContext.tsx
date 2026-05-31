@@ -24,6 +24,9 @@ import {
   saveUploadMeta,
   type PersistedUploadRecord,
 } from '@/app/dashboard/shared/uploadPersistence'
+import { compressVideoClient, shouldCompressVideoClient } from '@/app/lib/client-video-compression'
+import { compressPdfClient, shouldCompressPdf } from '@/app/lib/client-pdf-compression'
+import { formatFileSize } from '@/app/dashboard/shared/utils'
 
 export type UploadJobStatus = 'uploading' | 'saving' | 'completed' | 'error'
 
@@ -174,6 +177,37 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
       const scale = uploadScaleFor(record)
 
       try {
+        // --- Phase: client-side compression (ffmpeg.wasm) ---
+        if (record.phase === 'compress') {
+          if (record.videoFile && shouldCompressVideoClient(record.videoFile)) {
+            patchJob(jobId, {
+              status: 'uploading',
+              step: 'កំពុងបង្រួមវីដេអូ...',
+              progress: 0,
+              bytesPerSec: undefined,
+            })
+            try {
+              const result = await compressVideoClient(record.videoFile, {
+                onProgress: (ratio) => patchJob(jobId, { progress: Math.round(ratio * 100) }),
+              })
+              if (result.compressed) {
+                record.videoFile = result.file
+                record.videoFileName = result.file.name
+                record.videoFileType = result.file.type
+                record.videoFileSize = result.file.size
+                await saveUploadFiles(jobId, result.file, record.thumbnailFile)
+                notify.success(
+                  `បានបង្រួមវីដេអូ ${formatFileSize(result.originalSize)} → ${formatFileSize(result.compressedSize)}`
+                )
+              }
+            } catch {
+              // Compression is best-effort; fall back to uploading the original file.
+            }
+          }
+          record.phase = 'video'
+          void saveUploadMeta(record)
+        }
+
         // --- Phase: video upload ---
         if (record.phase === 'video' && record.videoFile) {
           patchJob(jobId, { status: 'uploading', step: 'កំពុងផ្ទុកវីដេអូ...' })
@@ -322,6 +356,37 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
       const scale = uploadScaleFor(record)
 
       try {
+        // --- Phase: client-side compression (ghostscript.wasm, PDF only) ---
+        if (record.phase === 'compress') {
+          if (record.videoFile && shouldCompressPdf(record.videoFile)) {
+            patchJob(jobId, {
+              status: 'uploading',
+              step: 'កំពុងបង្រួមឯកសារ...',
+              progress: 0,
+              bytesPerSec: undefined,
+            })
+            try {
+              const result = await compressPdfClient(record.videoFile, {
+                onProgress: (ratio) => patchJob(jobId, { progress: Math.round(ratio * 100) }),
+              })
+              if (result.compressed) {
+                record.videoFile = result.file
+                record.videoFileName = result.file.name
+                record.videoFileType = result.file.type
+                record.videoFileSize = result.file.size
+                await saveUploadFiles(jobId, result.file, null)
+                notify.success(
+                  `បានបង្រួមឯកសារ ${formatFileSize(result.originalSize)} → ${formatFileSize(result.compressedSize)}`
+                )
+              }
+            } catch {
+              // Compression is best-effort; fall back to uploading the original file.
+            }
+          }
+          record.phase = 'file'
+          void saveUploadMeta(record)
+        }
+
         if (record.phase === 'file' && record.videoFile) {
           patchJob(jobId, { status: 'uploading', step: 'កំពុងផ្ទុកឯកសារ...' })
 
@@ -459,7 +524,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
         category_id: payload.category_id,
         category_name: payload.category_name,
         access_level: payload.access_level,
-        phase: 'video',
+        phase: 'compress',
         multipart: null,
       }
 
@@ -516,7 +581,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
         existingFileUrl: payload.existingFileUrl,
         existingFileName: payload.existingFileName,
         existingFileSize: payload.existingFileSize,
-        phase: 'video',
+        phase: 'compress',
         multipart: null,
       }
 
@@ -566,7 +631,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
         category_id: payload.category_id,
         category_name: payload.category_name,
         access_level: payload.access_level,
-        phase: 'file',
+        phase: 'compress',
         multipart: null,
       }
 
@@ -620,7 +685,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
         existingFileUrl: payload.existingFileUrl,
         existingFileName: payload.existingFileName,
         existingFileSize: payload.existingFileSize,
-        phase: 'file',
+        phase: 'compress',
         multipart: null,
       }
 

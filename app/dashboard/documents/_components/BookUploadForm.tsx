@@ -289,7 +289,7 @@ export default function BookUploadForm({
       <Card padding="md" className="mb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900">វឌ្ឍនភាពការបំពេញ</p>
+            <p className="text-sm font-semibold text-slate-900">ការបំពេញ</p>
             <p className="mt-0.5 text-sm text-slate-600">
               {completion.doneCount} / {completion.total} ជំហានរួចរាល់
             </p>
@@ -324,7 +324,7 @@ export default function BookUploadForm({
             aria-valuenow={completion.percent}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="វឌ្ឍនភាពការបំពេញទម្រង់"
+            aria-label="ការបំពេញទម្រង់"
           />
         </div>
       </Card>
@@ -339,7 +339,7 @@ export default function BookUploadForm({
               </span>
               <div>
                 <h4 className="text-lg font-bold text-slate-900 font-heading">ឯកសារ</h4>
-                <p className="text-sm text-slate-600">អូសទម្លាក់ ឬចុចដើម្បីជ្រើស</p>
+
               </div>
             </div>
 
@@ -606,7 +606,7 @@ export default function BookUploadForm({
               {selectedMainCategoryId && availableSubcategories.length > 0 && (
                 <div>
                   <label htmlFor="sub-category" className="block text-sm font-semibold text-slate-900 mb-2">
-                    ប្រភេទរង <span className="text-slate-500 font-normal">(ស្រេចចិត្ត)</span>
+                    ប្រភេទរង <span className="text-slate-500 font-normal"></span>
                   </label>
                   <select
                     id="sub-category"
@@ -627,7 +627,7 @@ export default function BookUploadForm({
 
               <div>
                 <label htmlFor="description" className="block text-sm font-semibold text-slate-900 mb-2">
-                  ការពិពណ៌នា <span className="text-slate-500 font-normal">(ស្រេចចិត្ត)</span>
+                  ការពិពណ៌នា <span className="text-slate-500 font-normal"></span>
                 </label>
                 <textarea
                   id="description"
@@ -760,21 +760,9 @@ export default function BookUploadForm({
       </div>
 
       {/* Sticky action bar — stays within main scroll area */}
-      <div className="sticky bottom-0 z-10 -mx-4 sm:-mx-6 lg:-mx-8 mt-8 border-t border-slate-200 bg-white/95 backdrop-blur-sm shadow-[0_-4px_24px_-4px_rgb(15_23_42/0.08)]">
+      <div className="sticky bottom-0 z-10 -mx-4 sm:-mx-6 lg:-mx-8 mt-8">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <div className="min-w-0 text-sm text-slate-600">
-            {canSubmit ? (
-              <span className="font-medium text-emerald-700">រួចរាល់ផ្ទុក — ចុចបញ្ជូនដើម្បីចាប់ផ្តើម</span>
-            ) : (
-              <span>
-                នៅសល់{' '}
-                <span className="font-semibold text-slate-900">
-                  {completion.total - completion.doneCount}
-                </span>{' '}
-                ជំហានមុនផ្ទុក
-              </span>
-            )}
-          </div>
+          <div className="min-w-0 text-sm text-slate-600"></div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:shrink-0">
             <Link href="/dashboard/documents/list">
               <Button type="button" variant="secondary" fullWidth className="sm:w-auto" disabled={isLoading}>

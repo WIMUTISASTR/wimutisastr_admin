@@ -90,7 +90,7 @@ export default function CreateCategoryPage() {
                     value={categoryFormData.description}
                     onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 bg-white"
-                    placeholder="ការពិពណ៌នា (ស្រេចចិត្ត)"
+                    placeholder="ការពិពណ៌នា "
                     rows={3}
                     disabled={isSaving}
                   />

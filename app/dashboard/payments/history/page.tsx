@@ -155,7 +155,7 @@ export default function PaymentHistoryPage() {
       },
     },
     {
-      header: 'សមាជិកភាព',
+      header: 'សមាជិក',
       accessor: 'membership_ends_at',
       width: '16%',
       render: (value: unknown, row: PaymentProof) => {

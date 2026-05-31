@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# wasm cores copied from node_modules at build time (see scripts/copy-wasm.mjs)
+/public/ffmpeg
+/public/ghostscript
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

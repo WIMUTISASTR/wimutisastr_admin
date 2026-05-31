@@ -55,7 +55,6 @@ export default function DocumentsUploadPage() {
     <>
       <PageHeader
         title="ផ្ទុកឯកសារ"
-        description="បន្ថែមឯកសារថ្មីទៅបណ្ណាល័យ — អាចផ្ទុករួមគ្នាច្រើនឯកសារ ហើយមើលវឌ្ឍនភាពក្នុងម៉ឺនុយខាងលើ"
         showBackButton
         backHref="/dashboard/documents"
       />
